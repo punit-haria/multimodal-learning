@@ -8,11 +8,12 @@ import ops
 import plot
 
 # parameters
-n_steps = 1000                         # number of training steps
+lr = 0.001                             # learning rate
 batch_size = 100                        # minibatch size
-latent_dim = 20                         # dimensionality of latent variable
+latent_dim = 2                          # dimensionality of latent variable
 n_parms = latent_dim + 1                # number of parameters in q(z|x) distribution (Gaussian)
-lr = 0.01                               # learning rate
+n_steps = 50000                         # number of training steps
+
 
 # train and test sets
 Xtr, ytr = data.mnist('train')
@@ -22,12 +23,11 @@ Xte, yte = data.mnist('test')
 Ntr = len(Xtr)
 Nte = len(Xte)
 
-
 # encoder network
 enc_input, enc_output = enc.enc_1(n_parms)
 
 # variational loss
-latents, dec, bound = ops.vae_bound(enc_input, enc_output, dec.dec_1, Ntr, latent_dim)
+latents, dec_out, dec_probs, bound = ops.vae_bound(enc_input, enc_output, dec.dec_1, Ntr, latent_dim)
 
 # optimizer
 step = tf.train.AdamOptimizer(lr).minimize(-bound)
@@ -58,15 +58,18 @@ for i in range(n_steps):
     # save summary 
     train_writer.add_summary(summary, i)
 
-    if i % 50 == 0:
+    if i % 500 == 0:
         print("At iteration ", i)
         summary = sess.run(merged, feed_dict={enc_input: Xte})
         test_writer.add_summary(summary, i)
 
         # generate images
-        images = ops.generate(dec, 25, latent_dim)
-        plot.plot_images(images, 5, 5, '../plots/images_'+str(i))
+        #images = ops.generate_random(dec_probs, 25, latents, latent_dim, sess)
+        images = ops.generate_uniform(dec_probs, 20, latents, sess)
+        plot.plot_images(images, 20, 20, '../plots/images_'+str(i))
 
-
+        # visualize latent space
+        Zmu = ops.encode_mean(enc_input, enc_output, Xte, sess)
+        plot.plot_latent_space(Zmu, yte, '../plots/latent_'+str(i))
 
 
