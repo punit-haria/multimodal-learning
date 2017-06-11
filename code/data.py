@@ -16,7 +16,7 @@ def mnist(dataset_type):
     data = _read_mnist(path)
     labels = _read_mnist(label_path)
 
-    n = len(X)
+    n = len(data)
     data = data.reshape([n,-1])
 
     return data, labels
