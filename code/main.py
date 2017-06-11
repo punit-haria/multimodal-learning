@@ -8,11 +8,11 @@ import ops
 import plot
 
 # parameters
-lr = 0.001                             # learning rate
+lr = 0.0001                             # learning rate
 batch_size = 100                        # minibatch size
 latent_dim = 2                          # dimensionality of latent variable
 n_parms = latent_dim + 1                # number of parameters in q(z|x) distribution (Gaussian)
-n_steps = 50000                         # number of training steps
+n_steps = 2000                         # number of training steps
 
 
 # train and test sets
@@ -58,7 +58,7 @@ for i in range(n_steps):
     # save summary 
     train_writer.add_summary(summary, i)
 
-    if i % 500 == 0:
+    if i % 200 == 0:
         print("At iteration ", i)
         summary = sess.run(merged, feed_dict={enc_input: Xte})
         test_writer.add_summary(summary, i)

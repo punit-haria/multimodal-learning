@@ -36,3 +36,5 @@ def enc_1(output_dims):
 	return input, output
 
 
+
+
