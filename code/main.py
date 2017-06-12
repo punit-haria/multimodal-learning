@@ -12,7 +12,7 @@ lr = 0.0001                             # learning rate
 batch_size = 100                        # minibatch size
 latent_dim = 2                          # dimensionality of latent variable
 n_parms = latent_dim + 1                # number of parameters in q(z|x) distribution (Gaussian)
-n_steps = 2000                         # number of training steps
+n_steps = 3000                         # number of training steps
 
 
 # train and test sets
@@ -71,5 +71,14 @@ for i in range(n_steps):
         # visualize latent space
         Zmu = ops.encode_mean(enc_input, enc_output, Xte, sess)
         plot.plot_latent_space(Zmu, yte, '../plots/latent_'+str(i))
+
+        # generate reconstructions
+        n_recons = 8
+        idx = np.random.randint(Nte, size=n_recons)
+        Xtb = Xte[idx,:]
+        R = sess.run(dec_probs, feed_dict={enc_input: Xtb})
+        images = np.concatenate((R, Xtb), axis=0)
+        images = np.reshape(images, [-1,28,28])
+        plot.plot_images(images, 4, 4, '../plots/reconstructions_'+str(i))
 
 
