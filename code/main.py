@@ -11,8 +11,7 @@ import plot
 lr = 0.0001                             # learning rate
 batch_size = 100                        # minibatch size
 latent_dim = 2                          # dimensionality of latent variable
-n_parms = latent_dim + 1                # number of parameters in q(z|x) distribution (Gaussian)
-n_steps = 3000                         # number of training steps
+n_steps = 5000                         # number of training steps
 
 
 # train and test sets
@@ -24,10 +23,10 @@ Ntr = len(Xtr)
 Nte = len(Xte)
 
 # encoder network
-enc_input, enc_output = enc.enc_1(n_parms)
+x, z_mean, z_logvar = enc.enc_1(latent_dim)
 
 # variational loss
-latents, dec_out, dec_probs, bound = ops.vae_bound(enc_input, enc_output, dec.dec_1, Ntr, latent_dim)
+latents, dec_out, dec_probs, bound = ops.vae_bound(x, z_mean, z_logvar, dec.dec_1, Ntr, latent_dim)
 
 # optimizer
 step = tf.train.AdamOptimizer(lr).minimize(-bound)
@@ -53,14 +52,14 @@ for i in range(n_steps):
     Xb = Xtr[idx,:]
 
     # optimize
-    _, summary = sess.run([step, merged], feed_dict={enc_input: Xb})
+    _, summary = sess.run([step, merged], feed_dict={x: Xb})
 
     # save summary 
     train_writer.add_summary(summary, i)
 
-    if i % 200 == 0:
+    if i % 250 == 0:
         print("At iteration ", i)
-        summary = sess.run(merged, feed_dict={enc_input: Xte})
+        summary = sess.run(merged, feed_dict={x: Xte})
         test_writer.add_summary(summary, i)
 
         # generate images
@@ -69,14 +68,14 @@ for i in range(n_steps):
         plot.plot_images(images, 20, 20, '../plots/images_'+str(i))
 
         # visualize latent space
-        Zmu = ops.encode_mean(enc_input, enc_output, Xte, sess)
+        Zmu = sess.run(z_mean, feed_dict={x: Xte})
         plot.plot_latent_space(Zmu, yte, '../plots/latent_'+str(i))
 
         # generate reconstructions
         n_recons = 8
         idx = np.random.randint(Nte, size=n_recons)
         Xtb = Xte[idx,:]
-        R = sess.run(dec_probs, feed_dict={enc_input: Xtb})
+        R = sess.run(dec_probs, feed_dict={x: Xtb})
         images = np.concatenate((R, Xtb), axis=0)
         images = np.reshape(images, [-1,28,28])
         plot.plot_images(images, 4, 4, '../plots/reconstructions_'+str(i))
