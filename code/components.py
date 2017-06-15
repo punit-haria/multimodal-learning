@@ -69,8 +69,8 @@ class VariationalAutoEncoder(object):
         Recognition network.
         """
         with tf.variable_scope("encoder", reuse=False):
-            h1 = tf.nn.tanh(affine_map(self.X, self.x_dim, 500, "layer_1"))
-            h2 = tf.nn.tanh(affine_map(h1, 500, 500, "layer_2"))
+            h1 = tf.nn.softplus(affine_map(self.X, self.x_dim, 500, "layer_1"))
+            h2 = tf.nn.softplus(affine_map(h1, 500, 500, "layer_2"))
 
             z_mean = affine_map(h2, 500, self.z_dim, "z_mean")
             z_var = tf.nn.softplus(affine_map(h2, 500, self.z_dim, "z_var"))
@@ -83,8 +83,8 @@ class VariationalAutoEncoder(object):
         Generator network. 
         """
         with tf.variable_scope("decoder", reuse=False):
-            h1 = tf.nn.tanh(affine_map(self.Z, self.z_dim, 500, "layer_1"))
-            h2 = tf.nn.tanh(affine_map(h1, 500, 500, "layer_2"))
+            h1 = tf.nn.softplus(affine_map(self.Z, self.z_dim, 500, "layer_1"))
+            h2 = tf.nn.softplus(affine_map(h1, 500, 500, "layer_2"))
 
             x_logits = affine_map(h2, 500, self.x_dim, "x_logits")
             x_probs = tf.nn.sigmoid(x_logits)

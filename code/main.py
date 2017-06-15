@@ -34,8 +34,11 @@ for i in range(train_steps):
     if i % 100 == 0:
         print("At iteration ", i)
 
+        # test minibatch
+        Xtb, ytb = data.sample([Xte,yte], 1000)
+
         # test model
-        vae.test(Xte)
+        vae.test(Xtb)
 
         # plot decoded images from uniform grid in latent space
         n_grid = 7
@@ -44,12 +47,11 @@ for i in range(train_steps):
         plot.plot_images(images, n_grid, n_grid, '../plots/images_'+str(i))
 
         # plot latent space
-        Xtb, ytb = data.sample([Xte,yte], 1000)
         Zmean = vae.encode(Xtb)
         plot.plot_latent_space(Zmean, ytb, '../plots/latent_'+str(i))
 
         # plot reconstruction samples
-        Xtb = data.sample(Xte, 8)
+        Xtb = Xtb[0:8]
         Xrec = vae.reconstruct(Xtb)
         images = np.concatenate((Xrec, Xtb), axis=0)
         images = np.reshape(images, [-1,28,28])
