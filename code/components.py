@@ -24,7 +24,7 @@ class VariationalAutoEncoder(object):
         self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
 
         # latent space parameters
-        self.z_mean, self.z_std = self._encoder()
+        self.z_mean, self.z_var = self._encoder()
 
         # samples from latent space
         self.Z = self._sample_latent_space()
@@ -32,8 +32,11 @@ class VariationalAutoEncoder(object):
         # model parameters
         self.x_logits, self.x_probs = self._decoder()      
 
+        # variational bound
+        self.bound = self._variational_bound()
+
         # loss
-        self.loss = self._variational_loss()
+        self.loss = -self.bound
 
         # optimization step
         self.step = self._optimizer()
@@ -41,13 +44,17 @@ class VariationalAutoEncoder(object):
         # summary variables 
         self.summary = self._summaries()
 
-        # logging and saved model directories
+        # logger and model directories
         self.log_dir = log_dir
         self.model_dir = model_dir
+        if not os.path.exists(self.model_dir):
+            os.mkdir(self.model_dir)
+        if not os.path.exists(self.log_dir):
+            os.mkdir(self.log_dir)
 
         # summary writers
-        self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train_') 
-        self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test_') 
+        self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
+        self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
 
         # counts number of executed training steps
         self.n_steps = 0
@@ -66,9 +73,9 @@ class VariationalAutoEncoder(object):
             h2 = tf.nn.tanh(affine_map(h1, 500, 500, "layer_2"))
 
             z_mean = affine_map(h2, 500, self.z_dim, "z_mean")
-            z_std = tf.nn.softplus(affine_map(h2, 500, self.z_dim, "z_std"))
+            z_var = tf.nn.softplus(affine_map(h2, 500, self.z_dim, "z_var"))
 
-            return z_mean, z_std
+            return z_mean, z_var
 
 
     def _decoder(self,):
@@ -90,25 +97,26 @@ class VariationalAutoEncoder(object):
         Monte Carlo sampling from Latent distribution. Takes a single sample for each observation.
         """
         with tf.variable_scope("sampling", reuse=False):
-            mvn = tf.contrib.distributions.MultivariateNormalDiag(loc=self.z_mean, scale_diag=self.z_std)
+            z_std = tf.sqrt(self.z_var)
+            mvn = tf.contrib.distributions.MultivariateNormalDiag(loc=self.z_mean, scale_diag=z_std)
             return tf.squeeze(mvn.sample())
     
 
-    def _variational_loss(self,):
+    def _variational_bound(self,):
         """
-        Negative evidence lower bound.
+        Variational Bound.
         """
         with tf.variable_scope("variational_bound", reuse=False):
-            # negative reconstruction 
-            l1 = tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
-                labels=self.X))
-        
+            # reconstruction
+            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
+                labels=self.X), axis=1)
+
             # penalty
-            l2 = -0.5 * tf.reduce_sum(1 + tf.log(tf.square(self.z_std)) 
-                - tf.square(self.z_mean) - tf.square(self.z_std))
+            l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.z_var) - tf.square(self.z_mean) - self.z_var, axis=1)
 
-            return l1+l2
-
+            # total bound
+            return tf.reduce_mean(l1+l2, axis=0)
+        
 
     def _optimizer(self,):
         """
@@ -124,7 +132,7 @@ class VariationalAutoEncoder(object):
         Summary variables for visualizing with tensorboard.
         """
         with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('variational loss', self.loss)
+            tf.summary.scalar('variational bound', self.bound)
             return tf.summary.merge_all()
 
 
@@ -147,8 +155,10 @@ class VariationalAutoEncoder(object):
 
         batch_X: minibatch of input data
         """
-        summary = self.sess.run(self.summary, feed_dict={self.X: batch_X})
+        loss, summary = self.sess.run([self.loss, self.summary], feed_dict={self.X: batch_X})
         self.te_writer.add_summary(summary, self.n_steps)
+
+        return loss
         
 
     def reconstruct(self, batch_X):
@@ -184,8 +194,6 @@ class VariationalAutoEncoder(object):
         """
         if name is None:
             name = self.name
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
         saver = tf.train.Saver()
         saver.save(self.sess, self.model_dir+name)
 

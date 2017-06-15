@@ -31,20 +31,22 @@ for i in range(train_steps):
     # training step
     vae.train(Xb)
 
-    if i % 250 == 0:
+    if i % 100 == 0:
         print("At iteration ", i)
 
         # test model
         vae.test(Xte)
-        
+
         # plot decoded images from uniform grid in latent space
-        Z = utils.generate_uniform(20,3)
+        n_grid = 7
+        Z = utils.generate_uniform(n_grid,3)
         images = np.reshape(vae.decode(Z), [-1,28,28])
-        plot.plot_images(images, 20, 20, '../plots/images_'+str(i))
+        plot.plot_images(images, n_grid, n_grid, '../plots/images_'+str(i))
 
         # plot latent space
-        Zmean = vae.encode(Xte)
-        plot.plot_latent_space(Zmean, yte, '../plots/latent_'+str(i))
+        Xtb, ytb = data.sample([Xte,yte], 1000)
+        Zmean = vae.encode(Xtb)
+        plot.plot_latent_space(Zmean, ytb, '../plots/latent_'+str(i))
 
         # plot reconstruction samples
         Xtb = data.sample(Xte, 8)
@@ -52,7 +54,7 @@ for i in range(train_steps):
         images = np.concatenate((Xrec, Xtb), axis=0)
         images = np.reshape(images, [-1,28,28])
         plot.plot_images(images, 4, 4, '../plots/reconstructions_'+str(i))
-
+        
 
 # save final model
 vae.save_state()
