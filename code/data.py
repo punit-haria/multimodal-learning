@@ -2,9 +2,27 @@ import numpy as np
 import struct
 
 
-def mnist(dataset_type):
+def sample(data, batch_size):
     '''
-    Loda MNIST data.
+    Generate random minibatch.
+    '''
+    idx = np.random.randint(len(data), size=batch_size)
+    return data[idx,:]
+
+
+def mnist():
+    '''
+    Load MNIST training and test sets.
+    '''
+    Xtr, ytr = _get_data('train')
+    Xte, yte = _get_data('test')
+    return Xtr, ytr, Xte, yte
+
+def _get_data(dataset_type):
+    '''
+    Helper function.
+
+    Load MNIST data.
     dataset_type: 'train' or 'test'
     '''
     if dataset_type == 'train':

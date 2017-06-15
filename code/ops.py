@@ -30,7 +30,7 @@ def vae_bound(x, z_mean, z_logvar, decoder, N, latent_dim):
         dec_logits, dec_probs = decoder(latents, latent_dim)
 
         # variational loss - reconstruction
-        l1 = -tf.nn.softmax_cross_entropy_with_logits(logits=dec_logits, labels=x)
+        l1 = -tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(logits=dec_logits, labels=x), axis=1)
         
         # variational loss - penalty
         l2 = 0.5 * tf.reduce_sum(1 + z_logvar - tf.square(z_mean) - tf.exp(z_logvar), axis=1)

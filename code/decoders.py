@@ -33,8 +33,8 @@ def dec_1(input, input_dims):
 		# output as logits
 		output = tf.matmul(H1,W) + b
 
-		# softmaxed output
-		probs = tf.nn.softmax(output)
+		# sigmoided output
+		probs = tf.nn.sigmoid(output)
 
 	return output, probs
 
