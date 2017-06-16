@@ -12,7 +12,7 @@ learning_rate = 0.001
 batch_size = 100  
 x_dim = 784                    
 z_dim = 2                        
-train_steps = 10000                        
+train_steps = 100000                        
 
 
 # train/test sets
@@ -31,7 +31,7 @@ for i in range(train_steps):
     # training step
     vae.train(Xb)
 
-    if i % 200 == 0:
+    if i % 500 == 0:
         print("At iteration ", i)
 
         # test minibatch
@@ -40,7 +40,7 @@ for i in range(train_steps):
         # test model
         vae.test(Xtb)
 
-    if i % 1000 == 0:
+    if i % 5000 == 0:
         if z_dim == 2:
             # plot decoded images from uniform grid in latent space
             n_grid = 7
@@ -59,6 +59,8 @@ for i in range(train_steps):
         images = np.reshape(images, [-1,28,28])
         plot.plot_images(images, 4, 4, '../plots/reconstructions_'+str(i))
         
+        # save current model
+        vae.save_state(name='vae_'+str(i))
 
 # save final model
 vae.save_state()
