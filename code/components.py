@@ -309,7 +309,7 @@ def batch_norm(x, scope, decay, epsilon, is_training, center=True):
 
 class M2(object):
 
-    def __init__(self, input_dim, latent_dim, learning_rate, model_name,
+    def __init__(self, input_dim, latent_dim, n_classes, learning_rate, model_name,
         epsilon = 1e-3, decay = 0.99,
         log_dir='../logs/', model_dir='../models/'):
         """
@@ -318,22 +318,40 @@ class M2(object):
         
         input_dim: input data dimensions
         latent_dim: latent space dimensionality
+        y_dim: number of classes (y is a one-hot encoded vector)
         learning_rate: optimization learning rate
         model_name: identifier for current experiment
         epsilon/decay: batch normalization parameters
         """
         self.x_dim = input_dim
         self.z_dim = latent_dim
+        self.y_dim = n_classes
         self.lr = learning_rate
         self.name = model_name
         self.eps = epsilon
         self.decay = decay
 
+
         # training indicator
         self.is_training = tf.placeholder(tf.bool)
 
-        # input placeholder
-        self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+        # labelled input placeholders
+        self.X_labelled = tf.placeholder(tf.float32, [None, self.x_dim], name='X_labelled')
+        self.Y_labelled = tf.placeholder(tf.float32, [None, self.y_dim],name='Y')
+
+        # unlabelled input placeholder
+        self.X_missing = tf.placeholder(tf.float32, [None, self.x_dim], name='X_missing')
+
+        # concat data
+        self.X = tf.concat([self.X_labelled, self.X_missing], axis=0)
+
+        # discriminative classifier
+        self.y_logits, self.y_prob = self._discriminator(self.X)
+
+        # encoders
+        zlab_mean, zlab_var = self._encoder(self.X, self.Y, scope='labelled_encoder')
+        zmiss_mean, zmiss_var = self._encoder(self.X, yyy, scope="missing_encoder")
+        
 
         # latent space parameters
         self.z_mean, self.z_var = self._encoder()  
@@ -376,25 +394,29 @@ class M2(object):
         self.sess.run(tf.global_variables_initializer())
           
 
-    def _encoder(self,):
+    def _encoder(self, X, Y, scope="encoder"):
         """
         Recognition network.
         """
-        with tf.variable_scope("encoder", reuse=False):
-            a1 = affine_map(self.X, self.x_dim, 500, "layer_1")
+        with tf.variable_scope(scope, reuse=False):
+            input = tf.concat([X,Y], axis=1)
+
+            n_width = (self.x_dim + self.y_dim + self.z_dim) / 2
+
+            a1 = affine_map(input, self.x_dim+self.y_dim, n_width, "layer_1")
             b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False)
             h1 = tf.nn.relu(b1)
-            a2 = affine_map(h1, 500, 500, "layer_2")
+            a2 = affine_map(h1, n_width, n_width, "layer_2")
             b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False)
             h2 = tf.nn.relu(b2)
 
-            a3_mean = affine_map(h2, 500, self.z_dim, "mean_layer")
+            a3_mean = affine_map(h2, n_width, self.z_dim, "mean_layer")
             z_mean = batch_norm(a3_mean, 'z_mean', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False) 
 
-            a3_var = affine_map(h2, 500, self.z_dim, "var_layer")
+            a3_var = affine_map(h2, n_width, self.z_dim, "var_layer")
             b3_var = batch_norm(a3_var, 'b3_var', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False) 
             z_var = tf.nn.softplus(b3_var)
@@ -402,26 +424,58 @@ class M2(object):
             return z_mean, z_var
 
 
-    def _decoder(self,):
+    def _discriminator(self, X, scope="classifier"):
         """
-        Generator network. 
+        Discriminative classifier q(y|x).
         """
-        with tf.variable_scope("decoder", reuse=False):
-            a1 = affine_map(self.Z, self.z_dim, 500, "layer_1")
+        with tf.variable_scope(scope, reuse=False):
+            n_width = (self.x_dim + self.y_dim) / 2
+
+            a1 = affine_map(X, self.x_dim, n_width, "layer_1")
             b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False)
             h1 = tf.nn.relu(b1)
-            a2 = affine_map(h1, 500, 500, "layer_2")
+            a2 = affine_map(h1, n_width, n_width, "layer_2")
             b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False)
             h2 = tf.nn.relu(b2)
 
-            a3 = affine_map(h2, 500, self.x_dim, "layer_3")
-            x_logits = batch_norm(a3, 'x_logits', decay=self.decay, epsilon=self.eps,
+            a3 = affine_map(h2, n_width, self.y_dim, "layer_3")
+            y_logits = batch_norm(a3, 'y_logits', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False)
-            x_probs = tf.nn.sigmoid(x_logits)
+            y_probs = tf.nn.softmax(x_logits)
 
-            return x_logits, x_probs
+            return y_logits, y_probs
+
+
+    def _decoder(self, Y, Z, scope="decoder"):
+        """
+        Generator network. 
+        """
+        with tf.variable_scope(scope, reuse=False):
+            input = tf.concat([Y,Z], axis=1)
+
+            n_width = (self.y_dim + self.z_dim + self.x_dim) / 2
+
+            a1 = affine_map(input, self.y_dim + self.z_dim, n_width, "layer_1")
+            b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False)
+            h1 = tf.nn.relu(b1)
+            a2 = affine_map(h1, n_width, n_width, "layer_2")
+            b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False)
+            h2 = tf.nn.relu(b2)
+
+            a3_mean = affine_map(h2, n_width, self.x_dim, "mean_layer")
+            x_mean = batch_norm(a3_mean, 'x_mean', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False) 
+
+            a3_var = affine_map(h2, n_width, self.x_dim, "var_layer")
+            b3_var = batch_norm(a3_var, 'b3_var', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False) 
+            x_var = tf.nn.softplus(b3_var)
+
+            return x_mean, x_var
 
     
     def _sample_latent_space(self,):
