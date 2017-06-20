@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 import os
 
 
@@ -336,34 +337,35 @@ class M2(object):
         self.is_training = tf.placeholder(tf.bool)
 
         # labelled input placeholders
-        self.X_labelled = tf.placeholder(tf.float32, [None, self.x_dim], name='X_labelled')
-        self.Y_labelled = tf.placeholder(tf.float32, [None, self.y_dim],name='Y')
+        self.Xlab = tf.placeholder(tf.float32, [None, self.x_dim], name='X_labelled')
+        self.Ylab = tf.placeholder(tf.float32, [None, self.y_dim],name='Y_labelled')
 
         # unlabelled input placeholder
-        self.X_missing = tf.placeholder(tf.float32, [None, self.x_dim], name='X_missing')
+        self.Xmiss = tf.placeholder(tf.float32, [None, self.x_dim], name='X_missing')
 
-        # concat data
-        self.X = tf.concat([self.X_labelled, self.X_missing], axis=0)
+        # missing label probabilities
+        self.Ymiss_logits, self.Ymiss_prob = self._discriminator(self.Xmiss, scope='missing_probs')
 
-        # discriminative classifier
-        self.y_logits, self.y_prob = self._discriminator(self.X)
+        # sample missing labels
+        self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')
 
-        # encoders
-        zlab_mean, zlab_var = self._encoder(self.X, self.Y, scope='labelled_encoder')
-        zmiss_mean, zmiss_var = self._encoder(self.X, yyy, scope="missing_encoder")
+        # concatentate
+        self.X = tf.concat([self.Xlab, self.Xmiss], axis=0)
+        self.Y = tf.concat([self.Ylab, self.Ymiss], axis=0)
+
+        # encoder
+        self.z_mean, self.z_var = self._encoder(self.X, self.Y)
+    
+        # sample z 
+        self.Z = self._sample_z(self.z_mean, self.z_var)
+
+        # decoder 
+        self.x_mean, self.x_var = self._decoder(self.Y, self.Z)        
         
-
-        # latent space parameters
-        self.z_mean, self.z_var = self._encoder()  
-
-        # samples from latent space
-        self.Z = self._sample_latent_space()
-
-        # model parameters
-        self.x_logits, self.x_probs = self._decoder()      
-
         # variational bound
         self.bound = self._variational_bound()
+
+
 
         # loss
         self.loss = -self.bound  
@@ -393,6 +395,30 @@ class M2(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
           
+
+    def _discriminator(self, X, scope="classifier"):
+        """
+        Discriminative classifier q(y|x).
+        """
+        with tf.variable_scope(scope, reuse=False):
+            n_width = (self.x_dim + self.y_dim) / 2
+
+            a1 = affine_map(X, self.x_dim, n_width, "layer_1")
+            b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False)
+            h1 = tf.nn.relu(b1)
+            a2 = affine_map(h1, n_width, n_width, "layer_2")
+            b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False)
+            h2 = tf.nn.relu(b2)
+
+            a3 = affine_map(h2, n_width, self.y_dim, "layer_3")
+            y_logits = batch_norm(a3, 'y_logits', decay=self.decay, epsilon=self.eps,
+                is_training=self.is_training, center=False)
+            y_probs = tf.nn.softmax(x_logits)
+
+            return y_logits, y_probs
+
 
     def _encoder(self, X, Y, scope="encoder"):
         """
@@ -424,30 +450,6 @@ class M2(object):
             return z_mean, z_var
 
 
-    def _discriminator(self, X, scope="classifier"):
-        """
-        Discriminative classifier q(y|x).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            n_width = (self.x_dim + self.y_dim) / 2
-
-            a1 = affine_map(X, self.x_dim, n_width, "layer_1")
-            b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h1 = tf.nn.relu(b1)
-            a2 = affine_map(h1, n_width, n_width, "layer_2")
-            b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h2 = tf.nn.relu(b2)
-
-            a3 = affine_map(h2, n_width, self.y_dim, "layer_3")
-            y_logits = batch_norm(a3, 'y_logits', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            y_probs = tf.nn.softmax(x_logits)
-
-            return y_logits, y_probs
-
-
     def _decoder(self, Y, Z, scope="decoder"):
         """
         Generator network. 
@@ -477,31 +479,59 @@ class M2(object):
 
             return x_mean, x_var
 
+
+    def _sample_y(self, y_probs, scope='y_sampler'):
+        """
+        Monte Carlo sampling from q(y|x). Returns single sample for each observation.
+        """
+        with tf.variable_scope(scope, reuse=False):
+            cat = tf.contrib.distributions.Categorical(probs=y_probs)
+            return tf.squeeze(cat.sample())
+
     
-    def _sample_latent_space(self,):
+    def _sample_z(self, z_mean, z_var, scope='z_sampler'):
         """
-        Monte Carlo sampling from Latent distribution. Takes a single sample for each observation.
+        Monte Carlo sampling from q(z|x,y). Returns a single sample for each observation.
         """
-        with tf.variable_scope("sampling", reuse=False):
-            z_std = tf.sqrt(self.z_var)
-            mvn = tf.contrib.distributions.MultivariateNormalDiag(loc=self.z_mean, scale_diag=z_std)
+        with tf.variable_scope(scope, reuse=False):
+            z_std = tf.sqrt(z_var)
+            mvn = tf.contrib.distributions.MultivariateNormalDiag(loc=z_mean, scale_diag=z_std)
             return tf.squeeze(mvn.sample())
     
 
-    def _variational_bound(self,):
+    def _variational_bound(self, X, Y, x_mean, x_var, z_mean, z_var, 
+        Xlab, Ylab, 
+        Xmiss, Ymiss, Ymiss_logits, Ymiss_probs,
+        scope='variational_bound'):
         """
         Variational Bound.
+
+        X/Y: total data
+        Xlab/Ylab: labelled data
+        Xmiss/Ymiss: missing label data (with y sampled from q(y|x))
         """
-        with tf.variable_scope("variational_bound", reuse=False):
-            # reconstruction
-            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
-                labels=self.X), axis=1)
+        with tf.variable_scope(scope, reuse=False):
+
+            # reconstruction 
+            l1a = self.x_dim * math.log(2*math.pi)
+            l1b = tf.reduce_sum(tf.log(x_var), axis=1)
+            l1c = tf.reduce_sum(tf.multiply(tf.square(X - x_mean), x_var), axis=1)
+            l1 = -0.5 * (l1a + l1b + l1c) 
 
             # penalty
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.z_var) - tf.square(self.z_mean) - self.z_var, axis=1)
 
+            # log p(y) --> assuming uniform prior on y (using labelled y only)
+            logpy = Ylab.get_shape()[0] * math.log(0.1)            
+
+            # entropy of q(y|x) for missing data 
+            entropy = tf.reduce_sum(-tf.multiply(Ymiss_probs, tf.nn.log_softmax(Ymiss_logits)), axis=1)
+
+            # negative cross entropy of p(y)=0.1 on q(y|x)
+            xent = tf.reduce_sum(math.log(0.1) * Ymiss_probs, axis=1)
+
             # total bound
-            return tf.reduce_mean(l1+l2, axis=0)
+            return tf.reduce_mean(l1+l2+entropy+xent, axis=0) + logpy
         
 
     def _optimizer(self,):
