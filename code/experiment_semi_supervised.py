@@ -37,8 +37,11 @@ vae.load_state(name='vae')  # using final model state
 Ztr = vae.encode(Xtr)
 Zte = vae.encode(Xte)
 
+# close vae tensorflow session
+vae.sess.close()
+
 # Model M2
-m2 = cp.M2(z1_dim, z2_dim, n_classes, learning_rate, 'm2', session=vae.sess)
+m2 = cp.M2(z1_dim, z2_dim, n_classes, learning_rate, 'm2')
 
 
 # train model

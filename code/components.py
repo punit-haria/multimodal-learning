@@ -6,8 +6,8 @@ import os
 
 class VariationalAutoEncoder(object):
 
-    def __init__(self, input_dim, latent_dim, learning_rate, model_name,
-        epsilon = 1e-3, decay = 0.99,
+    def __init__(self, input_dim, latent_dim, learning_rate, model_name, session=None,
+        epsilon = 1e-3, decay = 0.99, 
         log_dir='../logs/', model_dir='../models/'):
         """
         Variational Auto-Encoder. 
@@ -23,12 +23,13 @@ class VariationalAutoEncoder(object):
         self.z_dim = latent_dim
         self.lr = learning_rate
         self.name = model_name
+        self.sess = session
         self.eps = epsilon
         self.decay = decay
 
         with tf.variable_scope(self.name, reuse=False):  
             # training indicator
-            self.is_training = tf.placeholder(tf.bool)
+            self.is_training = tf.placeholder(tf.bool, name='is_training')
 
             # input placeholder
             self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
@@ -69,9 +70,10 @@ class VariationalAutoEncoder(object):
         # counts number of executed training steps
         self.n_steps = 0
 
-        # new tensorflow session
-        self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
+        # tensorflow session
+        if self.sess is None:
+            self.sess = tf.Session()
+            self.sess.run(tf.global_variables_initializer())
           
 
     def _encoder(self,):
@@ -257,56 +259,58 @@ def affine_map(input, in_dim, out_dim, scope, reuse=False):
     """
     with tf.variable_scope(scope, reuse=reuse):
         W = tf.get_variable("W", shape=[in_dim,out_dim], 
-			initializer=tf.contrib.layers.xavier_initializer(uniform=False, dtype=tf.float32))
+            initializer=tf.contrib.layers.xavier_initializer(uniform=False, dtype=tf.float32))
         b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0))
 
         return tf.matmul(input,W) + b
 
 
 def batch_norm(x, scope, decay, epsilon, is_training, center=True, reuse=False):
-	"""
-	Batch normalization layer
+    """
+    Batch normalization layer
 
-  	This was implemented while referring to the following papers/resources:
-  	https://arxiv.org/pdf/1502.03167.pdf
-  	https://arxiv.org/pdf/1603.09025.pdf
-  	http://r2rt.com/implementing-batch-normalization-in-tensorflow.html
-	"""
-	with tf.variable_scope(scope, reuse=reuse):
-		# number of features in input matrix
-		dim = x.get_shape()[1].value
-		# scaling coefficients
-		gamma = tf.get_variable('gamma', [dim], initializer=tf.constant_initializer(1.0), trainable=True)
-		# offset coefficients (if required)
-		if center:
-			beta = tf.get_variable('beta', [dim], initializer=tf.constant_initializer(0), trainable=True)
-		else:
-			beta = None
+      This was implemented while referring to the following papers/resources:
+      https://arxiv.org/pdf/1502.03167.pdf
+      https://arxiv.org/pdf/1603.09025.pdf
+      http://r2rt.com/implementing-batch-normalization-in-tensorflow.html
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        # number of features in input matrix
+        dim = x.get_shape()[1].value
+        # scaling coefficients
+        gamma = tf.get_variable('gamma', [dim], initializer=tf.constant_initializer(1.0), trainable=True)
+        # offset coefficients (if required)
+        if center:
+            beta = tf.get_variable('beta', [dim], initializer=tf.constant_initializer(0), trainable=True)
+        else:
+            beta = None
 
-		# population mean variable (for prediction)
-		popmean = tf.get_variable('pop_mean', shape=[dim], initializer=tf.constant_initializer(0.0), trainable=False)
-		# population variance variable (for prediction)
-		popvar = tf.get_variable('pop_var', shape=[dim], initializer=tf.constant_initializer(1.0), trainable=False)
+        # population mean variable (for prediction)
+        popmean = tf.get_variable('pop_mean', shape=[dim], initializer=tf.constant_initializer(0.0),
+            trainable=False)
+        # population variance variable (for prediction)
+        popvar = tf.get_variable('pop_var', shape=[dim], initializer=tf.constant_initializer(1.0), 
+            trainable=False)
 
-		# compute batch mean and variance
-		batch_mean, batch_var = tf.nn.moments(x, axes=[0])
+        # compute batch mean and variance
+        batch_mean, batch_var = tf.nn.moments(x, axes=[0])
 
-		def update_and_train():
-			# update popmean and popvar using moving average of batch_mean and batch_var
-			pop_mean_new = popmean * decay + batch_mean * (1 - decay)
-			pop_var_new = popvar * decay + batch_var * (1 - decay)
-			with tf.control_dependencies([popmean.assign(pop_mean_new), popvar.assign(pop_var_new)]):
-				# batch normalization
-		  		return tf.nn.batch_normalization(x, mean=batch_mean, variance=batch_var, 
-		  			offset=beta, scale=gamma, variance_epsilon=epsilon)
+        def update_and_train():
+            # update popmean and popvar using moving average of batch_mean and batch_var
+            pop_mean_new = popmean * decay + batch_mean * (1 - decay)
+            pop_var_new = popvar * decay + batch_var * (1 - decay)
+            with tf.control_dependencies([popmean.assign(pop_mean_new), popvar.assign(pop_var_new)]):
+                # batch normalization
+                return tf.nn.batch_normalization(x, mean=batch_mean, variance=batch_var, 
+                    offset=beta, scale=gamma, variance_epsilon=epsilon)
 
-		def predict():
-			# batch normalization (using population moments)
-			return tf.nn.batch_normalization(x, mean=popmean, variance=popvar, 
-				offset=beta, scale=gamma, variance_epsilon=epsilon)
+        def predict():
+            # batch normalization (using population moments)
+            return tf.nn.batch_normalization(x, mean=popmean, variance=popvar, 
+                offset=beta, scale=gamma, variance_epsilon=epsilon)
 
-		# conditional evaluation in tf graph
-		return tf.cond(is_training, update_and_train, predict)
+        # conditional evaluation in tf graph
+        return tf.cond(is_training, update_and_train, predict)
 
 
 
@@ -406,7 +410,7 @@ class M2(object):
         # tensorflow session
         if self.sess is None:
             self.sess = tf.Session()
-        self.sess.run(tf.global_variables_initializer())
+            self.sess.run(tf.global_variables_initializer())
           
 
     def _discriminator(self, X, scope="classifier", reuse=False):
