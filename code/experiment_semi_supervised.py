@@ -8,7 +8,7 @@ import utils
 
 
 # parameters
-learning_rate = 0.001                            
+learning_rate = 0.01                            
 batch_size = 100  
 n_classes = 10
 x_dim = 784                    
