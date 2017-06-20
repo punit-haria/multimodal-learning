@@ -245,7 +245,7 @@ class VariationalAutoEncoder(object):
 
 
 
-def affine_map(input, in_dim, out_dim, scope):
+def affine_map(input, in_dim, out_dim, scope, reuse=False):
     """
     Affine transform.
 
@@ -253,7 +253,7 @@ def affine_map(input, in_dim, out_dim, scope):
     in_dim/out_dim: input and output dimensions
     scope: variable scope as string
     """
-    with tf.variable_scope(scope, reuse=False):
+    with tf.variable_scope(scope, reuse=reuse):
         W = tf.get_variable("W", shape=[in_dim,out_dim], 
 			initializer=tf.contrib.layers.xavier_initializer(uniform=False, dtype=tf.float32))
         b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0))
@@ -261,7 +261,7 @@ def affine_map(input, in_dim, out_dim, scope):
         return tf.matmul(input,W) + b
 
 
-def batch_norm(x, scope, decay, epsilon, is_training, center=True):
+def batch_norm(x, scope, decay, epsilon, is_training, center=True, reuse=False):
 	"""
 	Batch normalization layer
 
@@ -270,7 +270,7 @@ def batch_norm(x, scope, decay, epsilon, is_training, center=True):
   	https://arxiv.org/pdf/1603.09025.pdf
   	http://r2rt.com/implementing-batch-normalization-in-tensorflow.html
 	"""
-	with tf.variable_scope(scope):
+	with tf.variable_scope(scope, reuse=reuse):
 		# number of features in input matrix
 		dim = x.get_shape()[1].value
 		# scaling coefficients
@@ -332,26 +332,28 @@ class M2(object):
         self.eps = epsilon
         self.decay = decay
 
-
         # training indicator
         self.is_training = tf.placeholder(tf.bool)
 
         # labelled input placeholders
-        self.Xlab = tf.placeholder(tf.float32, [None, self.x_dim], name='X_labelled')
-        self.Ylab = tf.placeholder(tf.float32, [None, self.y_dim],name='Y_labelled')
+        self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+        self.Y = tf.placeholder(tf.float32, [None, self.y_dim],name='Y')
 
-        # unlabelled input placeholder
-        self.Xmiss = tf.placeholder(tf.float32, [None, self.x_dim], name='X_missing')
+        # missing and labelled index
+        self.missing = tf.placeholder(tf.int32, [None], name='missing_index')
+        self.labelled = tf.placeholder(tf.int32, [None], name='labelled_index')
 
-        # missing label probabilities
-        self.Ymiss_logits, self.Ymiss_prob = self._discriminator(self.Xmiss, scope='missing_probs')
+        # predictive y probabilities using q(y|x) 
+        self.Y_logits, self.Y_prob = self._discriminator(self.X)
+
+        # separate missing and labelled probabilities
+        self.Ymiss_logits = tf.gather(params=self.Y_logits, indices=self.missing)
+        self.Ymiss_prob = tf.gather(params=self.Y_prob, indices=self.missing)
+        self.Ylab_logits = tf.gather(params=self.Y_logits, indices=self.labelled)
+        self.Ylab_prob = tf.gather(params=self.Y_prob, indices=self.labelled)
 
         # sample missing labels
-        self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')
-
-        # concatentate
-        self.X = tf.concat([self.Xlab, self.Xmiss], axis=0)
-        self.Y = tf.concat([self.Ylab, self.Ymiss], axis=0)
+        self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')  # check dimensions of output!
 
         # encoder
         self.z_mean, self.z_var = self._encoder(self.X, self.Y)
@@ -362,13 +364,16 @@ class M2(object):
         # decoder 
         self.x_mean, self.x_var = self._decoder(self.Y, self.Z)        
         
-        # variational bound
-        self.bound = self._variational_bound()
+        # variational bound 
+        self.bound = self._variational_bound(self.X, self.Y, self.x_mean, self.x_var, 
+            self.z_mean, self.z_var, self.Ymiss_logits, self.Ymiss_prob)
 
-
+        # classification loss
+        self.Ylab = tf.gather(params=self.Y, indices=self.labelled)
+        self.class_loss = self._classification_loss(self.Ylab, self.Ylab_logits)
 
         # loss
-        self.loss = -self.bound  
+        self.loss = -self.bound + self.class_loss
 
         # optimization step
         self.step = self._optimizer()
@@ -396,25 +401,25 @@ class M2(object):
         self.sess.run(tf.global_variables_initializer())
           
 
-    def _discriminator(self, X, scope="classifier"):
+    def _discriminator(self, X, scope="classifier", reuse=False):
         """
         Discriminative classifier q(y|x).
         """
-        with tf.variable_scope(scope, reuse=False):
+        with tf.variable_scope(scope, reuse=reuse):  
             n_width = (self.x_dim + self.y_dim) / 2
 
-            a1 = affine_map(X, self.x_dim, n_width, "layer_1")
+            a1 = affine_map(X, self.x_dim, n_width, "layer_1", reuse=reuse)
             b1 = batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
+                is_training=self.is_training, center=False, reuse=reuse)
             h1 = tf.nn.relu(b1)
-            a2 = affine_map(h1, n_width, n_width, "layer_2")
+            a2 = affine_map(h1, n_width, n_width, "layer_2", reuse=reuse)
             b2 = batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
+                is_training=self.is_training, center=False, reuse=reuse)
             h2 = tf.nn.relu(b2)
 
-            a3 = affine_map(h2, n_width, self.y_dim, "layer_3")
+            a3 = affine_map(h2, n_width, self.y_dim, "layer_3", reuse=reuse)
             y_logits = batch_norm(a3, 'y_logits', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
+                is_training=self.is_training, center=False, reuse=reuse)
             y_probs = tf.nn.softmax(x_logits)
 
             return y_logits, y_probs
@@ -500,15 +505,10 @@ class M2(object):
     
 
     def _variational_bound(self, X, Y, x_mean, x_var, z_mean, z_var, 
-        Xlab, Ylab, 
-        Xmiss, Ymiss, Ymiss_logits, Ymiss_probs,
+        Ymiss_logits, Ymiss_prob,
         scope='variational_bound'):
         """
         Variational Bound.
-
-        X/Y: total data
-        Xlab/Ylab: labelled data
-        Xmiss/Ymiss: missing label data (with y sampled from q(y|x))
         """
         with tf.variable_scope(scope, reuse=False):
 
@@ -522,17 +522,33 @@ class M2(object):
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.z_var) - tf.square(self.z_mean) - self.z_var, axis=1)
 
             # log p(y) --> assuming uniform prior on y (using labelled y only)
-            logpy = Ylab.get_shape()[0] * math.log(0.1)            
+            logpy = math.log(0.1)            
 
             # entropy of q(y|x) for missing data 
-            entropy = tf.reduce_sum(-tf.multiply(Ymiss_probs, tf.nn.log_softmax(Ymiss_logits)), axis=1)
+            entropy = tf.reduce_sum(-tf.multiply(Ymiss_prob, tf.nn.log_softmax(Ymiss_logits)), axis=1)
 
             # negative cross entropy of p(y)=0.1 on q(y|x)
-            xent = tf.reduce_sum(math.log(0.1) * Ymiss_probs, axis=1)
+            xent = tf.reduce_sum(math.log(0.1) * Ymiss_prob, axis=1)
+
+            # bound components
+            missing_bound = tf.reduce_mean(entropy + xent, axis=0)
+            labelled_bound = logpy 
+            combined_bound = tf.reduce_mean(l1 + l2, axis=0)
 
             # total bound
-            return tf.reduce_mean(l1+l2+entropy+xent, axis=0) + logpy
+            return missing_bound + labelled_bound + combined_bound
         
+
+    def _classification_loss(self, Ylab, Ylab_logits, scope='classification_loss'):
+        """
+        Classification loss --> based on symmetric Dirichlet prior on parameters of p(y)
+        """
+        with tf.variable_scope(scope, reuse=False):
+            # classification utility 
+            alpha = 0.1 
+            xent_lab = -tf.reduce_sum(tf.multiply(Ylab, tf.nn.log_softmax(Ylab_logits)), axis=1)
+            return alpha * tf.reduce_mean(xent_lab, axis=0)
+
 
     def _optimizer(self,):
         """
@@ -549,66 +565,48 @@ class M2(object):
         """
         with tf.variable_scope("summary", reuse=False):
             tf.summary.scalar('variational bound', self.bound)
+            tf.summary.scalar('classification loss', self.class_loss)
+            tf.summary.scalar('total loss', self.loss)
             #tf.summary.histogram('z_mean', self.z_mean)
             #tf.summary.histogram('z_var', self.z_var)
             return tf.summary.merge_all()
 
 
-    def train(self, batch_X, write=True):
+    def train(self, X, Y, missing, labelled, write=True):
         """
         Executes single training step.
 
-        batch_X: minibatch of input data
+        X/Y: minibatch of examples
+        missing: indicates missing examples
+        labelled: indicates labelled examples
         write: indicates whether to write summary
         """
-        feed = {self.X: batch_X, self.is_training: True}
+        feed = {self.X: X, self.Y: Y, self.missing: missing, self.labelled: labelled, self.is_training: True}
         summary, _ = self.sess.run([self.summary, self.step], feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
     
 
-    def test(self, batch_X):
+    def test(self, X, Y):
         """
-        Writes summary for test data.
-
-        batch_X: minibatch of input data
+        Writes summary for test data. Returns classification loss. 
         """
-        feed = {self.X: batch_X, self.is_training: False}
-        loss, summary = self.sess.run([self.loss, self.summary], feed_dict=feed)
+        missing = np.array([])
+        labelled = np.arange(X.shape[0])
+        feed = {self.X: X, self.Y: Y, self.missing: missing, self.labelled: labelled, self.is_training: False}
+        loss, summary = self.sess.run([self.class_loss, self.summary], feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
         return loss
         
 
-    def reconstruct(self, batch_X):
+    def predict(self, X):
         """
-        Reconstructed data, given input X.
-
-        batch_X: minibatch of input data
+        Computes class probabilities using q(y|x) distribution. 
         """
-        feed = {self.X: batch_X, self.is_training: False}
-        return self.sess.run(self.x_probs, feed_dict=feed)
-
-    
-    def encode(self, batch_X):
-        """
-        Computes mean of latent space, given input X.
-
-        batch_X: minibatch of input data        
-        """
-        feed = {self.X: batch_X, self.is_training: False}
-        return self.sess.run(self.z_mean, feed_dict=feed)
-
-    
-    def decode(self, batch_Z):
-        """
-        Computes bernoulli probabilities in data space, given input Z.
-
-        batch_Z: minibatch in latent space
-        """
-        feed = {self.Z: batch_Z, self.is_training: False}
-        return self.sess.run(self.x_probs, feed_dict=feed)
+        feed = {self.X: X, self.is_training: False}
+        return self.sess.run(self.Y_prob, feed_dict=feed)
 
 
     def save_state(self, name=None):

@@ -11,8 +11,8 @@ import utils
 learning_rate = 0.001                            
 batch_size = 100  
 x_dim = 784                    
-z_dim = 2                        
-train_steps = 10000                      
+z_dim = 20                        
+train_steps = 30000                      
 
 
 # train/test sets
