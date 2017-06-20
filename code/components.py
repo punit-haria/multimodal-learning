@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 import math
 import os
 
@@ -25,44 +26,45 @@ class VariationalAutoEncoder(object):
         self.eps = epsilon
         self.decay = decay
 
-        # training indicator
-        self.is_training = tf.placeholder(tf.bool)
+        with tf.variable_scope(self.name, reuse=False):  
+            # training indicator
+            self.is_training = tf.placeholder(tf.bool)
 
-        # input placeholder
-        self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+            # input placeholder
+            self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
 
-        # latent space parameters
-        self.z_mean, self.z_var = self._encoder()
+            # latent space parameters
+            self.z_mean, self.z_var = self._encoder()
 
-        # samples from latent space
-        self.Z = self._sample_latent_space()
+            # samples from latent space
+            self.Z = self._sample_latent_space()
 
-        # model parameters
-        self.x_logits, self.x_probs = self._decoder()      
+            # model parameters
+            self.x_logits, self.x_probs = self._decoder()      
 
-        # variational bound
-        self.bound = self._variational_bound()
+            # variational bound
+            self.bound = self._variational_bound()
 
-        # loss
-        self.loss = -self.bound  
+            # loss
+            self.loss = -self.bound  
 
-        # optimization step
-        self.step = self._optimizer()
+            # optimization step
+            self.step = self._optimizer()
 
-        # summary variables 
-        self.summary = self._summaries()
+            # summary variables 
+            self.summary = self._summaries()
 
-        # logger and model directories
-        self.log_dir = log_dir
-        self.model_dir = model_dir
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-        if not os.path.exists(self.log_dir):
-            os.mkdir(self.log_dir)
+            # logger and model directories
+            self.log_dir = log_dir
+            self.model_dir = model_dir
+            if not os.path.exists(self.model_dir):
+                os.mkdir(self.model_dir)
+            if not os.path.exists(self.log_dir):
+                os.mkdir(self.log_dir)
 
-        # summary writers
-        self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
-        self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
+            # summary writers
+            self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
+            self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
 
         # counts number of executed training steps
         self.n_steps = 0
@@ -160,7 +162,7 @@ class VariationalAutoEncoder(object):
         Summary variables for visualizing with tensorboard.
         """
         with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('variational bound', self.bound)
+            tf.summary.scalar('variational_bound', self.bound)
             #tf.summary.histogram('z_mean', self.z_mean)
             #tf.summary.histogram('z_var', self.z_var)
             return tf.summary.merge_all()
@@ -310,8 +312,8 @@ def batch_norm(x, scope, decay, epsilon, is_training, center=True, reuse=False):
 
 class M2(object):
 
-    def __init__(self, input_dim, latent_dim, n_classes, learning_rate, model_name,
-        epsilon = 1e-3, decay = 0.99,
+    def __init__(self, input_dim, latent_dim, n_classes, learning_rate, model_name, session=None,
+        epsilon = 1e-3, decay = 0.99,  
         log_dir='../logs/', model_dir='../models/'):
         """
         This is the M2 model based on this paper: https://arxiv.org/abs/1406.5298
@@ -329,75 +331,81 @@ class M2(object):
         self.y_dim = n_classes
         self.lr = learning_rate
         self.name = model_name
+        self.sess = session
         self.eps = epsilon
         self.decay = decay
 
-        # training indicator
-        self.is_training = tf.placeholder(tf.bool)
+        with tf.variable_scope(self.name, reuse=False):  
+            # training indicator
+            self.is_training = tf.placeholder(tf.bool, name='is_training')  
 
-        # labelled input placeholders
-        self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
-        self.Y = tf.placeholder(tf.float32, [None, self.y_dim],name='Y')
+            # labelled input placeholders
+            self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+            self.Y = tf.placeholder(tf.float32, [None, self.y_dim],name='Y')
 
-        # missing and labelled index
-        self.missing = tf.placeholder(tf.int32, [None], name='missing_index')
-        self.labelled = tf.placeholder(tf.int32, [None], name='labelled_index')
+            # missing and labelled index
+            self.missing = tf.placeholder(tf.int32, [None], name='missing_index')
+            self.labelled = tf.placeholder(tf.int32, [None], name='labelled_index')
 
-        # predictive y probabilities using q(y|x) 
-        self.Y_logits, self.Y_prob = self._discriminator(self.X)
+            # predictive y probabilities using q(y|x) 
+            self.Y_logits, self.Y_prob = self._discriminator(self.X)
 
-        # separate missing and labelled probabilities
-        self.Ymiss_logits = tf.gather(params=self.Y_logits, indices=self.missing)
-        self.Ymiss_prob = tf.gather(params=self.Y_prob, indices=self.missing)
-        self.Ylab_logits = tf.gather(params=self.Y_logits, indices=self.labelled)
-        self.Ylab_prob = tf.gather(params=self.Y_prob, indices=self.labelled)
+            # separate missing and labelled probabilities
+            self.Ymiss_logits = tf.gather(params=self.Y_logits, indices=self.missing)
+            self.Ymiss_prob = tf.gather(params=self.Y_prob, indices=self.missing)
+            self.Ylab_logits = tf.gather(params=self.Y_logits, indices=self.labelled)
+            self.Ylab_prob = tf.gather(params=self.Y_prob, indices=self.labelled)
 
-        # sample missing labels
-        self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')  # check dimensions of output!
+            # sample missing labels
+            self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')  # check dimensions of output!
 
-        # encoder
-        self.z_mean, self.z_var = self._encoder(self.X, self.Y)
-    
-        # sample z 
-        self.Z = self._sample_z(self.z_mean, self.z_var)
-
-        # decoder 
-        self.x_mean, self.x_var = self._decoder(self.Y, self.Z)        
+            # encoder
+            self.z_mean, self.z_var = self._encoder(self.X, self.Y)
         
-        # variational bound 
-        self.bound = self._variational_bound(self.X, self.Y, self.x_mean, self.x_var, 
-            self.z_mean, self.z_var, self.Ymiss_logits, self.Ymiss_prob)
+            # sample z 
+            self.Z = self._sample_z(self.z_mean, self.z_var)
 
-        # classification loss
-        self.Ylab = tf.gather(params=self.Y, indices=self.labelled)
-        self.class_loss = self._classification_loss(self.Ylab, self.Ylab_logits)
+            # decoder 
+            self.x_mean, self.x_var = self._decoder(self.Y, self.Z)        
+            
+            # variational bound 
+            self.bound = self._variational_bound(self.X, self.Y, self.x_mean, self.x_var, 
+                self.z_mean, self.z_var, self.Ymiss_logits, self.Ymiss_prob)
 
-        # loss
-        self.loss = -self.bound + self.class_loss
+            # classification loss (negative cross entropy)
+            self.Ylab = tf.gather(params=self.Y, indices=self.labelled)
+            self.class_loss = self._classification_loss(self.Ylab, self.Ylab_logits)
 
-        # optimization step
-        self.step = self._optimizer()
+            # classification accuracy
+            self.accuracy = self._accuracy(self.Ylab, self.Ylab_logits)
 
-        # summary variables 
-        self.summary = self._summaries()
+            # optimization objective
+            self.loss = -self.bound + self.class_loss
 
-        # logger and model directories
-        self.log_dir = log_dir
-        self.model_dir = model_dir
-        if not os.path.exists(self.model_dir):
-            os.mkdir(self.model_dir)
-        if not os.path.exists(self.log_dir):
-            os.mkdir(self.log_dir)
+            # optimization step
+            self.step = self._optimizer()
 
-        # summary writers
-        self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
-        self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
+            # summary variables 
+            self.summary = self._summaries()
+
+            # logger and model directories
+            self.log_dir = log_dir
+            self.model_dir = model_dir
+            if not os.path.exists(self.model_dir):
+                os.mkdir(self.model_dir)
+            if not os.path.exists(self.log_dir):
+                os.mkdir(self.log_dir)
+
+            # summary writers
+            self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
+            self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
 
         # counts number of executed training steps
         self.n_steps = 0
 
-        # new tensorflow session
-        self.sess = tf.Session()
+        # tensorflow session
+        if self.sess is None:
+            self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
           
 
@@ -420,7 +428,7 @@ class M2(object):
             a3 = affine_map(h2, n_width, self.y_dim, "layer_3", reuse=reuse)
             y_logits = batch_norm(a3, 'y_logits', decay=self.decay, epsilon=self.eps,
                 is_training=self.is_training, center=False, reuse=reuse)
-            y_probs = tf.nn.softmax(x_logits)
+            y_probs = tf.nn.softmax(y_logits)
 
             return y_logits, y_probs
 
@@ -505,8 +513,7 @@ class M2(object):
     
 
     def _variational_bound(self, X, Y, x_mean, x_var, z_mean, z_var, 
-        Ymiss_logits, Ymiss_prob,
-        scope='variational_bound'):
+        Ymiss_logits, Ymiss_prob, scope='variational_bound'):
         """
         Variational Bound.
         """
@@ -544,15 +551,25 @@ class M2(object):
         Classification loss --> based on symmetric Dirichlet prior on parameters of p(y)
         """
         with tf.variable_scope(scope, reuse=False):
-            # classification utility 
             alpha = 0.1 
             xent_lab = -tf.reduce_sum(tf.multiply(Ylab, tf.nn.log_softmax(Ylab_logits)), axis=1)
             return alpha * tf.reduce_mean(xent_lab, axis=0)
 
+    
+    def _accuracy(self, Y, Y_logits, scope='accuracy'):
+        """
+        Classification accuracy using argmax q(y|x)
+        """
+        with tf.variable_scope(scope, reuse=False):
+            pred = tf.argmax(Y_logits, axis=1)
+            truth = tf.argmax(Y, axis=1)
+            correct = tf.equal(truth, pred)
+            return tf.reduce_mean(tf.cast(correct, tf.float32))
+            
 
     def _optimizer(self,):
         """
-        Optimization method.
+        Optimization method
         """
         with tf.variable_scope("optimization", reuse=False):
             step = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
@@ -564,9 +581,10 @@ class M2(object):
         Summary variables for visualizing with tensorboard.
         """
         with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('variational bound', self.bound)
-            tf.summary.scalar('classification loss', self.class_loss)
-            tf.summary.scalar('total loss', self.loss)
+            tf.summary.scalar('variational_bound', self.bound)
+            tf.summary.scalar('classification_loss', self.class_loss)
+            tf.summary.scalar('classification_accuracy', self.accuracy)
+            tf.summary.scalar('total_loss', self.loss)
             #tf.summary.histogram('z_mean', self.z_mean)
             #tf.summary.histogram('z_var', self.z_var)
             return tf.summary.merge_all()
@@ -590,15 +608,15 @@ class M2(object):
 
     def test(self, X, Y):
         """
-        Writes summary for test data. Returns classification loss. 
+        Writes summary for test data. Returns classification accuracy. 
         """
         missing = np.array([])
         labelled = np.arange(X.shape[0])
         feed = {self.X: X, self.Y: Y, self.missing: missing, self.labelled: labelled, self.is_training: False}
-        loss, summary = self.sess.run([self.class_loss, self.summary], feed_dict=feed)
+        accuracy, summary = self.sess.run([self.accuracy, self.summary], feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return loss
+        return accuracy
         
 
     def predict(self, X):

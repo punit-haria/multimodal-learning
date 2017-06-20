@@ -12,7 +12,7 @@ learning_rate = 0.001
 batch_size = 100  
 x_dim = 784                    
 z_dim = 20                        
-train_steps = 30000                      
+train_steps = 1000                      
 
 
 # train/test sets
@@ -26,7 +26,7 @@ vae = cp.VariationalAutoEncoder(x_dim, z_dim, learning_rate, 'vae')
 for i in range(train_steps):
     
     # randomly sampled minibatch 
-    Xb = data.sample(Xtr, batch_size)
+    _, Xb = data.sample(Xtr, batch_size)
 
     # training step
     vae.train(Xb)
@@ -35,7 +35,7 @@ for i in range(train_steps):
         print("At iteration ", i)
 
         # test minibatch
-        Xtb, ytb = data.sample([Xte,yte], 1000)
+        _, (Xtb, ytb) = data.sample([Xte,yte], 1000)
 
         # test model
         vae.test(Xtb)

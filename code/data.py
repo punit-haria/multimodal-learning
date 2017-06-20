@@ -4,18 +4,18 @@ import struct
 
 def sample(data, batch_size):
     '''
-    Generate random minibatch.
+    Generate random minibatch. 
     '''
     if not isinstance(data, list):
         n = len(data)
         idx = np.random.randint(len(data), size=batch_size)
-        return data[idx]
+        return idx, data[idx], 
     else:
         n = {len(x) for x in data}
         assert len(n) == 1
         n = n.pop()
         idx = np.random.randint(n, size=batch_size)
-        return tuple(x[idx] for x in data)
+        return idx, tuple(x[idx] for x in data)
 
 
 def mnist():
@@ -25,6 +25,7 @@ def mnist():
     Xtr, ytr = _get_data('train')
     Xte, yte = _get_data('test')
     return Xtr, ytr, Xte, yte
+
 
 def _get_data(dataset_type):
     '''

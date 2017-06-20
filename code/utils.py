@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def one_hot_encoding(array, n_classes):
+    """
+    One hot encodes input 1-dimensional array.
+    """
+    return np.eye(n_classes)[array]
+
+
 def generate_random(n, dim):
     """
     Generates examples from multivariate normal distribution.

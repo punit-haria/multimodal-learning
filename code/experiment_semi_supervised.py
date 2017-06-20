@@ -21,61 +21,55 @@ train_steps = 1000
 Xtr, ytr, Xte, yte = data.mnist()
 
 # one hot encoding 
+ytr = utils.one_hot_encoding(ytr, 10)
+yte = utils.one_hot_encoding(yte, 10)
 
-
-# separate labelled/unlabelled training examples
+# index labelled training examples
 n_labelled = 1000
-Xlab = Xtr[0:n_labelled]
-Ylab = ytr[0:n_labelled]
-Xmiss = Xtr[n_labelled:]
-Ymiss = Ytr[n_labelled:]
+labelled = np.arange(n_labelled)
+
 
 # pretrained Model M1 
 vae = cp.VariationalAutoEncoder(x_dim, z1_dim, learning_rate, 'vae')
-vae.load_state(name='vae_60000')
+vae.load_state(name='vae')  # using final model state
+
+# get embedding space means (Z1)
+Ztr = vae.encode(Xtr)
+Zte = vae.encode(Xte)
 
 # Model M2
-m2 = cp.M2(z1_dim, z2_dim, n_classes, learning_rate, 'm2')
+m2 = cp.M2(z1_dim, z2_dim, n_classes, learning_rate, 'm2', session=vae.sess)
+
 
 # train model
 for i in range(train_steps):
     
     # randomly sampled minibatch 
-    Xb = data.sample(Xtr, batch_size)
+    idx, (Zb, yb) = data.sample([Ztr,ytr], batch_size)
+
+    # separate missing and labelled indices
+    missing_vals = np.array(sorted(set(idx) - set(labelled)))
+    idx_missing = np.array([np.argwhere(idx == x)[0,0]  for x in missing_vals], dtype=np.int32)
+    labelled_vals = np.array(sorted(set(idx) - set(idx_missing)))
+    idx_labelled = np.array([np.argwhere(idx == x)[0,0]  for x in labelled_vals], dtype=np.int32)
 
     # training step
-    vae.train(Xb)
+    m2.train(Zb, yb, idx_missing, idx_labelled)
 
     if i % 100 == 0:
         print("At iteration ", i)
 
         # test minibatch
-        Xtb, ytb = data.sample([Xte,yte], 1000)
+        _, (Ztb, ytb) = data.sample([Zte,yte], 1000)
 
         # test model
-        vae.test(Xtb)
+        accuracy = m2.test(Ztb, ytb)
 
-    if i % 2000 == 0:
-        if z_dim == 2:
-            # plot decoded images from uniform grid in latent space
-            n_grid = 7
-            Z = utils.generate_uniform(n_grid,3)
-            images = np.reshape(vae.decode(Z), [-1,28,28])
-            plot.plot_images(images, n_grid, n_grid, '../plots/images_'+str(i))
+        # test classification accuracy
+        print("Test Accuracy: ", accuracy)
 
-            # plot latent space
-            Zmean = vae.encode(Xtb)
-            plot.plot_latent_space(Zmean, ytb, '../plots/latent_'+str(i))
-
-        # plot reconstruction samples
-        Xtb = Xtb[0:8]
-        Xrec = vae.reconstruct(Xtb)
-        images = np.concatenate((Xrec, Xtb), axis=0)
-        images = np.reshape(images, [-1,28,28])
-        plot.plot_images(images, 4, 4, '../plots/reconstructions_'+str(i))
-        
-        # save current model
-        vae.save_state(name='vae_'+str(i))
+    if i % 2000 == 0:        
+        m2.save_state(name='M2_'+str(i))  # save current model
 
 # save final model
-vae.save_state()
+m2.save_state()
