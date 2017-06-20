@@ -360,24 +360,32 @@ class M2(object):
             self.Ylab_logits = tf.gather(params=self.Y_logits, indices=self.labelled)
             self.Ylab_prob = tf.gather(params=self.Y_prob, indices=self.labelled)
 
-            # sample missing labels
-            self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled')  # check dimensions of output!
+            # sample missing labels 
+            self.Ymiss = self._sample_y(self.Ymiss_prob, scope='missing_y_sampled') 
+
+            # separate missing and labelled data
+            self.Xmiss = tf.gather(params=self.X, indices=self.missing)
+            self.Ylab = tf.gather(params=self.Y, indices=self.labelled)
+            self.Xlab = tf.gather(params=self.X, indices=self.labelled)
+
+            # update input tensors
+            self.XX = tf.concat([self.Xlab, self.Xmiss], axis=0)
+            self.YY = tf.concat([self.Ylab, self.Ymiss], axis=0)
 
             # encoder
-            self.z_mean, self.z_var = self._encoder(self.X, self.Y)
+            self.z_mean, self.z_var = self._encoder(self.XX, self.YY)
         
             # sample z 
             self.Z = self._sample_z(self.z_mean, self.z_var)
 
             # decoder 
-            self.x_mean, self.x_var = self._decoder(self.Y, self.Z)        
+            self.x_mean, self.x_var = self._decoder(self.YY, self.Z)        
             
             # variational bound 
-            self.bound = self._variational_bound(self.X, self.Y, self.x_mean, self.x_var, 
+            self.bound = self._variational_bound(self.XX, self.YY, self.x_mean, self.x_var, 
                 self.z_mean, self.z_var, self.Ymiss_logits, self.Ymiss_prob)
 
             # classification loss (negative cross entropy)
-            self.Ylab = tf.gather(params=self.Y, indices=self.labelled)
             self.class_loss = self._classification_loss(self.Ylab, self.Ylab_logits)
 
             # classification accuracy
@@ -502,8 +510,8 @@ class M2(object):
         Monte Carlo sampling from q(y|x). Returns single sample for each observation.
         """
         with tf.variable_scope(scope, reuse=False):
-            cat = tf.contrib.distributions.Categorical(probs=y_probs)
-            return tf.squeeze(cat.sample())
+            cat = tf.contrib.distributions.OneHotCategorical(probs=y_probs)
+            return tf.cast(tf.squeeze(cat.sample()), tf.float32)
 
     
     def _sample_z(self, z_mean, z_var, scope='z_sampler'):

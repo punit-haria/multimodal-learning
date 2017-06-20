@@ -14,7 +14,7 @@ n_classes = 10
 x_dim = 784                    
 z1_dim = 20                        
 z2_dim = 10
-train_steps = 1000                      
+train_steps = 10000                      
 
 
 # train/test sets
@@ -37,8 +37,9 @@ vae.load_state(name='vae')  # using final model state
 Ztr = vae.encode(Xtr)
 Zte = vae.encode(Xte)
 
-# close vae tensorflow session
+# reset tensorflow session
 vae.sess.close()
+tf.reset_default_graph()
 
 # Model M2
 m2 = cp.M2(z1_dim, z2_dim, n_classes, learning_rate, 'm2')
@@ -55,6 +56,9 @@ for i in range(train_steps):
     idx_missing = np.array([np.argwhere(idx == x)[0,0]  for x in missing_vals], dtype=np.int32)
     labelled_vals = np.array(sorted(set(idx) - set(idx_missing)))
     idx_labelled = np.array([np.argwhere(idx == x)[0,0]  for x in labelled_vals], dtype=np.int32)
+
+    # hide 'missing' labels from model
+    yb[idx_missing] = 0
 
     # training step
     m2.train(Zb, yb, idx_missing, idx_labelled)
