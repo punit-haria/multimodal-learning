@@ -8,13 +8,13 @@ import utils
 
 
 # parameters
-learning_rate = 0.01                            
+learning_rate = 0.005                            
 batch_size = 100  
 n_classes = 10
 x_dim = 784                    
 z1_dim = 20                        
 z2_dim = 10
-train_steps = 10000                      
+train_steps = 30000                      
 
 
 # train/test sets
@@ -63,7 +63,7 @@ for i in range(train_steps):
     # training step
     m2.train(Zb, yb, idx_missing, idx_labelled)
 
-    if i % 100 == 0:
+    if i % 200 == 0:
         print("At iteration ", i)
 
         # test minibatch

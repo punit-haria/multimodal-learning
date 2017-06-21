@@ -12,7 +12,7 @@ learning_rate = 0.001
 batch_size = 100  
 x_dim = 784                    
 z_dim = 20                        
-train_steps = 1000                      
+train_steps = 10000                      
 
 
 # train/test sets
