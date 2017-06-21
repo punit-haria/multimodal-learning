@@ -14,6 +14,7 @@ n_classes = 10
 x_dim = 784                    
 z1_dim = 20                        
 z2_dim = 10
+n_labelled = 1000
 train_steps = 30000                      
 
 
@@ -25,7 +26,6 @@ ytr = utils.one_hot_encoding(ytr, 10)
 yte = utils.one_hot_encoding(yte, 10)
 
 # index labelled training examples
-n_labelled = 1000
 labelled = np.arange(n_labelled)
 
 
