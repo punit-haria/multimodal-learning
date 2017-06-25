@@ -6,20 +6,22 @@ import data
 import plot
 import utils
 
+from models.vae import VariationalAutoEncoder
+
 
 # parameters
 learning_rate = 0.001                            
 batch_size = 100  
 x_dim = 784                    
 z_dim = 20                        
-train_steps = 10000                      
+train_steps = 1000                      
 
 
 # train/test sets
 Xtr, ytr, Xte, yte = data.mnist()
 
-# variational auto-encoder (model + optimization)
-vae = cp.VariationalAutoEncoder(x_dim, z_dim, learning_rate, 'vae')
+# variational auto-encoder (model + inference)
+vae = VariationalAutoEncoder(x_dim, z_dim, learning_rate)
 
 
 # train model
