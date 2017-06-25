@@ -1,6 +1,6 @@
 import tensorflow as tf
-import modules as mod
-import base 
+from models import modules as mod
+from models import base 
 
 
 class VariationalAutoEncoder(base.Model):

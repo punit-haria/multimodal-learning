@@ -13,8 +13,8 @@ from models.vae import VariationalAutoEncoder
 learning_rate = 0.001                            
 batch_size = 100  
 x_dim = 784                    
-z_dim = 20                        
-train_steps = 1000                      
+z_dim = 2                    
+train_steps = 1001                     
 
 
 # train/test sets
@@ -42,7 +42,7 @@ for i in range(train_steps):
         # test model
         vae.test(Xtb)
 
-    if i % 2000 == 0:
+    if i % 500 == 0:
         if z_dim == 2:
             # plot decoded images from uniform grid in latent space
             n_grid = 7
