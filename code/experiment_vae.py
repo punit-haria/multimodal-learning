@@ -13,7 +13,7 @@ from models.vae import VariationalAutoEncoder
 learning_rate = 0.001                            
 batch_size = 100  
 x_dim = 784                    
-z_dim = 2                    
+z_dim = 200                    
 train_steps = 5000                     
 
 

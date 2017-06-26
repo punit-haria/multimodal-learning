@@ -13,14 +13,11 @@ class VariationalAutoEncoder(base.Model):
         input_dim: input data dimensions
         latent_dim: latent space dimensionality
         learning_rate: optimization learning rate
-        epsilon/decay: batch normalization parameters
         """
         # data and latent dimensionality
         self.x_dim = input_dim
         self.z_dim = latent_dim
         self.lr = learning_rate
-        self.eps = epsilon
-        self.decay = decay
 
         # counter for number of executed training steps
         self.n_steps = 0
