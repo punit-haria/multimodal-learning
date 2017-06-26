@@ -35,9 +35,6 @@ class VariationalAutoEncoder(base.Model):
         Initialize model components. 
         """
         with tf.variable_scope(self.name, reuse=False):  
-            # training indicator
-            self.is_training = tf.placeholder(tf.bool, name='is_training')
-
             # input placeholder
             self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
 
@@ -66,22 +63,14 @@ class VariationalAutoEncoder(base.Model):
         """
         with tf.variable_scope("encoder", reuse=False):
             a1 = mod.affine_map(self.X, self.x_dim, 500, "layer_1")
-            b1 = mod.batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h1 = tf.nn.relu(b1)
+            h1 = tf.nn.relu(a1)
             a2 = mod.affine_map(h1, 500, 500, "layer_2")
-            b2 = mod.batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h2 = tf.nn.relu(b2)
+            h2 = tf.nn.relu(a2)
 
-            a3_mean = mod.affine_map(h2, 500, self.z_dim, "mean_layer")
-            z_mean = mod.batch_norm(a3_mean, 'z_mean', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False) 
+            z_mean = mod.affine_map(h2, 500, self.z_dim, "mean_layer")
 
             a3_var = mod.affine_map(h2, 500, self.z_dim, "var_layer")
-            b3_var = mod.batch_norm(a3_var, 'b3_var', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False) 
-            z_var = tf.nn.softplus(b3_var)
+            z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
 
@@ -92,17 +81,11 @@ class VariationalAutoEncoder(base.Model):
         """
         with tf.variable_scope("decoder", reuse=False):
             a1 = mod.affine_map(self.Z, self.z_dim, 500, "layer_1")
-            b1 = mod.batch_norm(a1, 'b1', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h1 = tf.nn.relu(b1)
+            h1 = tf.nn.relu(a1)
             a2 = mod.affine_map(h1, 500, 500, "layer_2")
-            b2 = mod.batch_norm(a2, 'b2', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
-            h2 = tf.nn.relu(b2)
+            h2 = tf.nn.relu(a2)
 
-            a3 = mod.affine_map(h2, 500, self.x_dim, "layer_3")
-            x_logits = mod.batch_norm(a3, 'x_logits', decay=self.decay, epsilon=self.eps,
-                is_training=self.is_training, center=False)
+            x_logits = mod.affine_map(h2, 500, self.x_dim, "layer_3")
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
@@ -114,8 +97,10 @@ class VariationalAutoEncoder(base.Model):
         """
         with tf.variable_scope("sampling", reuse=False):
             z_std = tf.sqrt(self.z_var)
-            mvn = tf.contrib.distributions.MultivariateNormalDiag(loc=self.z_mean, scale_diag=z_std)
-            return tf.squeeze(mvn.sample())
+            batch_size = tf.shape(self.X)[0]
+            eps = tf.random_normal((batch_size, self.z_dim))
+            z = self.z_mean + tf.multiply(z_std, eps)
+            return z
     
 
     def _variational_bound(self,):
@@ -139,7 +124,7 @@ class VariationalAutoEncoder(base.Model):
         Optimization method.
         """
         with tf.variable_scope("optimization", reuse=False):
-            step = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
+            step = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
             return step
 
 
@@ -149,8 +134,6 @@ class VariationalAutoEncoder(base.Model):
         """
         with tf.variable_scope("summary", reuse=False):
             tf.summary.scalar('variational_bound', self.bound)
-            #tf.summary.histogram('z_mean', self.z_mean)
-            #tf.summary.histogram('z_var', self.z_var)
             return tf.summary.merge_all()
 
 
@@ -161,7 +144,7 @@ class VariationalAutoEncoder(base.Model):
         batch_X: minibatch of input data
         write: indicates whether to write summary
         """
-        feed = {self.X: batch_X, self.is_training: True}
+        feed = {self.X: batch_X}
         summary, _ = self.sess.run([self.summary, self.step], feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
@@ -174,7 +157,7 @@ class VariationalAutoEncoder(base.Model):
 
         batch_X: minibatch of input data
         """
-        feed = {self.X: batch_X, self.is_training: False}
+        feed = {self.X: batch_X}
         loss, summary = self.sess.run([self.loss, self.summary], feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
@@ -187,7 +170,7 @@ class VariationalAutoEncoder(base.Model):
 
         batch_X: minibatch of input data
         """
-        feed = {self.X: batch_X, self.is_training: False}
+        feed = {self.X: batch_X}
         return self.sess.run(self.x_probs, feed_dict=feed)
 
     
@@ -197,7 +180,7 @@ class VariationalAutoEncoder(base.Model):
 
         batch_X: minibatch of input data        
         """
-        feed = {self.X: batch_X, self.is_training: False}
+        feed = {self.X: batch_X}
         return self.sess.run(self.z_mean, feed_dict=feed)
 
     
@@ -207,6 +190,6 @@ class VariationalAutoEncoder(base.Model):
 
         batch_Z: minibatch in latent space
         """
-        feed = {self.Z: batch_Z, self.is_training: False}
+        feed = {self.Z: batch_Z}
         return self.sess.run(self.x_probs, feed_dict=feed)
 

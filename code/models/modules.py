@@ -14,8 +14,11 @@ def affine_map(input, in_dim, out_dim, scope, reuse=False):
     """
     with tf.variable_scope(scope, reuse=reuse):
         W = tf.get_variable("W", shape=[in_dim,out_dim], 
-            initializer=tf.contrib.layers.xavier_initializer(uniform=False, dtype=tf.float32))
-        b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0))
+            initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+        b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
+
+        tf.summary.histogram('weights', W)
+        tf.summary.histogram('biases', b)
 
         return tf.matmul(input,W) + b
 

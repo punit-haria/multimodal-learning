@@ -41,6 +41,7 @@ def _get_data(dataset_type):
     label_path = path + '_labels'
 
     data = _read_mnist(path)
+    data = data / 255 
     labels = _read_mnist(label_path)
 
     n = len(data)

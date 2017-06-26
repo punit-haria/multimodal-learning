@@ -20,9 +20,9 @@ class Model(object):
 
         # create default directories
         if self.log_dir is None:
-            self.log_dir = '../../logs/'
+            self.log_dir = '../logs/'
         if self.model_dir is None: 
-            self.model_dir = '../../models/'
+            self.model_dir = '../models/'
 
         # create directories if they don't exist
         if not os.path.exists(self.model_dir):
@@ -47,6 +47,10 @@ class Model(object):
         if self.sess is None:
             self.sess = tf.Session()
             self.sess.run(tf.global_variables_initializer())
+
+        # visualize tf graph
+        self.tr_writer.add_graph(self.sess.graph)
+        self.te_writer.add_graph(self.sess.graph)
       
     
     def _initialize(self,):
