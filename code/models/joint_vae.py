@@ -114,6 +114,11 @@ class JointVAE(base.Model):
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.zxy_var) - tf.square(self.zxy_mean) - self.zxy_var, axis=1)
             joint_bound = tf.reduce_mean(l1_x + l1_y + l2, axis=0)
 
+            # summaries
+            tf.summary.scalar('x_bound', x_bound)
+            tf.summary.scalar('y_bound', y_bound)
+            tf.summary.scalar('joint_bound', joint_bound)
+
             # final bound
             self.bound = x_bound + y_bound + joint_bound
 
@@ -124,7 +129,7 @@ class JointVAE(base.Model):
             self.step = self._optimizer()
 
 
-    def _p_x_z(self, Z, z_dim, x_dim, scope='_p_x_z', reuse=False):
+    def _p_x_z(self, Z, z_dim, x_dim, scope, reuse):
         """
         Generator network. 
 
@@ -144,7 +149,7 @@ class JointVAE(base.Model):
             return x_logits, x_probs
 
     
-    def _q_z_x(self, X, x_dim, z_dim, scope='_q_z_x', reuse=False):
+    def _q_z_x(self, X, x_dim, z_dim, scope, reuse):
         """
         Inference network.
 
@@ -207,7 +212,7 @@ class JointVAE(base.Model):
         Summary variables for visualizing with tensorboard.
         """
         with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('variational_bound', self.bound)
+            #tf.summary.scalar('variational_bound', self.bound)
             return tf.summary.merge_all()
 
 
