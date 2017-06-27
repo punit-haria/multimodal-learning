@@ -10,12 +10,12 @@ from models.joint_vae import JointVAE
 
 
 # parameters
-#learning_rate = 0.0005                            
-#batch_size = 100  
+learning_rate = 0.002                           
+batch_size = 250  
 x_dim = 392 
 y_dim = 392                   
 z_dim = 50                    
-train_steps = 10 
+train_steps = 10000
 
 
 # joint/missing split
@@ -28,58 +28,51 @@ y_only = set(len(x_and_y) + len(x_only) + np.arange(29500))
 Xtr, ytr, Xte, yte = data.mnist()
 
 
-lr = [0.0001, 0.001, 0.01]
-bs = [50, 100, 200]
+# joint variational auto-encoder
+model_name = 'vae_lr_'+str(learning_rate)+'_batch_'+str(batch_size)
+vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, name=model_name)
+
+# train model
+for i in range(train_steps):
+    
+    # randomly sampled minibatch 
+    idx, batch = data.sample(Xtr, batch_size)
+
+    # separate indices
+    x_idx = np.array(list(set(idx) & x_only))
+    x_idx = np.array([np.argwhere(idx == x)[0,0]  for x in x_idx], dtype=np.int32)
+    y_idx = np.array(list(set(idx) & y_only))
+    y_idx = np.array([np.argwhere(idx == x)[0,0]  for x in y_idx], dtype=np.int32)
+    xy_idx = np.array(list(set(idx) & x_and_y))
+    xy_idx = np.array([np.argwhere(idx == x)[0,0]  for x in xy_idx], dtype=np.int32)
+
+    # separate jointly observed and missing data
+    X = batch[x_idx, 0:x_dim]
+    Y = batch[y_idx, x_dim:]
+    X_joint = batch[xy_idx, 0:x_dim]
+    Y_joint = batch[xy_idx, x_dim:]
+
+    # training step
+    vae.train(X, Y, X_joint, Y_joint)
 
 
-for learning_rate in lr:
-    for batch_size in bs:
+    if i % 25 == 0:
+        print("At iteration ", i)
 
-        # joint variational auto-encoder
-        model_name = 'vae_lr_'+str(learning_rate)+'_batch_'+str(batch_size)
-        vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, name=model_name)
+        # test minibatch
+        idx, test_batch = data.sample(Xte, 1000)
 
-        # train model
-        for i in range(train_steps):
-            
-            # randomly sampled minibatch 
-            idx, batch = data.sample(Xtr, batch_size)
+        # test solely on joint data
+        X = test_batch[:,0:x_dim]
+        Y = test_batch[:,x_dim:]
 
-            # separate indices
-            x_idx = np.array(list(set(idx) & x_only))
-            x_idx = np.array([np.argwhere(idx == x)[0,0]  for x in x_idx], dtype=np.int32)
-            y_idx = np.array(list(set(idx) & y_only))
-            y_idx = np.array([np.argwhere(idx == x)[0,0]  for x in y_idx], dtype=np.int32)
-            xy_idx = np.array(list(set(idx) & x_and_y))
-            xy_idx = np.array([np.argwhere(idx == x)[0,0]  for x in xy_idx], dtype=np.int32)
-
-            # separate jointly observed and missing data
-            X = batch[x_idx, 0:x_dim]
-            Y = batch[y_idx, x_dim:]
-            X_joint = batch[xy_idx, 0:x_dim]
-            Y_joint = batch[xy_idx, x_dim:]
-
-            # training step
-            vae.train(X, Y, X_joint, Y_joint)
+        # test model
+        vae.test(X, Y, X, Y)
 
 
-            if i % 100 == 0:
-                print("At iteration ", i)
+# save final model
+vae.save_state()
 
-                # test minibatch
-                idx, test_batch = data.sample(Xte, 1000)
-
-                # test solely on joint data
-                X = test_batch[:,0:x_dim]
-                Y = test_batch[:,x_dim:]
-
-                # test model
-                vae.test(X, Y, X, Y)
-
-
-        # save final model
-        vae.save_state()
-
-        # reset tensorflow session and graph
-        vae.sess.close()
-        tf.reset_default_graph()
+# reset tensorflow session and graph
+vae.sess.close()
+tf.reset_default_graph()

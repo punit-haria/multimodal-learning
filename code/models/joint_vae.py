@@ -138,12 +138,12 @@ class JointVAE(base.Model):
         x_dim: dimensionality of output space 
         """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(Z, z_dim, 500, "layer_1", reuse=reuse)
+            a1 = mod.affine_map(Z, z_dim, 200, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 500, 500, "layer_2", reuse=reuse)
+            a2 = mod.affine_map(h1, 200, 200, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            x_logits = mod.affine_map(h2, 500, x_dim, "layer_3", reuse=reuse)
+            x_logits = mod.affine_map(h2, 200, x_dim, "layer_3", reuse=reuse)
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
@@ -158,14 +158,14 @@ class JointVAE(base.Model):
         z_dim: dimensionality of latent space
         """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(X, x_dim, 500, "layer_1", reuse=reuse)
+            a1 = mod.affine_map(X, x_dim, 200, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 500, 500, "layer_2", reuse=reuse)
+            a2 = mod.affine_map(h1, 200, 200, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            z_mean = mod.affine_map(h2, 500, z_dim, "mean_layer", reuse=reuse)
+            z_mean = mod.affine_map(h2, 200, z_dim, "mean_layer", reuse=reuse)
 
-            a3_var = mod.affine_map(h2, 500, z_dim, "var_layer", reuse=reuse)
+            a3_var = mod.affine_map(h2, 200, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
