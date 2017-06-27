@@ -45,10 +45,10 @@ class JointVAE(base.Model):
 
             # q(z|x) parameters
             self.zx_mean, self.zx_var = self._q_z_x(self.X, self.x_dim, self.z_dim, 
-                scope='q_z_x', reuse=True)
+                scope='q_z_x', reuse=False)
             # q(z|y) parameters 
             self.zy_mean, self.zy_var = self._q_z_x(self.Y, self.y_dim, self.z_dim, 
-                scope='q_z_y', reuse=True)
+                scope='q_z_y', reuse=False)
 
             # q(z|x,y) parameters (using product of two Gaussians)
             zxm, zxv = self._q_z_x(self.X_joint, self.x_dim, self.z_dim,
@@ -72,10 +72,16 @@ class JointVAE(base.Model):
             self.Zy = self._sample_latent_space(self.zy_mean, self.zy_var, self.z_dim, zy_samples)
             self.Zxy = self._sample_latent_space(self.zxy_mean, self.zxy_var, self.z_dim, zxy_samples)
 
-            # p(x|z) and p(y|z) parameters
-            self.x_logits, self.x_probs = self._p_x_z(self.Zy, self.z_dim, self.x_dim,
+            # p(x|z) parameters
+            self.xy_logits, self.xy_probs = self._p_x_z(self.Zy, self.z_dim, self.x_dim,
+                scope='p_x_z', reuse=False)
+            self.xx_logits, self.xx_probs = self._p_x_z(self.Zx, self.z_dim, self.x_dim,
                 scope='p_x_z', reuse=True)
-            self.y_logits, self.y_probs = self._p_x_z(self.Zx, self.z_dim, self.y_dim,
+            
+            # p(y|z) parameters
+            self.yx_logits, self.yx_probs = self._p_x_z(self.Zx, self.z_dim, self.y_dim,
+                scope='p_y_z', reuse=False)
+            self.yy_logits, self.yy_probs = self._p_x_z(self.Zy, self.z_dim, self.y_dim,
                 scope='p_y_z', reuse=True)
             
             # joint p(x|z) and p(y|z) parameters
@@ -85,16 +91,20 @@ class JointVAE(base.Model):
                 scope='p_y_z', reuse=True)
 
             # bound: X observed, Y missing
-            marginal_x = self._variational_bound(self.x_logits, self.X, self.zx_mean, self.zx_var)
-            l1_p_y_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.y_logits, 
-                labels=self.Y), axis=1)
-            x_bound = tf.reduce_mean(marginal_x + l1_p_y_z, axis=0)
+            marginal_x = self._variational_bound(self.xx_logits, self.X, self.zx_mean, self.zx_var,
+                scope='marginal_x')
+            #l1_p_y_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.yx_logits, 
+            #    labels=self.Y), axis=1)
+            #x_bound = tf.reduce_mean(marginal_x + l1_p_y_z, axis=0)
+            x_bound = tf.reduce_mean(marginal_x, axis=0)
             
             # bound: Y observed, X missing
-            marginal_y = self._variational_bound(self.y_logits, self.Y, self.zy_mean, self.zy_var)
-            l1_p_x_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
-                labels=self.X), axis=1)
-            y_bound = tf.reduce_mean(marginal_y + l1_p_x_z, axis=0)
+            marginal_y = self._variational_bound(self.yy_logits, self.Y, self.zy_mean, self.zy_var,
+                scope='marginal_y')
+            #l1_p_x_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
+            #    labels=self.X), axis=1)
+            #y_bound = tf.reduce_mean(marginal_y + l1_p_x_z, axis=0)
+            y_bound = tf.reduce_mean(marginal_y, axis=0)
 
             # bound: X,Y observed
             l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits_joint, 
@@ -214,45 +224,37 @@ class JointVAE(base.Model):
         self.n_steps = self.n_steps + 1
     
 
-    def test(self, batch_X):
+    def test(self, X, Y, X_joint, Y_joint):
         """
         Writes summary for test data.
-
-        batch_X: minibatch of input data
         """
-        feed = {self.X: batch_X}
+        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
         loss, summary = self.sess.run([self.loss, self.summary], feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
         return loss
         
 
-    def reconstruct(self, batch_X):
+    def reconstruct(self, X, Y, X_joint, Y_joint):
         """
         Reconstructed data, given input X.
-
-        batch_X: minibatch of input data
         """
-        feed = {self.X: batch_X}
+        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
         return self.sess.run(self.x_probs, feed_dict=feed)
 
     
-    def encode(self, batch_X):
+    def encode(self, X, Y, X_joint, Y_joint):
         """
-        Computes mean of latent space, given input X.
-
-        batch_X: minibatch of input data        
+        Computes mean of latent space, given input X.  
         """
-        feed = {self.X: batch_X}
-        return self.sess.run(self.z_mean, feed_dict=feed)
+        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
+        return self.sess.run(self.zx_mean, feed_dict=feed)
 
     
-    def decode(self, batch_Z):
+    def decode(self, X, Y, X_joint, Y_joint):
         """
         Computes bernoulli probabilities in data space, given input Z.
-
-        batch_Z: minibatch in latent space
         """
-        feed = {self.Z: batch_Z}
+        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
         return self.sess.run(self.x_probs, feed_dict=feed)
 
