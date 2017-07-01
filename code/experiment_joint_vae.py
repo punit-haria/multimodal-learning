@@ -25,12 +25,15 @@ y_only = set(len(x_and_y) + len(x_only) + np.arange(29500))
 
 
 # train/test sets
-Xtr, ytr, Xte, yte = data.mnist()
+mnist = data.MNIST()
+Xtr, ytr = mnist.training_set()
+Xte, yte = mnist.testing_set()
 
 
 # joint variational auto-encoder
 model_name = 'vae_lr_'+str(learning_rate)+'_batch_'+str(batch_size)
 vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, name=model_name)
+
 
 # train model
 for i in range(train_steps):
