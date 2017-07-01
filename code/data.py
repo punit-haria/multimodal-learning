@@ -24,6 +24,15 @@ def sample(data, batch_size):
         return idx, tuple(x[idx] for x in data)
 
 
+class DAY_NIGHT(object):
+    """
+    Class to load day/night data.
+    """
+    def __init__(self,):
+        pass
+
+    
+    
 
 
 class MNIST(object):
@@ -73,7 +82,4 @@ class MNIST(object):
             data = np.fromstring(file.read(), dtype=np.uint8)
             return data.reshape(shape)
         
-
-
-
 
