@@ -124,10 +124,6 @@ class JointMNIST(MNIST):
         xy_idx = np.array(list(set(idx) & self.x_and_y))
         xy_idx = np.array([np.argwhere(idx == x)[0,0]  for x in xy_idx], dtype=np.int32)
 
-        assert(len(set(x_idx) & set(y_idx)) == 0)
-        assert(len(set(x_idx) & set(xy_idx)) == 0)
-        assert(len(set(y_idx) & set(xy_idx)) == 0)
-
         # create separate arrays for jointly observed and marginal data
         X = batch[x_idx, 0:self.split_point]
         Y = batch[y_idx, self.split_point:]
