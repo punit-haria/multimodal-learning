@@ -252,14 +252,30 @@ class JointVAE(base.Model):
         self.te_writer.add_summary(summary, self.n_steps)
 
         return loss
-        
 
-    def reconstruct(self, X, Y, X_joint, Y_joint):
+
+    def translate_x(self, X):
         """
-        Reconstructed data, given input X.
+        Translate X to Y.
         """
-        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        return self.sess.run(self.x_probs, feed_dict=feed)
+        feed = {self.X: X}
+        self.sess.run(self.yx_probs, feed_dict=feed)
+
+
+    def translate_y(self, Y):
+        """
+        Translate Y to X.
+        """
+        feed = {self.Y: Y}
+        self.sess.run(self.xy_probs, feed_dict=feed)
+
+
+    def reconstruct(self, X_joint, Y_joint):
+        """
+        Reconstruct X and Y, given paired input X and Y.
+        """
+        feed = {self.X_joint: X_joint, self.Y_joint: Y_joint}
+        return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
 
     
     def encode(self, X, Y, X_joint, Y_joint):
