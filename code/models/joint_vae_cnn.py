@@ -33,7 +33,7 @@ class JointVAE_CNN(JointVAE):
             X_image = tf.reshape(X, [-1, self._h, self._w, self._nc])
 
             w1 = self._weight([3, 3, self._nc, 16], "layer_1", reuse=reuse)
-            b1 = self._bias([10], "layer_1", reuse=reuse)
+            b1 = self._bias([16], "layer_1", reuse=reuse)
             c1 = tf.nn.conv2d(X_image, w1, strides=[1,1,1,1], padding='SAME') + b1
             r1 = tf.nn.relu(c1)
             m1 = tf.nn.max_pool(r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
@@ -44,15 +44,15 @@ class JointVAE_CNN(JointVAE):
             r2 = tf.nn.relu(c2)
             m2 = tf.nn.max_pool(r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
-            dim = tf.shape(m2)[1] * tf.shape(m2)[2] * tf.shape(m2)[3]
+            dim = m2.get_shape()[1].value * m2.get_shape()[2].value * m2.get_shape()[3].value
             flat = tf.reshape(m2, [-1, dim])
 
             fc = self._affine_map(flat, dim, n_hidden, "fc_layer", reuse=reuse)
             r3 = tf.nn.relu(fc)
 
-            z_mean = mod.affine_map(r3, n_hidden, z_dim, "mean_layer", reuse=reuse)
+            z_mean = self._affine_map(r3, n_hidden, z_dim, "mean_layer", reuse=reuse)
 
-            a3_var = mod.affine_map(r3, n_hidden, z_dim, "var_layer", reuse=reuse)
+            a3_var = self._affine_map(r3, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
@@ -69,26 +69,35 @@ class JointVAE_CNN(JointVAE):
         """
         with tf.variable_scope(scope, reuse=reuse):
 
+            b_size = tf.shape(Z)[0]
+
             a1 = self._affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
 
-            a2 = self._affine_map(h1, n_hidden, 7*7*16, "layer_2", reuse=reuse)
+            _h = int(self._h / 4) + 1
+            _w = int(self._w / 4)
+
+            a2 = self._affine_map(h1, n_hidden, _h*_w*16, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            Z_2d = tf.reshape(h2, [-1, 7, 7, 16])
-        
-            w1 = self._weight([3, 3, 16, n_hidden], "layer_2", reuse=reuse)
-            b1 = self._bias([16], "layer_2", reuse=reuse)
-            c1 = tf.nn.conv2d_transpose(Z_2d, w1, output_shape=[-1,14,14,16], strides=[1,2,2,1],padding='SAME') + b1
+            Z_2d = tf.reshape(h2, [-1, _h, _w, 16])
 
-            
+            _h = _h * 2  - 1
+            _w = _w * 2
         
-            a1 = self._affine_map(Z, z_dim, n_hidden, False, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
-            a2 = self._affine_map(h1, n_hidden, n_hidden, False, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            w1 = self._weight([3, 3, 16, 16], "layer_3", reuse=reuse)
+            b1 = self._bias([16], "layer_3", reuse=reuse)
+            c1 = tf.nn.conv2d_transpose(Z_2d, w1, output_shape=[b_size,_h,_w,16], 
+                strides=[1,2,2,1], padding='SAME') + b1
+            r1 = tf.nn.relu(c1)
 
-            x_logits = self._affine_map(h2, n_hidden, x_dim, "layer_3", reuse=reuse)
+            w2 = self._weight([3, 3, 1, 16], "layer_4", reuse=reuse)
+            b2 = self._bias([1], "layer_4", reuse=reuse)
+            c2 = tf.nn.conv2d_transpose(r1, w2, output_shape=[b_size, self._h, self._w, self._nc], 
+                strides=[1,2,2,1], padding='SAME') + b2
+            r2 = tf.nn.relu(c2)
+
+            x_logits = tf.reshape(r2, [-1, self._h * self._w * self._nc])
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs

@@ -4,7 +4,8 @@ import numpy as np
 import plot
 import utils
 
-from models.joint_vae import JointVAE
+from models.joint_vae import JointVAE 
+from models.joint_vae_cnn import JointVAE_CNN 
 from data import JointMNIST as MNIST
 
 
@@ -16,7 +17,8 @@ n_hidden = 200
 n_paired = 1000
 
 x_dim = 392 
-y_dim = 392                   
+y_dim = 392         
+image_dim = (14,28,1)          
 train_steps = 10000
 
 
@@ -24,8 +26,8 @@ train_steps = 10000
 mnist = MNIST(n_paired)
 
 # model
-vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, name='joint_vae')
-
+#vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, name='joint_vae')
+vae = JointVAE_CNN((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, name='joint_vae')
 
 # train model
 for i in range(train_steps):
