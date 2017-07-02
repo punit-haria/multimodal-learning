@@ -22,7 +22,7 @@ class Model(object):
         if self.log_dir is None:
             self.log_dir = '../logs/'
         if self.model_dir is None: 
-            self.model_dir = '../models/'
+            self.model_dir = '../saved_models/'
 
         # create directories if they don't exist
         if not os.path.exists(self.model_dir):

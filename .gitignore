@@ -1,4 +1,4 @@
 data/*
 logs/*
-models/*
+saved_models/*
 plots/*
