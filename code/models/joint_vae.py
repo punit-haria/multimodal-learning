@@ -5,19 +5,23 @@ from models import base
 
 class JointVAE(base.Model):
     
-    def __init__(self, input_dim, latent_dim, learning_rate, epsilon = 1e-3, decay = 0.99, 
+    def __init__(self, input_dim, latent_dim, learning_rate, n_hidden_units=200,
         name="VAE", session=None, log_dir=None, model_dir=None):
         """
-        Joint Variational Auto-Encoder (Hippolyt Ritter)
+        Joint Variational Auto-Encoder using marginal and joint variational bounds,
+        and constraining q(z|x,y) = q(z|x) q(z|y). Encoders and decoders are fully-
+        connected networks with 2 hidden layers. 
 
         input_dim: tuple of output variable dimensions (assumes 2 output variables)
         latent_dim: latent space dimensionality
         learning_rate: optimization learning rate
+        n_hidden_units: number of hidden units in each layer of encoder and decoder
         """
         # data and latent dimensionality
         self.x_dim, self.y_dim = input_dim
         self.z_dim = latent_dim
         self.lr = learning_rate
+        self.n_hidden = n_hidden_units
 
         # counter for number of executed training steps
         self.n_steps = 0
@@ -29,11 +33,11 @@ class JointVAE(base.Model):
 
     def _initialize(self,):
         """
-        Initialize model components. 
+        Initialize model components. This method is invoked in object constructor. 
         """
         with tf.variable_scope(self.name, reuse=False):  
             
-            # joint-input variables
+            # paired inputs X and Y
             self.X_joint = tf.placeholder(tf.float32, [None, self.x_dim], name='X_joint')
             self.Y_joint = tf.placeholder(tf.float32, [None, self.y_dim], name='Y_joint')
 
@@ -43,52 +47,46 @@ class JointVAE(base.Model):
             # Y input with missing X
             self.Y = tf.placeholder(tf.float32, [None, self.y_dim], name='Y')
 
-            # q(z|x) parameters
-            self.zx_mean, self.zx_var = self._q_z_x(self.X, self.x_dim, self.z_dim, 
+            # batch sizes for each case
+            n_x = tf.shape(self.X)[0]
+            n_y = tf.shape(self.Y)[0]
+            n_xy = tf.shape(self.X_joint)[0]
+
+            # q(z|x) and q(z|y) parameters
+            self.zx_mean, self.zx_var = self._q_z_x(self.X, self.x_dim, self.z_dim, self.n_hidden,
                 scope='q_z_x', reuse=False)
-            # q(z|y) parameters 
-            self.zy_mean, self.zy_var = self._q_z_x(self.Y, self.y_dim, self.z_dim, 
+            self.zy_mean, self.zy_var = self._q_z_x(self.Y, self.y_dim, self.z_dim, self.n_hidden,
                 scope='q_z_y', reuse=False)
 
-            # q(z|x,y) parameters (using product of two Gaussians)
-            zxm, zxv = self._q_z_x(self.X_joint, self.x_dim, self.z_dim,
+            # q(z|x,y) parameters, defined using constraint q(z|x,y) = q(z|x) q(z|y)
+            zxm, zxv = self._q_z_x(self.X_joint, self.x_dim, self.z_dim, self.n_hidden,
                 scope='q_z_x', reuse=True)
-            zym, zyv = self._q_z_x(self.Y_joint, self.y_dim, self.z_dim,
+            zym, zyv = self._q_z_x(self.Y_joint, self.y_dim, self.z_dim, self.n_hidden,
                 scope='q_z_y', reuse=True)
-            zxv_inv = tf.reciprocal(zxv)
-            zyv_inv = tf.reciprocal(zyv)
-            self.zxy_var = tf.reciprocal(zxv_inv + zyv_inv)
-            zx = tf.multiply(zxv_inv, zxm)
-            zy = tf.multiply(zyv_inv, zym)
-            self.zxy_mean = tf.multiply(self.zxy_var, zx + zy)
-
-            # batch sizes for each case
-            zx_samples = tf.shape(self.X)[0]
-            zy_samples = tf.shape(self.Y)[0]
-            zxy_samples = tf.shape(self.X_joint)[0]
+            self.zxy_mean, self.zxy_var = self._constrain_joint(zxm, zxv, zym, zyv)
 
             # sampling 
-            self.Zx = self._sample_latent_space(self.zx_mean, self.zx_var, self.z_dim, zx_samples)
-            self.Zy = self._sample_latent_space(self.zy_mean, self.zy_var, self.z_dim, zy_samples)
-            self.Zxy = self._sample_latent_space(self.zxy_mean, self.zxy_var, self.z_dim, zxy_samples)
+            self.Zx = self._sample(self.zx_mean, self.zx_var, self.z_dim, n_x)
+            self.Zy = self._sample(self.zy_mean, self.zy_var, self.z_dim, n_y)
+            self.Zxy = self._sample(self.zxy_mean, self.zxy_var, self.z_dim, n_xy)
 
             # p(x|z) parameters
-            self.xy_logits, self.xy_probs = self._p_x_z(self.Zy, self.z_dim, self.x_dim,
+            self.xy_logits, self.xy_probs = self._p_x_z(self.Zy, self.z_dim, self.x_dim, self.n_hidden,
                 scope='p_x_z', reuse=False)
-            self.xx_logits, self.xx_probs = self._p_x_z(self.Zx, self.z_dim, self.x_dim,
+            self.xx_logits, self.xx_probs = self._p_x_z(self.Zx, self.z_dim, self.x_dim, self.n_hidden,
                 scope='p_x_z', reuse=True)
             
             # p(y|z) parameters
-            self.yx_logits, self.yx_probs = self._p_x_z(self.Zx, self.z_dim, self.y_dim,
+            self.yx_logits, self.yx_probs = self._p_x_z(self.Zx, self.z_dim, self.y_dim, self.n_hidden,
                 scope='p_y_z', reuse=False)
-            self.yy_logits, self.yy_probs = self._p_x_z(self.Zy, self.z_dim, self.y_dim,
+            self.yy_logits, self.yy_probs = self._p_x_z(self.Zy, self.z_dim, self.y_dim, self.n_hidden,
                 scope='p_y_z', reuse=True)
             
             # joint p(x|z) and p(y|z) parameters
-            self.x_logits_joint, self.x_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.x_dim,
-                scope='p_x_z', reuse=True)
-            self.y_logits_joint, self.y_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.y_dim,
-                scope='p_y_z', reuse=True)
+            self.x_logits_joint, self.x_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.x_dim, 
+                self.n_hidden, scope='p_x_z', reuse=True)
+            self.y_logits_joint, self.y_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.y_dim, 
+                self.n_hidden, scope='p_y_z', reuse=True)
 
             # bound: X observed, Y missing
             marginal_x = self._variational_bound(self.xx_logits, self.X, self.zx_mean, self.zx_var,
@@ -129,51 +127,67 @@ class JointVAE(base.Model):
             self.step = self._optimizer()
 
 
-    def _p_x_z(self, Z, z_dim, x_dim, scope, reuse):
-        """
-        Generator network. 
-
-        Z: latent data
-        z_dim: dimensionality of latent space
-        x_dim: dimensionality of output space 
-        """
-        with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(Z, z_dim, 200, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 200, 200, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
-
-            x_logits = mod.affine_map(h2, 200, x_dim, "layer_3", reuse=reuse)
-            x_probs = tf.nn.sigmoid(x_logits)
-
-            return x_logits, x_probs
-
-    
-    def _q_z_x(self, X, x_dim, z_dim, scope, reuse):
+    def _q_z_x(self, X, x_dim, z_dim, n_hidden, scope, reuse):
         """
         Inference network.
 
         X: input data
         x_dim: dimensionality of input space 
         z_dim: dimensionality of latent space
+        n_hidden: number of hidden units in each layer
         """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(X, x_dim, 200, "layer_1", reuse=reuse)
+            a1 = mod.affine_map(X, x_dim, n_hidden, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 200, 200, "layer_2", reuse=reuse)
+            a2 = mod.affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            z_mean = mod.affine_map(h2, 200, z_dim, "mean_layer", reuse=reuse)
+            z_mean = mod.affine_map(h2, n_hidden, z_dim, "mean_layer", reuse=reuse)
 
-            a3_var = mod.affine_map(h2, 200, z_dim, "var_layer", reuse=reuse)
+            a3_var = mod.affine_map(h2, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
 
 
-    def _sample_latent_space(self, z_mean, z_var, z_dim, n_samples, scope='sampling', reuse=False):
+    def _constrain_joint(self, x_mean, x_var, y_mean, y_var):
         """
-        Monte Carlo sampling from Latent distribution. Takes a single sample for each observation.
+        Computes joint Gaussian as the product of two Gaussian with given means and variances. 
+        """
+        xv_inv = tf.reciprocal(x_var)
+        yv_inv = tf.reciprocal(y_var)
+        xy_var = tf.reciprocal(xv_inv + yv_inv)
+        xx = tf.multiply(xv_inv, x_mean)
+        yy = tf.multiply(yv_inv, y_mean)
+        xy_mean = tf.multiply(xy_var, xx + yy)
+
+        return xy_mean, xy_var
+
+
+    def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
+        """
+        Generator network. 
+
+        Z: latent data
+        z_dim: dimensionality of latent space
+        x_dim: dimensionality of output space
+        n_hidden: number of hidden units in each layer
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            a1 = mod.affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
+            a2 = mod.affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
+
+            x_logits = mod.affine_map(h2, n_hidden, x_dim, "layer_3", reuse=reuse)
+            x_probs = tf.nn.sigmoid(x_logits)
+
+            return x_logits, x_probs
+
+
+    def _sample(self, z_mean, z_var, z_dim, n_samples, scope='sampling', reuse=False):
+        """
+        Monte Carlo sampling from Gaussian distribution. Takes a single sample for each observation.
         """
         with tf.variable_scope(scope, reuse=reuse):
             z_std = tf.sqrt(z_var)
