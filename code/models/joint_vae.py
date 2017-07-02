@@ -270,26 +270,42 @@ class JointVAE(base.Model):
         self.sess.run(self.xy_probs, feed_dict=feed)
 
 
-    def reconstruct(self, X_joint, Y_joint):
+    def reconstruct(self, X, Y):
         """
         Reconstruct X and Y, given paired input X and Y.
         """
-        feed = {self.X_joint: X_joint, self.Y_joint: Y_joint}
+        feed = {self.X_joint: X, self.Y_joint: Y}
         return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
 
-    
-    def encode(self, X, Y, X_joint, Y_joint):
+       
+    def encode_x(self, X):
         """
         Computes mean of latent space, given input X.  
         """
-        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
+        feed = {self.X: X}
         return self.sess.run(self.zx_mean, feed_dict=feed)
 
+
+    def encode_y(self, Y):
+        """
+        Computes mean of latent space, given input X.  
+        """
+        feed = {self.Y: Y}
+        return self.sess.run(self.zy_mean, feed_dict=feed)
+
+
+    def encode_xy(self, X, Y):
+        """
+        Computes mean of latent space, given input X.  
+        """
+        feed = {self.X_joint: X, self.Y_joint: Y}
+        return self.sess.run(self.zxy_mean, feed_dict=feed)
+
     
-    def decode(self, X, Y, X_joint, Y_joint):
+    def decode(self, Z):
         """
         Computes bernoulli probabilities in data space, given input Z.
         """
-        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        return self.sess.run(self.x_probs, feed_dict=feed)
+        feed = {self.Zxy: Z}
+        return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
 
