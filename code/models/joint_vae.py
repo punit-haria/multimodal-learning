@@ -89,42 +89,22 @@ class JointVAE(base.Model):
                 self.n_hidden, scope='p_y_z', reuse=True)
 
             # bound: X observed, Y missing
-            marginal_x = self._variational_bound(self.xx_logits, self.X, self.zx_mean, self.zx_var,
+            self.x_bound = self._marginal_bound(self.xx_logits, self.X, self.zx_mean, self.zx_var,
                 scope='marginal_x')
-            #l1_p_y_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.yx_logits, 
-            #    labels=self.Y), axis=1)
-            #x_bound = tf.reduce_mean(marginal_x + l1_p_y_z, axis=0)
-            x_bound = tf.reduce_mean(marginal_x, axis=0)
             
             # bound: Y observed, X missing
-            marginal_y = self._variational_bound(self.yy_logits, self.Y, self.zy_mean, self.zy_var,
+            self.y_bound = self._marginal_bound(self.yy_logits, self.Y, self.zy_mean, self.zy_var,
                 scope='marginal_y')
-            #l1_p_x_z = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
-            #    labels=self.X), axis=1)
-            #y_bound = tf.reduce_mean(marginal_y + l1_p_x_z, axis=0)
-            y_bound = tf.reduce_mean(marginal_y, axis=0)
 
             # bound: X,Y observed
-            l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits_joint, 
-                labels=self.X_joint), axis=1)
-            l1_y = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.y_logits_joint, 
-                labels=self.Y_joint), axis=1)
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.zxy_var) - tf.square(self.zxy_mean) - self.zxy_var, axis=1)
-            joint_bound = tf.reduce_mean(l1_x + l1_y + l2, axis=0)
-
-            # summaries
-            tf.summary.scalar('x_bound', x_bound)
-            tf.summary.scalar('y_bound', y_bound)
-            tf.summary.scalar('joint_bound', joint_bound)
-
-            # final bound
-            self.bound = x_bound + y_bound + joint_bound
+            self.xy_bound = self._joint_bound(self.x_logits_joint, self.X_joint, self.y_logits_joint, self.Y_joint, 
+                self.zxy_mean, self.zxy_var, scope='joint_bound')
 
             # loss
-            self.loss = -self.bound
+            self.loss = -(self.x_bound + self.y_bound + self.xy_bound)
 
             # optimization step
-            self.step = self._optimizer()
+            self.step = self._optimizer(self.loss, self.lr)
 
 
     def _q_z_x(self, X, x_dim, z_dim, n_hidden, scope, reuse):
@@ -152,7 +132,7 @@ class JointVAE(base.Model):
 
     def _constrain_joint(self, x_mean, x_var, y_mean, y_var):
         """
-        Computes joint Gaussian as the product of two Gaussian with given means and variances. 
+        Computes joint Gaussian as the product of two Gaussians with given means and variances. 
         """
         xv_inv = tf.reciprocal(x_var)
         yv_inv = tf.reciprocal(y_var)
@@ -196,9 +176,9 @@ class JointVAE(base.Model):
             return z
     
 
-    def _variational_bound(self, logits, labels, mean, var, scope='variational_bound'):
+    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound'):
         """
-        Variational Bound.
+        Variational bound on marginal distribution p(x). 
         """
         with tf.variable_scope(scope, reuse=False):
             # reconstruction
@@ -208,25 +188,45 @@ class JointVAE(base.Model):
             # penalty
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
 
-            # total bound (unreduced)
-            return l1 + l2
+            # total bound
+            return tf.reduce_mean(l1+l2, axis=0)
         
 
-    def _optimizer(self,):
+    def _joint_bound(self, x_logits, x_labels, y_logits, y_labels, mean, var, scope='joint_bound'):
+        """
+        Variational bound on joint distribution p(x,y).
+        """
+        with tf.variable_scope(scope, reuse=False):
+            # reconstructions
+            l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=x_logits, 
+                labels=x_labels), axis=1)
+            l1_y = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=y_logits, 
+                labels=y_labels), axis=1)
+
+            # penalty on q(z|x,y)
+            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
+
+            # total bound
+            return tf.reduce_mean(l1_x + l1_y + l2, axis=0)
+
+
+    def _optimizer(self, loss, learning_rate):
         """
         Optimization method.
         """
         with tf.variable_scope("optimization", reuse=False):
-            step = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+            step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
             return step
 
 
     def _summaries(self,):
         """
-        Summary variables for visualizing with tensorboard.
+        Merge summary variables for visualizing with tensorboard.
         """
         with tf.variable_scope("summary", reuse=False):
-            #tf.summary.scalar('variational_bound', self.bound)
+            tf.summary.scalar('x_bound', self.x_bound)
+            tf.summary.scalar('y_bound', self.y_bound)
+            tf.summary.scalar('joint_bound', self.xy_bound)
             return tf.summary.merge_all()
 
 

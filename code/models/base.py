@@ -40,9 +40,6 @@ class Model(object):
         self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
         self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
 
-        # counter for number of executed training steps
-        self.n_steps = 0
-
         # tensorflow session
         if self.sess is None:
             self.sess = tf.Session()
