@@ -6,7 +6,7 @@ from models import base
 class JointVAE(base.Model):
     
     def __init__(self, input_dim, latent_dim, learning_rate, n_hidden_units=200,
-        name="VAE", session=None, log_dir=None, model_dir=None):
+        name="JointVAE", session=None, log_dir=None, model_dir=None):
         """
         Joint Variational Auto-Encoder using marginal and joint variational bounds,
         and constraining q(z|x,y) = q(z|x) q(z|y). Encoders and decoders are fully-
@@ -117,17 +117,53 @@ class JointVAE(base.Model):
         n_hidden: number of hidden units in each layer
         """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(X, x_dim, n_hidden, "layer_1", reuse=reuse)
+            a1 = self._affine_map(X, x_dim, n_hidden, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            z_mean = mod.affine_map(h2, n_hidden, z_dim, "mean_layer", reuse=reuse)
+            z_mean = self._affine_map(h2, n_hidden, z_dim, "mean_layer", reuse=reuse)
 
-            a3_var = mod.affine_map(h2, n_hidden, z_dim, "var_layer", reuse=reuse)
+            a3_var = self._affine_map(h2, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
+
+
+    def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
+        """
+        Generator network. 
+
+        Z: latent data
+        z_dim: dimensionality of latent space
+        x_dim: dimensionality of output space
+        n_hidden: number of hidden units in each layer
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            a1 = self._affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
+            a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
+
+            x_logits = self._affine_map(h2, n_hidden, x_dim, "layer_3", reuse=reuse)
+            x_probs = tf.nn.sigmoid(x_logits)
+
+            return x_logits, x_probs
+
+
+    def _affine_map(self, input, in_dim, out_dim, scope, reuse):
+        """
+        Affine transform.
+
+        input: input tensor
+        in_dim/out_dim: input and output dimensions
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            W = tf.get_variable("W", shape=[in_dim,out_dim], 
+                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+            b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
+
+            return tf.matmul(input,W) + b
 
 
     def _constrain_joint(self, x_mean, x_var, y_mean, y_var):
@@ -142,27 +178,6 @@ class JointVAE(base.Model):
         xy_mean = tf.multiply(xy_var, xx + yy)
 
         return xy_mean, xy_var
-
-
-    def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
-        """
-        Generator network. 
-
-        Z: latent data
-        z_dim: dimensionality of latent space
-        x_dim: dimensionality of output space
-        n_hidden: number of hidden units in each layer
-        """
-        with tf.variable_scope(scope, reuse=reuse):
-            a1 = mod.affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
-
-            x_logits = mod.affine_map(h2, n_hidden, x_dim, "layer_3", reuse=reuse)
-            x_probs = tf.nn.sigmoid(x_logits)
-
-            return x_logits, x_probs
 
 
     def _sample(self, z_mean, z_var, z_dim, n_samples, scope='sampling', reuse=False):
@@ -308,4 +323,5 @@ class JointVAE(base.Model):
         """
         feed = {self.Zxy: Z}
         return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
+
 

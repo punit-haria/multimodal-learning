@@ -59,14 +59,14 @@ class VariationalAutoEncoder(base.Model):
         Recognition network.
         """
         with tf.variable_scope("encoder", reuse=False):
-            a1 = mod.affine_map(self.X, self.x_dim, 500, "layer_1")
+            a1 = self._affine_map(self.X, self.x_dim, 500, "layer_1")
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 500, 500, "layer_2")
+            a2 = self._affine_map(h1, 500, 500, "layer_2")
             h2 = tf.nn.relu(a2)
 
-            z_mean = mod.affine_map(h2, 500, self.z_dim, "mean_layer")
+            z_mean = self._affine_map(h2, 500, self.z_dim, "mean_layer")
 
-            a3_var = mod.affine_map(h2, 500, self.z_dim, "var_layer")
+            a3_var = self._affine_map(h2, 500, self.z_dim, "var_layer")
             z_var = tf.nn.softplus(a3_var)
 
             return z_mean, z_var
@@ -77,15 +77,30 @@ class VariationalAutoEncoder(base.Model):
         Generator network. 
         """
         with tf.variable_scope("decoder", reuse=False):
-            a1 = mod.affine_map(self.Z, self.z_dim, 500, "layer_1")
+            a1 = self._affine_map(self.Z, self.z_dim, 500, "layer_1")
             h1 = tf.nn.relu(a1)
-            a2 = mod.affine_map(h1, 500, 500, "layer_2")
+            a2 = self._affine_map(h1, 500, 500, "layer_2")
             h2 = tf.nn.relu(a2)
 
-            x_logits = mod.affine_map(h2, 500, self.x_dim, "layer_3")
+            x_logits = self._affine_map(h2, 500, self.x_dim, "layer_3")
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
+
+
+    def _affine_map(self, input, in_dim, out_dim, scope, reuse):
+        """
+        Affine transform.
+
+        input: input tensor
+        in_dim/out_dim: input and output dimensions
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            W = tf.get_variable("W", shape=[in_dim,out_dim], 
+                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+            b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
+
+            return tf.matmul(input,W) + b
 
     
     def _sample_latent_space(self,):

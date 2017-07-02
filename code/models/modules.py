@@ -4,26 +4,6 @@ Collection of commonly used modules for building larger architectures.
 import tensorflow as tf
 
 
-def affine_map(input, in_dim, out_dim, scope, reuse):
-    """
-    Affine transform.
-
-    input: input tensor
-    in_dim/out_dim: input and output dimensions
-    scope: variable scope as string
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        W = tf.get_variable("W", shape=[in_dim,out_dim], 
-            initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
-        b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
-
-        #if reuse == False:
-        #    tf.summary.histogram('weights', W)
-        #    tf.summary.histogram('biases', b)
-
-        return tf.matmul(input,W) + b
-
-
 def batch_norm(x, scope, decay, epsilon, is_training, center=True, reuse=False):
     """
     Batch normalization layer

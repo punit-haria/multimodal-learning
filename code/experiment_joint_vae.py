@@ -5,7 +5,7 @@ import plot
 import utils
 
 from models.joint_vae import JointVAE
-from data import JointMNIST
+from data import JointMNIST as MNIST
 
 
 ### PARAMETERS ###
@@ -20,9 +20,8 @@ y_dim = 392
 train_steps = 10000
 
 
-
 # data set
-mnist = JointMNIST(n_paired)
+mnist = MNIST(n_paired)
 
 # model
 vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, name='joint_vae')
