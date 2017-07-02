@@ -1,12 +1,11 @@
 import tensorflow as tf
 import numpy as np 
 
-import components as cp
-import data
 import plot
 import utils
 
 from models.joint_vae import JointVAE
+from data import JointMNIST
 
 
 ### PARAMETERS ###
@@ -23,7 +22,7 @@ train_steps = 10000
 
 
 # data set
-mnist = data.JointMNIST(n_paired)
+mnist = JointMNIST(n_paired)
 
 # model
 vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, name='joint_vae')

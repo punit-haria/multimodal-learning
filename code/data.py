@@ -14,6 +14,76 @@ class DAY_NIGHT(object):
         pass
 
 
+
+class MNIST(object):
+    """
+    Class to load MNIST data. 
+    """
+    def __init__(self,):
+        self.train_path = '../data/mnist_train'
+        self.test_path = '../data/mnist_test'
+        self.train_labels_path = self.train_path+'_labels'
+        self.test_labels_path = self.test_path+'_labels'
+
+        self.Xtr, self.ytr = self._get_data(self.train_path, self.train_labels_path)
+        self.Xte, self.yte = self._get_data(self.test_path, self.test_labels_path)
+
+
+    def sample(self, dtype='train', batch_size=100):
+        """
+        Samples data from training set. 
+        """
+        _, (X,Y) = self._sample(dtype, batch_size)
+        return X, Y
+
+
+    def train_set(self,):
+        return self.Xtr, self.ytr
+
+    
+    def test_set(self,):
+        return self.Xte, self.yte
+
+
+    def _sample(self, dtype='train', batch_size=100):
+        """
+        Samples data from training set. 
+        """
+        if dtype == 'train':
+            return sample([self.Xtr, self.ytr], batch_size)
+        elif dtype == 'test':
+            return sample([self.Xte, self.yte], batch_size)
+        else:
+            raise Exception('Training or test set not selected..')
+
+
+    def _get_data(self, data_path, labels_path):
+        """
+        Reads MNIST data. Rescales image pixels to be between 0 and 1. 
+        """
+        data = self._read_mnist(data_path)
+        data = data / 255
+        labels = self._read_mnist(labels_path)
+
+        n = len(data)
+        data = data.reshape([n, -1])
+
+        return data, labels
+
+
+    def _read_mnist(self, path):
+        '''
+        Function to read MNIST data file, taken from  
+        https://gist.github.com/tylerneylon/ce60e8a06e7506ac45788443f7269e40
+        '''
+        with open(path, 'rb') as file:
+            zero, dtype, dims = struct.unpack('>HBB', file.read(4))
+            shape = tuple(struct.unpack('>I', file.read(4))[0] for d in range(dims))
+            data = np.fromstring(file.read(), dtype=np.uint8)
+            return data.reshape(shape)
+        
+
+
 class JointMNIST(MNIST):
     """
     MNIST data treated as two output variables consisting of the top halves and bottom halves of 
@@ -25,20 +95,20 @@ class JointMNIST(MNIST):
         """
         super(JointMNIST, self).__init__()  # load data
         self.n_paired = n_paired  
-        self.split_point = 784 / 2  
+        self.split_point = int(784 / 2)
 
         # joint and missing split
         self.x_and_y = set(np.arange(1000))
-        self.x_only = set(len(x_and_y) + np.arange(29500))
-        self.y_only = set(len(x_and_y) + len(x_only) + np.arange(29500))
+        self.x_only = set(len(self.x_and_y) + np.arange(29500))
+        self.y_only = set(len(self.x_and_y) + len(self.x_only) + np.arange(29500))
 
 
-    def sample(self, set='train', batch_size=100, include_labels=False):
+    def sample(self, dtype='train', batch_size=100, include_labels=False):
         # sample naively
-        idx, (batch,labels) = self._sample(set, batch_size)
+        idx, (batch,labels) = self._sample(dtype, batch_size)
 
         # handle test set case separately
-        if set == 'test':
+        if dtype == 'test':
             X = batch[:, 0:self.split_point]
             Y = batch[:,self.split_point:]
             if include_labels:
@@ -53,6 +123,10 @@ class JointMNIST(MNIST):
         y_idx = np.array([np.argwhere(idx == x)[0,0]  for x in y_idx], dtype=np.int32)
         xy_idx = np.array(list(set(idx) & self.x_and_y))
         xy_idx = np.array([np.argwhere(idx == x)[0,0]  for x in xy_idx], dtype=np.int32)
+
+        assert(len(set(x_idx) & set(y_idx)) == 0)
+        assert(len(set(x_idx) & set(xy_idx)) == 0)
+        assert(len(set(y_idx) & set(xy_idx)) == 0)
 
         # create separate arrays for jointly observed and marginal data
         X = batch[x_idx, 0:self.split_point]
@@ -70,74 +144,6 @@ class JointMNIST(MNIST):
             return X, Y, X_joint, Y_joint
 
 
-
-class MNIST(object):
-    """
-    Class to load MNIST data. 
-    """
-    def __init__(self,):
-        self.train_path = '../data/mnist_train'
-        self.test_path = '../data/mnist_test'
-        self.train_labels_path = self.train_path+'_labels'
-        self.test_labels_path = self.test_path+'_labels'
-
-        self.Xtr, self.ytr = _get_data(self.train_path, self.train_labels_path)
-        self.Xte, self.yte = _get_data(self.test_path, self.test_labels_path)
-
-
-    def sample(self, set='train', batch_size=100):
-        """
-        Samples data from training set. 
-        """
-        _, (X,Y) = self._sample(set, batch_size)
-        return X, Y
-
-
-    def train_set(self,):
-        return self.Xtr, self.ytr
-
-    
-    def test_set(self,):
-        return self.Xte, self.yte
-
-
-    def _sample(self, set='train', batch_size=100):
-        """
-        Samples data from training set. 
-        """
-        if set == 'train':
-            return sample([self.Xtr, self.ytr], batch_size)
-        elif set == 'test':
-            return sample([self.Xte, self.yte], batch_size)
-        else:
-            raise Exception('Training or test set not selected..')
-
-
-    def _get_data(data_path, labels_path):
-        """
-        Reads MNIST data. Rescales image pixels to be between 0 and 1. 
-        """
-        data = _read_mnist(data_path)
-        data = data / 255
-        labels = _read_mnist(labels_path)
-
-        n = len(data)
-        data = data.reshape([n, -1])
-
-        return data, labels
-
-
-    def _read_mnist(path):
-        '''
-        Function to read MNIST data file, taken from  
-        https://gist.github.com/tylerneylon/ce60e8a06e7506ac45788443f7269e40
-        '''
-        with open(path, 'rb') as file:
-            zero, dtype, dims = struct.unpack('>HBB', file.read(4))
-            shape = tuple(struct.unpack('>I', file.read(4))[0] for d in range(dims))
-            data = np.fromstring(file.read(), dtype=np.uint8)
-            return data.reshape(shape)
-        
 
 
 def sample(data, batch_size):
