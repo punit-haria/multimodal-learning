@@ -15,6 +15,7 @@ batch_size = 250
 z_dim = 50                
 n_hidden = 200
 n_paired = 1000
+strategy = 'constrain'
 
 x_dim = 392 
 y_dim = 392         
@@ -26,8 +27,8 @@ train_steps = 10000
 mnist = MNIST(n_paired)
 
 # model
-#vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, name='joint_vae')
-vae = JointVAE_CNN((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, name='joint_vae')
+vae = JointVAE((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name='joint_vae')
+#vae = JointVAE_CNN((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, name='joint_vae')
 
 # train model
 for i in range(train_steps):
@@ -46,6 +47,34 @@ for i in range(train_steps):
 
         # test model
         vae.test(X, Y, X, Y)
+
+        # plot reconstructions 
+        if i % 1000 == 0:
+            n_examples = 8
+
+            Xb = X[0:n_examples]
+            Yb = Y[0:n_examples]
+            XYb = np.concatenate((Xb,Yb), axis=1)
+
+            XX, YX = vae.reconstruct_from_x(Xb)
+            XY, YY = vae.reconstruct_from_y(Yb)
+            XXY, YXY = vae.reconstruct(Xb,Yb)
+
+            fromX = np.concatenate((XX,YX), axis=1)
+            fromY = np.concatenate((XY,YY), axis=1)
+            fromXY = np.concatenate((XXY,YXY), axis=1)
+
+            imagesX = np.concatenate((XYb, fromX), axis=0)
+            imagesY = np.concatenate((XYb, fromY), axis=0)
+            imagesXY = np.concatenate((XYb, fromXY), axis=0)
+
+            imagesX = np.reshape(imagesX, [-1,28,28])
+            imagesY = np.reshape(imagesY, [-1,28,28])
+            imagesXY = np.reshape(imagesXY, [-1,28,28])
+
+            plot.plot_images(imagesX, 4, 4, '../plots/reconstruct_X_'+str(i))
+            plot.plot_images(imagesY, 4, 4, '../plots/reconstruct_Y_'+str(i))
+            plot.plot_images(imagesXY, 4, 4, '../plots/reconstruct_XY_'+str(i))
 
 
 # save final model

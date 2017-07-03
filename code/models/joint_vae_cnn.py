@@ -74,7 +74,7 @@ class JointVAE_CNN(JointVAE):
             a1 = self._affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
 
-            _h = int(self._h / 4) + 1
+            _h = int(self._h / 4) + 1   # FIX THIS WHEN IMPLEMENTING WITH REAL DATASET
             _w = int(self._w / 4)
 
             a2 = self._affine_map(h1, n_hidden, _h*_w*16, "layer_2", reuse=reuse)
@@ -82,7 +82,7 @@ class JointVAE_CNN(JointVAE):
 
             Z_2d = tf.reshape(h2, [-1, _h, _w, 16])
 
-            _h = _h * 2  - 1
+            _h = _h * 2  - 1  # FIX THIS WHEN IMPLEMENTING WITH REAL DATASET
             _w = _w * 2
         
             w1 = self._weight([3, 3, 16, 16], "layer_3", reuse=reuse)
