@@ -43,8 +43,8 @@ strategies = ['share_weights', 'constrain']
 for name, model in models.items():
     for strat in strategies:
         
-        name = name + '__' + strat
-        vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strat, name=name)
+        model_name = name + '__' + strat
+        vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strat, name=model_name)
 
         # train model
         for i in range(train_steps+1):
@@ -88,9 +88,9 @@ for name, model in models.items():
                     imagesY = np.reshape(imagesY, [-1,28,28])
                     imagesXY = np.reshape(imagesXY, [-1,28,28])
 
-                    plot.plot_images(imagesX, 4, 4, '../plots/'+name+'__reconstruct_X_'+str(i))
-                    plot.plot_images(imagesY, 4, 4, '../plots/'+name+'__reconstruct_Y_'+str(i))
-                    plot.plot_images(imagesXY, 4, 4, '../plots/'+name+'__reconstruct_XY_'+str(i))
+                    plot.plot_images(imagesX, 4, 4, '../plots/'+model_name+'__reconstruct_X_'+str(i))
+                    plot.plot_images(imagesY, 4, 4, '../plots/'+model_name+'__reconstruct_Y_'+str(i))
+                    plot.plot_images(imagesXY, 4, 4, '../plots/'+model_name+'__reconstruct_XY_'+str(i))
 
 
         # save final model

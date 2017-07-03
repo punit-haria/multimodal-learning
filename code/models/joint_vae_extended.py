@@ -58,8 +58,9 @@ class JointVAE_Average(JointVAE):
             b1 = self._Txy() + self._Lx()
             b2 = self._Tyx() + self._Ly()
             b3 = self._Lxy()
+            b = tf.stack([b1, b2, b3], axis=1)
 
-            return tf.reduce_mean(b1 + b2 + b3)
+            return tf.reduce_mean(b)
             
 
             

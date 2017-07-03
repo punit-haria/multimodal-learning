@@ -98,9 +98,11 @@ class JointMNIST(MNIST):
         self.split_point = int(784 / 2)
 
         # joint and missing split
-        self.x_and_y = set(np.arange(1000))
-        self.x_only = set(len(self.x_and_y) + np.arange(29500))
-        self.y_only = set(len(self.x_and_y) + len(self.x_only) + np.arange(29500))
+        _n = len(self.Xtr)
+        self.x_and_y = np.random.randint(_n, size=self.n_paired)
+        _remain = set(np.arange(_n)) - set(self.x_and_y)
+        self.x_only = np.random.choice(_remain, size=len(_remain)/2, replace=False)
+        self.y_only = np.array(list(_remain - set(self.x_only)))
 
 
     def sample(self, dtype='train', batch_size=100, include_labels=False):
