@@ -223,6 +223,8 @@ class ColouredMNIST(MNIST):
         if dtype == 'test':
             X = self.M1_test[idx]
             Y = self.M2_test[idx]
+            X = np.reshape(X, newshape=[-1,784*3])
+            Y = np.reshape(Y, newshape=[-1,784*3])
             if include_labels:
                 return (X,labels), (Y,labels)
             else:
@@ -242,6 +244,12 @@ class ColouredMNIST(MNIST):
             Y = self.M2[y_idx]
             X_joint = self.M1[xy_idx]
             Y_joint = self.M2[xy_idx]
+
+            # reshape
+            X = np.reshape(X, newshape=[-1,784*3])
+            Y = np.reshape(Y, newshape=[-1,784*3])
+            X_joint = np.reshape(X_joint, newshape=[-1,784*3])
+            Y_joint = np.reshape(Y_joint, newshape=[-1,784*3])
         
             if include_labels:  # split label data too
                 lX = labels[x_idx]

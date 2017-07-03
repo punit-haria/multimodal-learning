@@ -367,7 +367,7 @@ class JointVAE(base.Model):
         Translate X to Y.
         """
         feed = {self.X: X}
-        self.sess.run(self.yx_probs, feed_dict=feed)
+        return self.sess.run(self.yx_probs, feed_dict=feed)
 
 
     def translate_y(self, Y):
@@ -375,7 +375,7 @@ class JointVAE(base.Model):
         Translate Y to X.
         """
         feed = {self.Y: Y}
-        self.sess.run(self.xy_probs, feed_dict=feed)
+        return self.sess.run(self.xy_probs, feed_dict=feed)
 
 
     def reconstruct(self, X, Y):

@@ -6,7 +6,7 @@ from models.joint_vae import JointVAE
 class JointVAE_CNN(JointVAE):
     
     def __init__(self, input_dim, latent_dim, input_2d_dim,
-        learning_rate, n_hidden_units=200,
+        learning_rate, n_hidden_units=200, joint_strategy='constrain',
         name="JointVAE_CNN", session=None, log_dir=None, model_dir=None):
         """
         Same as the JointVAE with the exception that encoders and decoders 
@@ -16,10 +16,10 @@ class JointVAE_CNN(JointVAE):
         """
         self._h, self._w, self._nc = input_2d_dim
 
-        super(JointVAE_CNN, self).__init__(input_dim, latent_dim, learning_rate, n_hidden_units,
+        super(JointVAE_CNN, self).__init__(input_dim, latent_dim, learning_rate, n_hidden_units, joint_strategy,
             name, session, log_dir, model_dir)
 
-    
+
     def _q_z_x(self, X, x_dim, z_dim, n_hidden, scope, reuse):
         """
         Inference network using convolution.
@@ -55,7 +55,7 @@ class JointVAE_CNN(JointVAE):
             a3_var = self._affine_map(r3, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
-            return z_mean, z_var
+            return z_mean, z_var, r3
 
 
     def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
@@ -74,7 +74,7 @@ class JointVAE_CNN(JointVAE):
             a1 = self._affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
 
-            _h = int(self._h / 4) + 1   # FIX THIS WHEN IMPLEMENTING WITH REAL DATASET
+            _h = int(self._h / 4) 
             _w = int(self._w / 4)
 
             a2 = self._affine_map(h1, n_hidden, _h*_w*16, "layer_2", reuse=reuse)
@@ -82,7 +82,7 @@ class JointVAE_CNN(JointVAE):
 
             Z_2d = tf.reshape(h2, [-1, _h, _w, 16])
 
-            _h = _h * 2  - 1  # FIX THIS WHEN IMPLEMENTING WITH REAL DATASET
+            _h = _h * 2  
             _w = _w * 2
         
             w1 = self._weight([3, 3, 16, 16], "layer_3", reuse=reuse)
@@ -91,7 +91,7 @@ class JointVAE_CNN(JointVAE):
                 strides=[1,2,2,1], padding='SAME') + b1
             r1 = tf.nn.relu(c1)
 
-            w2 = self._weight([3, 3, 1, 16], "layer_4", reuse=reuse)
+            w2 = self._weight([3, 3, self._nc, 16], "layer_4", reuse=reuse)
             b2 = self._bias([1], "layer_4", reuse=reuse)
             c2 = tf.nn.conv2d_transpose(r1, w2, output_shape=[b_size, self._h, self._w, self._nc], 
                 strides=[1,2,2,1], padding='SAME') + b2
