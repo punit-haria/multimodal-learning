@@ -3,7 +3,7 @@ Classes and methods to load datasets.
 """
 import numpy as np
 import struct
-
+from scipy import ndimage
 
 
 class DAY_NIGHT(object):
@@ -12,7 +12,6 @@ class DAY_NIGHT(object):
     """
     def __init__(self,):
         pass
-
 
 
 class MNIST(object):
@@ -84,6 +83,8 @@ class MNIST(object):
         
 
 
+
+
 class JointMNIST(MNIST):
     """
     MNIST data treated as two output variables consisting of the top halves and bottom halves of 
@@ -101,7 +102,8 @@ class JointMNIST(MNIST):
         _n = len(self.Xtr)
         self.x_and_y = np.random.randint(_n, size=self.n_paired)
         _remain = set(np.arange(_n)) - set(self.x_and_y)
-        self.x_only = np.random.choice(_remain, size=len(_remain)/2, replace=False)
+        _x_size = int(len(_remain)/2)
+        self.x_only = np.random.choice(list(_remain), size=_x_size, replace=False)
         self.y_only = np.array(list(_remain - set(self.x_only)))
 
 
@@ -140,6 +142,94 @@ class JointMNIST(MNIST):
 
         else:
             return X, Y, X_joint, Y_joint
+
+
+
+class ColouredMNIST(MNIST):
+    """
+    Based on dataset created in the paper: "Unsupervised Image-to-Image Translation Networks"
+
+    X dataset consists of MNIST digits with strokes coloured as red, blue, green. 
+    Y dataset consists of MNIST digits transformed to an edge map, and then coloured as orange, magenta, teal.
+    A small paired dataset consists of a one-to-one mapping between colours in X and colours in Y of the same 
+    MNIST digit. 
+    """
+    def __init__(self, n_paired):
+        """
+        n_paired: number of paired examples to create
+        """
+        super(JointMNIST, self).__init__()  # load data
+        self.n_paired = n_paired 
+
+        # colours for X and Y
+        self.x_colours = [(255, 98, 0), (185,249,0), (43,15,221)]
+        self.y_colours = [(235,0,120), (255,214,0), (1,194,212)]
+
+
+
+    
+    def _translate_x(self,):
+        pass
+
+
+    def _translate_y(self,):
+        pass
+
+
+    def _edge_map(self, data):
+        """
+        Converts MNIST digits into corresponding edge map.
+
+        data: numpy array of MNIST digits
+        """
+        n = len(data) 
+        edges = np.zeros(shape=data.shape)
+        for i in range(n):
+            im = data[i]
+            sx = ndimage.sobel(im, axis=0, mode='constant')
+            sy = ndimage.sobel(im, axis=1, mode='constant')
+            sob = np.hypot(sx, sy)
+            _max = np.max(sob)
+            edges[i] = sob / _max
+
+        return edges
+
+            
+    def _colour(self, data, modality):
+        """
+        Randomly colours MNIST digits into one of 3 colours.
+
+        data: numpy array of MNIST digits, with dimensions: #images x height x width 
+        modality: "X" or "Y"
+        """
+        # random colours
+        colours = self._random_colours(modality, len(data))
+
+        rgb = []
+        for i in range(3):
+            rgb_comp = data * colours[i,:]
+            rgb_comp = np.expand_dims(rgb_comp, axis=-1)
+            rgb.append(rgb_comp)
+        
+        return np.stack(rgb, axis=-1)
+
+
+    def _random_colours(self, modality, n_samples):
+        """
+        Draws random colours.
+
+        modality: "X" or "Y"
+        n_samples: number of random colours to draw
+        """
+        if modality == "X":
+            bank = np.array(self.x_colours)
+        elif modality == "Y":
+            bank = np.array(self.y_colours)
+        else:
+            raise Exception("Colour bank not implemented...")
+        
+        idx = np.random.randint(len(bank), size=n_samples)
+        return bank[idx]
 
 
 
