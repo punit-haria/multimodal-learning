@@ -40,11 +40,11 @@ models = {
 strategies = ['share_weights', 'constrain']
 
 
-for name, model in models:
+for name, model in models.items():
     for strat in strategies:
         
-        vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strat, name=name)
         name = name + '__' + strat
+        vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strat, name=name)
 
         # train model
         for i in range(train_steps+1):

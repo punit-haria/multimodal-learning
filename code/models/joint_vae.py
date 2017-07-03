@@ -178,7 +178,7 @@ class JointVAE(base.Model):
         if strategy == 'constrain':
             return self._constrain_joint(self.zxm, self.zxv, self.zym, self.zyv, scope, reuse)
         elif strategy == 'share_weights':
-            self._share_weights(self.hzxj, self.hzyj, self.z_dim, self.n_hidden, scope, reuse)
+            return self._share_weights(self.hzxj, self.hzyj, self.z_dim, self.n_hidden, scope, reuse)
         else:
             raise Exception("Strategy not implemented...")
 

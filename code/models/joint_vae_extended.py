@@ -14,7 +14,7 @@ class JointVAE_XtoY(JointVAE):
             joint_strategy, name, session, log_dir, model_dir)
 
 
-    def _joint_bound(self, x_logits, x_labels, y_logits, y_labels, mean, var, scope='joint_bound'):
+    def _joint_bound(self, scope='joint_bound'):
         with tf.variable_scope(scope, reuse=False):
             Txy = self._Txy()
             Lx = self._Lx()
@@ -33,7 +33,7 @@ class JointVAE_YtoX(JointVAE):
             joint_strategy, name, session, log_dir, model_dir)
 
 
-    def _joint_bound(self, x_logits, x_labels, y_logits, y_labels, mean, var, scope='joint_bound'):
+    def _joint_bound(self, scope='joint_bound'):
         with tf.variable_scope(scope, reuse=False):
             Tyx = self._Tyx()
             Ly = self._Ly()
@@ -53,7 +53,7 @@ class JointVAE_Average(JointVAE):
             joint_strategy, name, session, log_dir, model_dir)
 
 
-    def _joint_bound(self, x_logits, x_labels, y_logits, y_labels, mean, var, scope='joint_bound'):
+    def _joint_bound(self, scope='joint_bound'):
         with tf.variable_scope(scope, reuse=False):
             b1 = self._Txy() + self._Lx()
             b2 = self._Tyx() + self._Ly()
