@@ -41,7 +41,7 @@ class JointVAE_YtoX(JointVAE):
 
 
 
-class JointVAE_Average(base.Model):
+class JointVAE_Average(JointVAE):
     
     def __init__(self, input_dim, latent_dim, learning_rate, n_hidden_units=200, joint_strategy='constrain',
         name="JointVAE", session=None, log_dir=None, model_dir=None):
