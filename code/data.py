@@ -187,7 +187,7 @@ class ColouredMNIST(MNIST):
 
         # colours for X and Y
         self.x_colours = [(255, 0, 0), (0,219,0), (61,18,198)]
-        self.y_colours = [(191,0,191), (255,211,0), (0,191,43)]
+        self.y_colours = [(255,211,0), (0,191,43), (0,41,191)]
 
         # load from saved if exists
         self._path = '../data/mnist_coloured.npz'
@@ -261,16 +261,16 @@ class ColouredMNIST(MNIST):
         # randomly assign colours
         x_bank, y_bank = self._sample_random_colours(len(data))
 
-        print("Colouring...", flush=True)
+        # colour digits
         X = self._colour(data, x_bank)
         Y = self._colour(data, y_bank)
 
-        print("Reshaping...", flush=True)
+        # reshape and scale
         X = np.reshape(X, newshape=[-1,28,28,3]) / 255
-        Y = np.reshape(Y, newshape=[-1,28,28,3]) 
+        Y = np.reshape(Y, newshape=[-1,28,28,3])
 
-        print("Extracting edge maps...", flush=True)
-        Y = self._edge_map(Y) 
+        # compute edge map
+        Y = self._edge_map(Y)
 
         return X, Y
 
@@ -305,11 +305,8 @@ class ColouredMNIST(MNIST):
         for i in range(3):
             rgb_comp = np.zeros(data.shape)
             for j in range(len(data)):
-                zeros = np.where(data[j] == 0)[0]
                 ones = np.where(data[j] > 0)[0]
-
                 rgb_comp[j] = data[j]
-                rgb_comp[j,zeros] = 255
                 rgb_comp[j,ones] = colours[j,i]
             rgb.append(rgb_comp)
         
