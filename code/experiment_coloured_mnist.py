@@ -30,19 +30,18 @@ mnist = MNIST(n_paired)
 
 # models
 models = {
-#    'joint_vae_Lxy': JointVAE,
+#   'joint_vae_Lxy': JointVAE,
 #    'joint_vae_Txy_Lx': JointVAE_XtoY,
 #    'joint_vae_Tyx_Ly': JointVAE_YtoX,
 #    'joint_vae_average': JointVAE_Average,
     'joint_vae_cnn': JointVAE_CNN
 }
 
-# strategies
-strategies = ['share_weights', 'constrain']
-
 
 for name, model in models.items():
+    name = 'mnist_colored_'+name
 
+    #vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
     vae = model((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, strategy, name=name)
 
     # train model
@@ -64,8 +63,8 @@ for name, model in models.items():
             vae.test(X, Y, X, Y)
 
             # plot reconstructions 
-            if i % 1000 == 0:
-                n_examples = 8
+            if i % 500 == 0:
+                n_examples = 18
 
                 Xb = X[0:n_examples]
                 Yb = Y[0:n_examples]
@@ -79,8 +78,8 @@ for name, model in models.items():
                 XtoY = np.reshape(XtoY, [-1,28,28,3])
                 YtoX = np.reshape(YtoX, [-1,28,28,3])
 
-                plot.plot_images(XtoY, 4, 4, '../plots/'+name+'__translate_x_'+str(i))
-                plot.plot_images(YtoX, 4, 4, '../plots/'+name+'__translate_y_'+str(i))
+                plot.plot_images(XtoY, 6, 6, '../plots/'+name+'__translate_x_'+str(i))
+                plot.plot_images(YtoX, 6, 6, '../plots/'+name+'__translate_y_'+str(i))
 
 
     # save final model

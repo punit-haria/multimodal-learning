@@ -78,26 +78,28 @@ class JointVAE_CNN(JointVAE):
             _w = int(self._w / 4)
 
             a2 = self._affine_map(h1, n_hidden, _h*_w*16, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
 
-            Z_2d = tf.reshape(h2, [-1, _h, _w, 16])
+            Z_2d = tf.reshape(a2, [-1, _h, _w, 16])
 
-            _h = _h * 2  
-            _w = _w * 2
+            unpool_1 = self._unpool(Z_2d, "layer_3_unpool", reuse=reuse)
         
+            r1 = tf.nn.relu(unpool_1)
+
             w1 = self._weight([3, 3, 16, 16], "layer_3", reuse=reuse)
             b1 = self._bias([16], "layer_3", reuse=reuse)
-            c1 = tf.nn.conv2d_transpose(Z_2d, w1, output_shape=[b_size,_h,_w,16], 
-                strides=[1,2,2,1], padding='SAME') + b1
-            r1 = tf.nn.relu(c1)
+            c1 = tf.nn.conv2d_transpose(r1, w1, output_shape=[b_size,_h*2,_w*2,16], 
+                strides=[1,1,1,1], padding='SAME') + b1
+
+            unpool_2 = self._unpool(c1, "layer_4_unpool", reuse=reuse)
+
+            r2 = tf.nn.relu(unpool_2)
 
             w2 = self._weight([3, 3, self._nc, 16], "layer_4", reuse=reuse)
-            b2 = self._bias([1], "layer_4", reuse=reuse)
-            c2 = tf.nn.conv2d_transpose(r1, w2, output_shape=[b_size, self._h, self._w, self._nc], 
-                strides=[1,2,2,1], padding='SAME') + b2
-            r2 = tf.nn.relu(c2)
+            b2 = self._bias([self._nc], "layer_4", reuse=reuse)
+            c2 = tf.nn.conv2d_transpose(r2, w2, output_shape=[b_size, self._h, self._w, self._nc], 
+                strides=[1,1,1,1], padding='SAME') + b2
 
-            x_logits = tf.reshape(r2, [-1, self._h * self._w * self._nc])
+            x_logits = tf.reshape(c2, [-1, self._h * self._w * self._nc])
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
@@ -110,6 +112,10 @@ class JointVAE_CNN(JointVAE):
         with tf.variable_scope(scope, reuse=reuse):
             W = tf.get_variable("W", shape=shape, 
                 initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+
+            if not reuse:
+                tf.summary.histogram("weight", W)
+            
             return W
 
 
@@ -120,3 +126,26 @@ class JointVAE_CNN(JointVAE):
         with tf.variable_scope(scope, reuse=reuse):
             b = tf.get_variable("b", shape=shape, initializer=tf.constant_initializer(0.1))
             return b
+
+
+    def _unpool(self, value, scope, reuse):
+        """
+        Function taken from https://github.com/tensorflow/tensorflow/issues/2169
+
+        N-dimensional version of the unpooling operation from
+        https://www.robots.ox.ac.uk/~vgg/rg/papers/Dosovitskiy_Learning_to_Generate_2015_CVPR_paper.pdf
+
+        :param value: A Tensor of shape [b, d0, d1, ..., dn, ch]
+        :return: A Tensor of shape [b, 2*d0, 2*d1, ..., 2*dn, ch]
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            sh = value.get_shape().as_list()
+            dim = len(sh[1:-1])
+            out = (tf.reshape(value, [-1] + sh[-dim:]))
+            for i in range(dim, 0, -1):
+                out = tf.concat(i, [out, tf.zeros_like(out)])
+            out_size = [-1] + [s * 2 for s in sh[1:-1]] + [sh[-1]]
+            out = tf.reshape(out, out_size, name=scope)
+            
+            return out
+
