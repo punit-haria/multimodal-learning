@@ -57,7 +57,7 @@ class JointVAE_CNN(JointVAE):
             a3_var = self._affine_map(r3, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
-            return z_mean, z_var, r3
+            return z_mean, z_var, r3, [r1, m1_argmax, r2, m2_argmax]
 
 
     def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
