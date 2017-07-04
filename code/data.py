@@ -192,18 +192,22 @@ class ColouredMNIST(MNIST):
         # load from saved if exists
         self._path = '../data/mnist_coloured.npz'
         if os.path.isfile(self._path):
+            print("Loading data...", flush=True)
             data = np.load(self._path)
             self.M1 = data['arr_0']
             self.M2 = data['arr_1']
             self.M1_test = data['arr_2']
             self.M2_test = data['arr_3']
+            print("Data loaded.", flush=True)
 
         # create modalities if data doesn't exist
         else:
             self.M1, self.M2 = self._create_modalities(self.Xtr)
             self.M1_test, self.M2_test = self._create_modalities(self.Xte)
 
+            print("Saving data...", flush=True)
             np.savez(self._path, self.M1, self.M2, self.M1_test, self.M2_test)
+            print("Saved.", flush=True)
 
         # separate indices
         _n = len(self.Xtr)
@@ -270,6 +274,7 @@ class ColouredMNIST(MNIST):
         x_bank, y_bank = self._sample_random_colours(len(data))
 
         # colour digits
+        print("Colouring modalities...", flush=True)
         X = self._colour(data, x_bank)
         Y = self._colour(data, y_bank)
 
@@ -278,6 +283,7 @@ class ColouredMNIST(MNIST):
         Y = np.reshape(Y, newshape=[-1,28,28,3])
 
         # compute edge map
+        print("Computing edge map...", flush=True)
         Y = self._edge_map(Y)
 
         return X, Y

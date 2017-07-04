@@ -10,6 +10,7 @@ from models.joint_vae_cnn import JointVAE_CNN
 
 from data import ColouredMNIST as MNIST
 
+print("Starting experiment...", flush=True)
 
 ### PARAMETERS ###
 
@@ -26,6 +27,7 @@ image_dim = (28,28,3)
 train_steps = 5000
 
 # data set
+print("Reading data...", flush=True)
 mnist = MNIST(n_paired)
 
 # models
@@ -42,9 +44,11 @@ for name, model in models.items():
     name = 'mnist_colored_'+name
 
     #vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
+    print("Loading model...", flush=True)
     vae = model((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, strategy, name=name)
 
     # train model
+    print("Training...", flush=True)
     for i in range(train_steps+1):
         
         # random minibatch 
@@ -54,7 +58,7 @@ for name, model in models.items():
         vae.train(X, Y, X_joint, Y_joint)
 
         if i % 25 == 0:
-            print("At iteration ", i)
+            print("At iteration ", i, flush=True)
 
             # test minibatch
             X, Y = mnist.sample('test', 1000)

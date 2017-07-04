@@ -35,14 +35,16 @@ class JointVAE_CNN(JointVAE):
             w1 = self._weight([3, 3, self._nc, 16], "layer_1", reuse=reuse)
             b1 = self._bias([16], "layer_1", reuse=reuse)
             c1 = tf.nn.conv2d(X_image, w1, strides=[1,1,1,1], padding='SAME') + b1
-            r1 = tf.nn.relu(c1)
-            m1 = tf.nn.max_pool(r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+            self.r1 = tf.nn.relu(c1)
+
+            m1, self.m1_argmax = tf.nn.max_pool_with_argmax(r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
             w2 = self._weight([3, 3, 16, 16], "layer_2", reuse=reuse)
             b2 = self._bias([16], "layer_2", reuse=reuse)
             c2 = tf.nn.conv2d(m1, w2, strides=[1,1,1,1], padding='SAME') + b2
-            r2 = tf.nn.relu(c2)
-            m2 = tf.nn.max_pool(r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+            self.r2 = tf.nn.relu(c2)
+
+            m2, self.m2_argmax = tf.nn.max_pool_with_argmax(r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
             dim = m2.get_shape()[1].value * m2.get_shape()[2].value * m2.get_shape()[3].value
             flat = tf.reshape(m2, [-1, dim])
@@ -81,7 +83,7 @@ class JointVAE_CNN(JointVAE):
 
             Z_2d = tf.reshape(a2, [-1, _h, _w, 16])
 
-            unpool_1 = self._unpool(Z_2d, "layer_3_unpool", reuse=reuse)
+            unpool_1 = self._unpool(Z_2d, self.m2_argmax, tf.shape(self.r2), "layer_3_unpool", reuse=reuse)
         
             r1 = tf.nn.relu(unpool_1)
 
@@ -90,7 +92,7 @@ class JointVAE_CNN(JointVAE):
             c1 = tf.nn.conv2d_transpose(r1, w1, output_shape=[b_size,_h*2,_w*2,16], 
                 strides=[1,1,1,1], padding='SAME') + b1
 
-            unpool_2 = self._unpool(c1, "layer_4_unpool", reuse=reuse)
+            unpool_2 = self._unpool(c1, self.m1_argmax, tf.shape(self.r1), "layer_4_unpool", reuse=reuse)
 
             r2 = tf.nn.relu(unpool_2)
 
@@ -128,24 +130,40 @@ class JointVAE_CNN(JointVAE):
             return b
 
 
-    def _unpool(self, value, scope, reuse):
-        """
-        Function taken from https://github.com/tensorflow/tensorflow/issues/2169
+    def unravel_argmax(self, argmax, shape):
+        output_list = []
+        output_list.append(argmax // (shape[2] * shape[3]))
+        output_list.append(argmax % (shape[2] * shape[3]) // shape[3])
+        return tf.pack(output_list)
 
-        N-dimensional version of the unpooling operation from
-        https://www.robots.ox.ac.uk/~vgg/rg/papers/Dosovitskiy_Learning_to_Generate_2015_CVPR_paper.pdf
 
-        :param value: A Tensor of shape [b, d0, d1, ..., dn, ch]
-        :return: A Tensor of shape [b, 2*d0, 2*d1, ..., 2*dn, ch]
-        """
+    def _unpool(self, input, encoded_argmax, out_shape, scope, reuse):
+        
         with tf.variable_scope(scope, reuse=reuse):
-            sh = value.get_shape().as_list()
-            dim = len(sh[1:-1])
-            out = (tf.reshape(value, [-1] + sh[-dim:]))
-            for i in range(dim, 0, -1):
-                out = tf.concat(i, [out, tf.zeros_like(out)])
-            out_size = [-1] + [s * 2 for s in sh[1:-1]] + [sh[-1]]
-            out = tf.reshape(out, out_size, name=scope)
-            
-            return out
+            argmax = self.unravel_argmax(encoded_argmax, tf.to_int64(out_shape))
+            output = tf.zeros([out_shape[1], out_shape[2], out_shape[3]])
 
+            height = tf.shape(output)[0]
+            width = tf.shape(output)[1]
+            channels = tf.shape(output)[2]
+
+            t1 = tf.to_int64(tf.range(channels))
+            t1 = tf.tile(t1, [((width + 1) // 2) * ((height + 1) // 2)])
+            t1 = tf.reshape(t1, [-1, channels])
+            t1 = tf.transpose(t1, perm=[1, 0])
+            t1 = tf.reshape(t1, [channels, (height + 1) // 2, (width + 1) // 2, 1])
+
+            t2 = tf.squeeze(argmax)
+            t2 = tf.pack((t2[0], t2[1]), axis=0)
+            t2 = tf.transpose(t2, perm=[3, 1, 2, 0])
+
+            t = tf.concat(3, [t2, t1])
+            indices = tf.reshape(t, [((height + 1) // 2) * ((width + 1) // 2) * channels, 3])
+
+            x1 = tf.squeeze(input)
+            x1 = tf.reshape(x1, [-1, channels])
+            x1 = tf.transpose(x1, perm=[1, 0])
+            values = tf.reshape(x1, [-1])
+
+            delta = tf.SparseTensor(indices, values, tf.to_int64(tf.shape(output)))
+            return tf.expand_dims(tf.sparse_tensor_to_dense(tf.sparse_reorder(delta)), 0)
