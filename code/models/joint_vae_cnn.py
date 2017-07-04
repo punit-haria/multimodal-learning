@@ -32,32 +32,24 @@ class JointVAE_CNN(JointVAE):
         with tf.variable_scope(scope, reuse=reuse):
             X_image = tf.reshape(X, [-1, self._h, self._w, self._nc])
 
-            w1 = self._weight([3, 3, self._nc, 16], "layer_1", reuse=reuse)
-            b1 = self._bias([16], "layer_1", reuse=reuse)
-            c1 = tf.nn.conv2d(X_image, w1, strides=[1,1,1,1], padding='SAME') + b1
-            self.r1 = tf.nn.relu(c1)
+            a1 = self._conv_pool(X_image, self._nc, 16, scope="layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
 
-            m1, self.m1_argmax = tf.nn.max_pool_with_argmax(self.r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+            a2 = self._conv_pool(h1, 16, 16, scope="layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
 
-            w2 = self._weight([3, 3, 16, 16], "layer_2", reuse=reuse)
-            b2 = self._bias([16], "layer_2", reuse=reuse)
-            c2 = tf.nn.conv2d(m1, w2, strides=[1,1,1,1], padding='SAME') + b2
-            self.r2 = tf.nn.relu(c2)
-
-            m2, self.m2_argmax = tf.nn.max_pool_with_argmax(self.r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
-
-            dim = m2.get_shape()[1].value * m2.get_shape()[2].value * m2.get_shape()[3].value
-            flat = tf.reshape(m2, [-1, dim])
+            dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
+            flat = tf.reshape(h2, [-1, dim])
 
             fc = self._affine_map(flat, dim, n_hidden, "fc_layer", reuse=reuse)
-            r3 = tf.nn.relu(fc)
+            h3 = tf.nn.relu(fc)
 
-            z_mean = self._affine_map(r3, n_hidden, z_dim, "mean_layer", reuse=reuse)
+            z_mean = self._affine_map(h3, n_hidden, z_dim, "mean_layer", reuse=reuse)
 
-            a3_var = self._affine_map(r3, n_hidden, z_dim, "var_layer", reuse=reuse)
+            a3_var = self._affine_map(h3, n_hidden, z_dim, "var_layer", reuse=reuse)
             z_var = tf.nn.softplus(a3_var)
 
-            return z_mean, z_var, r3, [r1, m1_argmax, r2, m2_argmax]
+            return z_mean, z_var, h3
 
 
     def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
@@ -83,87 +75,116 @@ class JointVAE_CNN(JointVAE):
 
             Z_2d = tf.reshape(a2, [-1, _h, _w, 16])
 
-            unpool_1 = self._unpool(Z_2d, self.m2_argmax, tf.shape(self.r2), "layer_3_unpool", reuse=reuse)
-        
-            r1 = tf.nn.relu(unpool_1)
+            r1 = tf.nn.relu(Z_2d)
+            up_1 = self._unpool(r1, scope="unpool_1", reuse=reuse)
+            d1 = self._deconv(up_1, 16, 16, scope="deconv_1", reuse=reuse)
 
-            w1 = self._weight([3, 3, 16, 16], "layer_3", reuse=reuse)
-            b1 = self._bias([16], "layer_3", reuse=reuse)
-            c1 = tf.nn.conv2d_transpose(r1, w1, output_shape=[b_size,_h*2,_w*2,16], 
-                strides=[1,1,1,1], padding='SAME') + b1
+            r2 = tf.nn.relu(d1)
+            up_2 = self._unpool(r2, scope="unpool_2", reuse=reuse)
+            d2 = self._deconv(up_2, 16, self._nc, scope="deconv_2", reuse=reuse)
 
-            unpool_2 = self._unpool(c1, self.m1_argmax, tf.shape(self.r1), "layer_4_unpool", reuse=reuse)
-
-            r2 = tf.nn.relu(unpool_2)
-
-            w2 = self._weight([3, 3, self._nc, 16], "layer_4", reuse=reuse)
-            b2 = self._bias([self._nc], "layer_4", reuse=reuse)
-            c2 = tf.nn.conv2d_transpose(r2, w2, output_shape=[b_size, self._h, self._w, self._nc], 
-                strides=[1,1,1,1], padding='SAME') + b2
-
-            x_logits = tf.reshape(c2, [-1, self._h * self._w * self._nc])
+            x_logits = tf.reshape(d2, [-1, self._h * self._w * self._nc])
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
 
     
-    def _weight(self, shape, scope, reuse):
+    def _conv_pool(self, input, in_ch, out_ch, scope, reuse):
+        """
+        Combined convolution and pooling layer.
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            C = self._conv(X_image, self._nc, 16, scope="conv", reuse=reuse)
+            return self._pool(C, scope="pool", reuse=reuse)
+
+
+    def _conv(self, input, in_ch, out_ch, scope, reuse):
+        """
+        Convolution layer
+
+        in_ch/out_ch: number of input and output channels
+        """ 
+        with tf.variable_scope(scope, reuse=reuse):
+            w = self._weight([3, 3, in_ch, out_ch], reuse)
+            b = self._bias([out_ch])
+
+            return tf.nn.conv2d(input, w, strides=[1,1,1,1], padding='SAME') + b
+
+
+    def _pool(self, input, scope, reuse):
+        """
+        Max pooling layer
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            return tf.nn.max_pool(input, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
+
+    def _deconv(self, input, in_ch, out_ch, scope, reuse):
+        """
+        Deconvolution layer, i.e. transpose of convolution
+
+        in_ch/out_ch: number of input and output channels
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            batch_size = tf.shape(input)[0]
+            h = tf.shape(input)[1]
+            w = tf.shape(input)[2]
+
+            w = self._weight([3, 3, out_ch, in_ch], reuse)
+            b = self._bias([out_ch])
+            out_shape = [batch_size, h, w, out_ch]
+
+            return tf.nn.conv2d_transpose(input, w, output_shape=out_shape, 
+                strides=[1,1,1,1], padding='SAME') + b
+
+
+    def _unpool(self, X, factor=2, scope="depool", reuse=False):
+        """
+        Taken from https://gist.github.com/kastnerkyle/f3f67424adda343fef40 
+
+        luke perforated upsample
+        http://www.brml.org/uploads/tx_sibibtex/281.pdf
+        """
+        with tf.variable_scope(scope, reuse=reuse):
+            output_shape = [
+                X.shape[1],
+                X.shape[2]*factor,
+                X.shape[3]*factor
+            ]
+            stride = X.shape[2]
+            offset = X.shape[3]
+            in_dim = stride * offset
+            out_dim = in_dim * factor * factor
+
+            upsamp_matrix = T.zeros((in_dim, out_dim))
+            rows = T.arange(in_dim)
+            cols = rows*factor + (rows/stride * factor * offset)
+            upsamp_matrix = T.set_subtensor(upsamp_matrix[rows, cols], 1.)
+
+            flat = T.reshape(X, (X.shape[0], output_shape[0], X.shape[2] * X.shape[3]))
+
+            up_flat = T.dot(flat, upsamp_matrix)
+            upsamp = T.reshape(up_flat, (X.shape[0], output_shape[0],
+                                        output_shape[1], output_shape[2]))
+
+            return upsamp
+
+
+    def _weight(self, shape, reuse):
         """
         Initialize weight variable.
         """
-        with tf.variable_scope(scope, reuse=reuse):
-            W = tf.get_variable("W", shape=shape, 
-                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+        W = tf.get_variable("W", shape=shape, 
+            initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
 
-            if not reuse:
-                tf.summary.histogram("weight", W)
+        if not reuse:
+            tf.summary.histogram("weight", W)
             
-            return W
+        return W
 
 
-    def _bias(self, shape, scope, reuse):
+    def _bias(self, shape):
         """
         Initialize bias variable. 
         """
-        with tf.variable_scope(scope, reuse=reuse):
-            b = tf.get_variable("b", shape=shape, initializer=tf.constant_initializer(0.1))
-            return b
-
-
-    def unravel_argmax(self, argmax, shape):
-        output_list = []
-        output_list.append(argmax // (shape[2] * shape[3]))
-        output_list.append(argmax % (shape[2] * shape[3]) // shape[3])
-        return tf.stack(output_list)
-
-
-    def _unpool(self, input, encoded_argmax, out_shape, scope, reuse):
-        
-        with tf.variable_scope(scope, reuse=reuse):
-            argmax = self.unravel_argmax(encoded_argmax, tf.to_int64(out_shape))
-            output = tf.zeros([out_shape[1], out_shape[2], out_shape[3]])
-
-            height = tf.shape(output)[0]
-            width = tf.shape(output)[1]
-            channels = tf.shape(output)[2]
-
-            t1 = tf.to_int64(tf.range(channels))
-            t1 = tf.tile(t1, [((width + 1) // 2) * ((height + 1) // 2)])
-            t1 = tf.reshape(t1, [-1, channels])
-            t1 = tf.transpose(t1, perm=[1, 0])
-            t1 = tf.reshape(t1, [channels, (height + 1) // 2, (width + 1) // 2, 1])
-
-            t2 = tf.squeeze(argmax)
-            t2 = tf.stack((t2[0], t2[1]), axis=0)
-            t2 = tf.transpose(t2, perm=[3, 1, 2, 0])
-
-            t = tf.concat([t2, t1], 3)
-            indices = tf.reshape(t, [((height + 1) // 2) * ((width + 1) // 2) * channels, 3])
-
-            x1 = tf.squeeze(input)
-            x1 = tf.reshape(x1, [-1, channels])
-            x1 = tf.transpose(x1, perm=[1, 0])
-            values = tf.reshape(x1, [-1])
-
-            delta = tf.SparseTensor(indices, values, tf.to_int64(tf.shape(output)))
-            return tf.expand_dims(tf.sparse_tensor_to_dense(tf.sparse_reorder(delta)), 0)
+        return tf.get_variable("b", shape=shape, initializer=tf.constant_initializer(0.1))
