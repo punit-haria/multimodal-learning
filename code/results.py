@@ -1,5 +1,6 @@
 import numpy as np
 from collections import defaultdict
+import pickle
 
 
 class Series(Object):
@@ -106,7 +107,23 @@ class Results(object):
             self.runs[run_name].add_to_series(series_name, i, value)
         
 
+    @staticmethod
+    def save(result, file_path=None):
+        """
+        Static method to save Results.
+        """
+        if file_path is None:
+            file_path = '../results/'+result.name+'.pickle'
+        with open(file_path, 'wb') as f:
+            pickle.dump(result, f, pickle.HIGHEST_PROTOCOL)
 
 
-
-
+    @staticmethod
+    def load(result_name, file_path=None):
+        """
+        Static method to load Results.
+        """
+        if file_path is None:
+            file_path = '../results/'
+        with open(file_path+result_name, 'rb') as f:
+            return pickle.load(f)

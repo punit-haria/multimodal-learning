@@ -42,8 +42,8 @@ models = {
 strategies = ['share_weights', 'constrain']
 
 
-# save experimental results
-res = Results()
+# store experimental results
+results = Results('experiments_mnist')
 
 
 for name, model in models.items():

@@ -2,3 +2,4 @@ data/*
 logs/*
 saved_models/*
 plots/*
+results/*
