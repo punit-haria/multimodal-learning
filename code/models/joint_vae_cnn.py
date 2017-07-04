@@ -76,12 +76,16 @@ class JointVAE_CNN(JointVAE):
             Z_2d = tf.reshape(a2, [-1, _h, _w, 16])
 
             r1 = tf.nn.relu(Z_2d)
-            up_1 = self._unpool(r1, scope="unpool_1", reuse=reuse)
+
+            up_1 = self._depool(r1, scope="depool_1", reuse=reuse)
             d1 = self._deconv(up_1, 16, 16, scope="deconv_1", reuse=reuse)
+            d1.set_shape([None, 14, 14, 16])
 
             r2 = tf.nn.relu(d1)
-            up_2 = self._unpool(r2, scope="unpool_2", reuse=reuse)
+
+            up_2 = self._depool(r2, scope="depool_2", reuse=reuse)
             d2 = self._deconv(up_2, 16, self._nc, scope="deconv_2", reuse=reuse)
+            d2.set_shape([None, 28, 28, self._nc])
 
             x_logits = tf.reshape(d2, [-1, self._h * self._w * self._nc])
             x_probs = tf.nn.sigmoid(x_logits)
@@ -94,7 +98,7 @@ class JointVAE_CNN(JointVAE):
         Combined convolution and pooling layer.
         """
         with tf.variable_scope(scope, reuse=reuse):
-            C = self._conv(X_image, self._nc, 16, scope="conv", reuse=reuse)
+            C = self._conv(input, in_ch, out_ch, scope="conv", reuse=reuse)
             return self._pool(C, scope="pool", reuse=reuse)
 
 
@@ -127,18 +131,19 @@ class JointVAE_CNN(JointVAE):
         """
         with tf.variable_scope(scope, reuse=reuse):
             batch_size = tf.shape(input)[0]
-            h = tf.shape(input)[1]
-            w = tf.shape(input)[2]
+            height = input.get_shape()[1].value 
+            width = input.get_shape()[2].value 
 
-            w = self._weight([3, 3, out_ch, in_ch], reuse)
+            W = self._weight([3, 3, out_ch, in_ch], reuse)
             b = self._bias([out_ch])
-            out_shape = [batch_size, h, w, out_ch]
+            
+            out_shape = [batch_size, height, width, out_ch]
 
-            return tf.nn.conv2d_transpose(input, w, output_shape=out_shape, 
+            return tf.nn.conv2d_transpose(input, W, output_shape=out_shape, 
                 strides=[1,1,1,1], padding='SAME') + b
 
 
-    def _unpool(self, X, factor=2, scope="depool", reuse=False):
+    def _depool(self, input, factor=2, scope="depool", reuse=False):
         """
         Taken from https://gist.github.com/kastnerkyle/f3f67424adda343fef40 
 
@@ -146,28 +151,31 @@ class JointVAE_CNN(JointVAE):
         http://www.brml.org/uploads/tx_sibibtex/281.pdf
         """
         with tf.variable_scope(scope, reuse=reuse):
-            output_shape = [
-                X.shape[1],
-                X.shape[2]*factor,
-                X.shape[3]*factor
-            ]
-            stride = X.shape[2]
-            offset = X.shape[3]
+
+            X = tf.transpose(input, perm=[0,3,1,2])
+
+            batch_size = tf.shape(X)[0]
+            channels = X.get_shape()[1].value
+            height = X.get_shape()[2].value
+            width = X.get_shape()[3].value
+
+            stride = height
+            offset = width
             in_dim = stride * offset
             out_dim = in_dim * factor * factor
 
-            upsamp_matrix = T.zeros((in_dim, out_dim))
-            rows = T.arange(in_dim)
-            cols = rows*factor + (rows/stride * factor * offset)
-            upsamp_matrix = T.set_subtensor(upsamp_matrix[rows, cols], 1.)
+            upsamp_matrix = tf.get_variable(name='upsamp', shape=[in_dim, out_dim], 
+                initializer=tf.zeros_initializer(), trainable=False)
+            step = factor * factor
+            upsamp_matrix = upsamp_matrix[:, ::step].assign(tf.ones(tf.shape(upsamp_matrix[:, ::step])))
 
-            flat = T.reshape(X, (X.shape[0], output_shape[0], X.shape[2] * X.shape[3]))
+            flat = tf.reshape(X, [batch_size, channels, height * width]) 
+            up_flat = tf.tensordot(flat, upsamp_matrix, axes=1)
 
-            up_flat = T.dot(flat, upsamp_matrix)
-            upsamp = T.reshape(up_flat, (X.shape[0], output_shape[0],
-                                        output_shape[1], output_shape[2]))
+            upsamp = tf.reshape(up_flat, [batch_size, channels,
+                                        height * factor, width * factor])
 
-            return upsamp
+            return tf.transpose(upsamp, perm=[0,2,3,1])
 
 
     def _weight(self, shape, reuse):
