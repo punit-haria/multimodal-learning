@@ -43,8 +43,8 @@ models = {
 for name, model in models.items():
     name = 'mnist_colored_'+name
 
-    #vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
     print("Loading model...", flush=True)
+    #vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
     vae = model((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, strategy, name=name)
 
     # train model

@@ -53,11 +53,7 @@ class JointVAE(base.Model):
             n_x = tf.shape(self.X)[0]
             n_y = tf.shape(self.Y)[0]
             n_xy = tf.shape(self.X_joint)[0]
-
-            # tensor dictionary
-            tdict = {
-                'X' : {}, 'Y' : {}, 'Xj' : {}, 'Yj' : {}, 'XY' : {}
-            }
+            
 
             # q(z|x) and q(z|y) parameters
             self.zx_mean, self.zx_var, _ = self._q_z_x(self.X, self.x_dim, self.z_dim, 

@@ -9,6 +9,7 @@ from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Ave
 from models.joint_vae_cnn import JointVAE_CNN 
 
 from data import JointMNIST as MNIST
+from results import Results
 
 
 ### PARAMETERS ###
@@ -24,6 +25,7 @@ x_dim = 392
 y_dim = 392         
 image_dim = (14,28,1)          
 train_steps = 10000
+plot_steps = 2500
 
 # data set
 mnist = MNIST(n_paired)
@@ -38,6 +40,10 @@ models = {
 
 # strategies
 strategies = ['share_weights', 'constrain']
+
+
+# save experimental results
+res = Results()
 
 
 for name, model in models.items():
@@ -65,8 +71,8 @@ for name, model in models.items():
                 vae.test(X, Y, X, Y)
 
                 # plot reconstructions 
-                if i % 2000 == 0:
-                    n_examples = 8
+                if i % plot_steps == 0:
+                    n_examples = 18
 
                     Xb = X[0:n_examples]
                     Yb = Y[0:n_examples]
@@ -88,9 +94,9 @@ for name, model in models.items():
                     imagesY = np.reshape(imagesY, [-1,28,28])
                     imagesXY = np.reshape(imagesXY, [-1,28,28])
 
-                    plot.plot_images(imagesX, 4, 4, '../plots/'+model_name+'__reconstruct_X_'+str(i))
-                    plot.plot_images(imagesY, 4, 4, '../plots/'+model_name+'__reconstruct_Y_'+str(i))
-                    plot.plot_images(imagesXY, 4, 4, '../plots/'+model_name+'__reconstruct_XY_'+str(i))
+                    plot.plot_images(imagesX, 6, 6, '../plots/'+model_name+'__reconstruct_X_'+str(i))
+                    plot.plot_images(imagesY, 6, 6, '../plots/'+model_name+'__reconstruct_Y_'+str(i))
+                    plot.plot_images(imagesXY, 6, 6, '../plots/'+model_name+'__reconstruct_XY_'+str(i))
 
 
         # save final model
