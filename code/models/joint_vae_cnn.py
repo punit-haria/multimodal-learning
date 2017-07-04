@@ -32,11 +32,11 @@ class JointVAE_CNN(JointVAE):
         with tf.variable_scope(scope, reuse=reuse):
             X_image = tf.reshape(X, [-1, self._h, self._w, self._nc])
 
-            a1 = self._conv_pool(X_image, self._nc, 16, scope="layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
+            h1 = self._conv_pool(X_image, self._nc, 16, scope="layer_1", reuse=reuse)
+            #h1 = tf.nn.relu(a1)
 
-            a2 = self._conv_pool(h1, 16, 16, scope="layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            h2 = self._conv_pool(h1, 16, 16, scope="layer_2", reuse=reuse)
+            #h2 = tf.nn.relu(a2)
 
             dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
             flat = tf.reshape(h2, [-1, dim])
@@ -72,22 +72,21 @@ class JointVAE_CNN(JointVAE):
             _w = int(self._w / 4)
 
             a2 = self._affine_map(h1, n_hidden, _h*_w*16, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
 
-            Z_2d = tf.reshape(a2, [-1, _h, _w, 16])
+            Z_2d = tf.reshape(h2, [-1, _h, _w, 16])
 
-            r1 = tf.nn.relu(Z_2d)
-
-            up_1 = self._depool(r1, scope="depool_1", reuse=reuse)
+            up_1 = self._depool(Z_2d, scope="depool_1", reuse=reuse)
             d1 = self._deconv(up_1, 16, 16, scope="deconv_1", reuse=reuse)
             d1.set_shape([None, 14, 14, 16])
 
-            r2 = tf.nn.relu(d1)
-
-            up_2 = self._depool(r2, scope="depool_2", reuse=reuse)
+            up_2 = self._depool(d1, scope="depool_2", reuse=reuse)
             d2 = self._deconv(up_2, 16, self._nc, scope="deconv_2", reuse=reuse)
             d2.set_shape([None, 28, 28, self._nc])
 
-            x_logits = tf.reshape(d2, [-1, self._h * self._w * self._nc])
+            r = tf.nn.relu6(d2)
+
+            x_logits = tf.reshape(r, [-1, self._h * self._w * self._nc])
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs
