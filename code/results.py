@@ -8,67 +8,105 @@ class Series(Object):
     """  
     def __init__(self, name):
         self.name = name
-        self._steps = []
-        self.series = {}
+        self.steps = []
+        self.series = []
+        self.sdict = {}
 
     def add(self, i, value):
-        self._steps.append(i)
-        self.series[i] = value        
+        self.steps.append(i)
+        self.series.append(value)
+        self.sdict[i] = value
+
+    def get(self, ):
+        return self.steps, self.series
 
     def get(self, i):
-        return self.series[i]
+        return self.sdict[i]
     
-
-
-class Mappings(Object):
-    """
-    Simple class to store sequence of structured mappings.
-    """  
-    def __init__(self, name):
-        self.name = name
-        self._steps = []
-        self.initial = {}
-        self.mapping = {}
-
-    def add(self, i, initial, mapping):
-        self._steps.append(i)
-        self.initial[i] = value   
-        self.mapping[i] = mapping     
-
-    def get(self, i):
-        return self.initial[i], self.mapping[i]
-
 
 
 class Trial(object):
     """
-    Class to store experimental results, including training and test performance,
+    Class to store a single run's results, including training and test performance,
     as well as image reconstructions and translations. 
     """
-    def __init__(self, experiment_name, series_names, mapping_names):
+    def __init__(self, experiment_name):
         """
         experiment_name: name of experiment
-        series_names: list of names of time series to track
-        mapping_names: list of names of mapping sequences to track
         """
         self.name = experiment_name
-        self.series_names = series_names
-        self.mapping_names = mapping_names
-        
-        # manage time series results
         self.series = {}
-        for s in self.series_names:
-            self.series[s] = Series(s)
+        
 
-        # manage mapping sequences
-        self.mappings = {}
-        for m in self.mapping_names:
-            self.mappings[m] = Mappings(m)
+    def add_to_series(self, name, i, value):
+        """
+        Add to series (which may not yet exist). 
+
+        name: series name
+        i: time step
+        value: value to add
+        """    
+        if name in self.series:
+            self.series[name].add(i, value)
+        else:
+            s = Series(name)
+            s.add(i, value)
+            self.series[name] = s
+    
+
+    def get_series(self, name, i=None):
+        """
+        Get series by name. Returns entire series if i is None, and single point if i is given.
+        """
+        if i is None:
+            return self.series[name].get()
+        else:
+            return self.series[name].get(i)
         
-        
-    def get_series(self, )
 
 
 class Results(object):
-    def __init__(self,):
-        pass
+    """
+    Class to store experimental results across multiple runs.
+    """
+    def __init__(self, name):
+        """
+        name: experiment name
+        """
+        self.name = name
+        self.runs = {}
+        self.last = None  # tracks last added Trial
+
+
+    def create_run(self, name):
+        """
+        name: name of the new run
+        """
+        t = Trial(name)
+        self.runs[name] = t
+        self.last = t
+
+    
+    def add(self, i, value, series_name, run_name=None):
+        """
+        Adds timestep and value to a given series in a given trial. If trial name is None, then 
+        add to last added trial.
+
+        i: time step
+        value: value to add
+        series_name: name of time series 
+        run_name: name of experimental run (i.e. trial)
+        """
+        if run_name is None:
+            if self.last is None:
+                raise Exception("Result object is empty. No runs to add to. Create a run first.")
+            else:
+                self.last.add_to_series(series_name, i, value)
+        else:
+            self.runs[run_name].add_to_series(series_name, i, value)
+        
+
+
+
+
+
