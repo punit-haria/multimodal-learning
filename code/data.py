@@ -23,14 +23,17 @@ class MNIST(object):
         # load from saved if exists
         self._path = '../data/mnist_binary.npz'
         if os.path.isfile(self._path):
+            print("Loading data..", flush=True)
             data = np.load(self._path)
             self.Xtr = data['arr_0']
             self.ytr = data['arr_1']
             self.Xte = data['arr_2']
             self.yte = data['arr_3']
+            print("Data loaded.", flush=True)
 
         # binarize mnist 
         else:
+            print("Binarizing data...", flush=True)
             self.train_path = '../data/mnist_train'
             self.test_path = '../data/mnist_test'
             self.train_labels_path = self.train_path+'_labels'
@@ -42,7 +45,9 @@ class MNIST(object):
             self.Xtr = self._binarize(self.Xtr)
             self.Xte = self._binarize(self.Xte)
 
+            print("Saving data...", flush=True)
             np.savez(self._path, self.Xtr, self.ytr, self.Xte, self.yte)
+            print("Saved.", flush=True)
 
 
     def sample(self, dtype='train', batch_size=100):

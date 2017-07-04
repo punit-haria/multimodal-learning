@@ -16,8 +16,8 @@ class JointVAE_CNN(JointVAE):
         """
         self._h, self._w, self._nc = input_2d_dim
 
-        super(JointVAE_CNN, self).__init__(input_dim, latent_dim, learning_rate, n_hidden_units, joint_strategy,
-            name, session, log_dir, model_dir)
+        super(JointVAE_CNN, self).__init__(input_dim, latent_dim, learning_rate, n_hidden_units,        
+            joint_strategy, name, session, log_dir, model_dir)
 
 
     def _q_z_x(self, X, x_dim, z_dim, n_hidden, scope, reuse):
@@ -37,14 +37,14 @@ class JointVAE_CNN(JointVAE):
             c1 = tf.nn.conv2d(X_image, w1, strides=[1,1,1,1], padding='SAME') + b1
             self.r1 = tf.nn.relu(c1)
 
-            m1, self.m1_argmax = tf.nn.max_pool_with_argmax(r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+            m1, self.m1_argmax = tf.nn.max_pool_with_argmax(self.r1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
             w2 = self._weight([3, 3, 16, 16], "layer_2", reuse=reuse)
             b2 = self._bias([16], "layer_2", reuse=reuse)
             c2 = tf.nn.conv2d(m1, w2, strides=[1,1,1,1], padding='SAME') + b2
             self.r2 = tf.nn.relu(c2)
 
-            m2, self.m2_argmax = tf.nn.max_pool_with_argmax(r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+            m2, self.m2_argmax = tf.nn.max_pool_with_argmax(self.r2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
             dim = m2.get_shape()[1].value * m2.get_shape()[2].value * m2.get_shape()[3].value
             flat = tf.reshape(m2, [-1, dim])
@@ -134,7 +134,7 @@ class JointVAE_CNN(JointVAE):
         output_list = []
         output_list.append(argmax // (shape[2] * shape[3]))
         output_list.append(argmax % (shape[2] * shape[3]) // shape[3])
-        return tf.pack(output_list)
+        return tf.stack(output_list)
 
 
     def _unpool(self, input, encoded_argmax, out_shape, scope, reuse):
@@ -154,10 +154,10 @@ class JointVAE_CNN(JointVAE):
             t1 = tf.reshape(t1, [channels, (height + 1) // 2, (width + 1) // 2, 1])
 
             t2 = tf.squeeze(argmax)
-            t2 = tf.pack((t2[0], t2[1]), axis=0)
+            t2 = tf.stack((t2[0], t2[1]), axis=0)
             t2 = tf.transpose(t2, perm=[3, 1, 2, 0])
 
-            t = tf.concat(3, [t2, t1])
+            t = tf.concat([t2, t1], 3)
             indices = tf.reshape(t, [((height + 1) // 2) * ((width + 1) // 2) * channels, 3])
 
             x1 = tf.squeeze(input)
