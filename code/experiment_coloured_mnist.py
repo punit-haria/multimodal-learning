@@ -5,7 +5,7 @@ import plot
 import utils
 
 from models.joint_vae import JointVAE 
-from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Average
+from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Average, JointVAE_Deeper
 from models.joint_vae_cnn import JointVAE_CNN 
 
 from data import ColouredMNIST as MNIST
@@ -24,7 +24,7 @@ strategy = 'constrain'
 x_dim = 784 * 3
 y_dim = 784 * 3     
 image_dim = (28,28,3)          
-train_steps = 5000
+train_steps = 50000
 
 # data set
 print("Reading data...", flush=True)
@@ -35,8 +35,9 @@ models = {
 #   'joint_vae_Lxy': JointVAE,
 #    'joint_vae_Txy_Lx': JointVAE_XtoY,
 #    'joint_vae_Tyx_Ly': JointVAE_YtoX,
-#    'joint_vae_average': JointVAE_Average,
-    'joint_vae_cnn': JointVAE_CNN
+#   'joint_vae_average': JointVAE_Average,
+#    'joint_vae_cnn': JointVAE_CNN
+'joint_vae_Lxy' : JointVAE_Deeper
 }
 
 
@@ -44,8 +45,8 @@ for name, model in models.items():
     name = 'mnist_colored_'+name
 
     print("Loading model...", flush=True)
-    #vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
-    vae = model((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, strategy, name=name)
+    vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strategy, name=name)
+    #vae = model((x_dim, y_dim), z_dim, image_dim, learning_rate, n_hidden, strategy, name=name)
 
     # train model
     print("Training...", flush=True)
