@@ -90,9 +90,9 @@ class JointVAE_Deeper(JointVAE):
             h1 = tf.nn.relu(a1)
             a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
-            a3 = self._affine_map(h2, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            a3 = self._affine_map(h2, n_hidden, n_hidden, "layer_3", reuse=reuse)
             h3 = tf.nn.relu(a3)
-            a4 = self._affine_map(h3, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            a4 = self._affine_map(h3, n_hidden, n_hidden, "layer_4", reuse=reuse)
             h4 = tf.nn.relu(a4)
 
             z_mean = self._affine_map(h4, n_hidden, z_dim, "mean_layer", reuse=reuse)
@@ -117,12 +117,12 @@ class JointVAE_Deeper(JointVAE):
             h1 = tf.nn.relu(a1)
             a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
-            a3 = self._affine_map(h2, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            a3 = self._affine_map(h2, n_hidden, n_hidden, "layer_3", reuse=reuse)
             h3 = tf.nn.relu(a3)
-            a4 = self._affine_map(h3, n_hidden, n_hidden, "layer_2", reuse=reuse)
+            a4 = self._affine_map(h3, n_hidden, n_hidden, "layer_4", reuse=reuse)
             h4 = tf.nn.relu(a4)
 
-            x_logits = self._affine_map(h4, n_hidden, x_dim, "layer_3", reuse=reuse)
+            x_logits = self._affine_map(h4, n_hidden, x_dim, "prob_layer", reuse=reuse)
             x_probs = tf.nn.sigmoid(x_logits)
 
             return x_logits, x_probs

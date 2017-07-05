@@ -24,7 +24,7 @@ strategy = 'constrain'
 x_dim = 784 * 3
 y_dim = 784 * 3     
 image_dim = (28,28,3)          
-train_steps = 50000
+train_steps = 100000
 plot_steps = 10000
 
 # data set
