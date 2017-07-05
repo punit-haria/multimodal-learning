@@ -25,6 +25,7 @@ x_dim = 784 * 3
 y_dim = 784 * 3     
 image_dim = (28,28,3)          
 train_steps = 50000
+plot_steps = 10000
 
 # data set
 print("Reading data...", flush=True)
@@ -58,7 +59,7 @@ for name, model in models.items():
         # training step
         vae.train(X, Y, X_joint, Y_joint)
 
-        if i % 25 == 0:
+        if i % 50 == 0:
             print("At iteration ", i, flush=True)
 
             # test minibatch
@@ -68,7 +69,7 @@ for name, model in models.items():
             vae.test(X, Y, X, Y)
 
             # plot reconstructions 
-            if i % 500 == 0:
+            if i % plot_steps == 0:
                 n_examples = 18
 
                 Xb = X[0:n_examples]
