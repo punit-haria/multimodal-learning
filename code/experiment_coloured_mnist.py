@@ -14,7 +14,7 @@ print("Starting experiment...", flush=True)
 
 ### PARAMETERS ###
 
-learning_rate = 0.002                           
+learning_rate = 0.001                           
 batch_size = 250  
 z_dim = 50                
 n_hidden = 200
@@ -24,8 +24,8 @@ strategy = 'constrain'
 x_dim = 784 * 3
 y_dim = 784 * 3     
 image_dim = (28,28,3)          
-train_steps = 100000
-plot_steps = 10000
+train_steps = 10000
+plot_steps = 500
 
 # data set
 print("Reading data...", flush=True)

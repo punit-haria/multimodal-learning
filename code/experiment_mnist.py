@@ -101,24 +101,7 @@ for name, model in models.items():
                     results.add(i, (Yb, XY), "YtoX")
                     results.add(i, (Yb, YY), "YtoY")
                     results.add(i, (Xb,Yb,XXY,YXY), "XjYjtoXY")
-
-                    '''
-                    fromX = np.concatenate((XX,YX), axis=1)
-                    fromY = np.concatenate((XY,YY), axis=1)
-                    fromXY = np.concatenate((XXY,YXY), axis=1)
-
-                    imagesX = np.concatenate((XYb, fromX), axis=0)
-                    imagesY = np.concatenate((XYb, fromY), axis=0)
-                    imagesXY = np.concatenate((XYb, fromXY), axis=0)
-
-                    imagesX = np.reshape(imagesX, [-1,28,28])
-                    imagesY = np.reshape(imagesY, [-1,28,28])
-                    imagesXY = np.reshape(imagesXY, [-1,28,28])
-
-                    plot.plot_images(imagesX, 6, 6, '../plots/'+model_name+'__reconstruct_X_'+str(i))
-                    plot.plot_images(imagesY, 6, 6, '../plots/'+model_name+'__reconstruct_Y_'+str(i))
-                    plot.plot_images(imagesXY, 6, 6, '../plots/'+model_name+'__reconstruct_XY_'+str(i))
-                    '''
+                    
 
         # save final model
         vae.save_state()
