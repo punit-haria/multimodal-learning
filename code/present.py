@@ -62,12 +62,13 @@ labels = [
 ]
 
 n_images = 18
+time_step = 10000
 
 for i,t in enumerate(trials):
     run = res.get(t)
 
-    Xb, XX = run.get_series('XtoX', i=10000)
-    _, XY = run.get_series('XtoY', i=10000)
+    Xb, XX = run.get_series('XtoX', i=time_step)
+    _, XY = run.get_series('XtoY', i=time_step)
     Yb = np.ones(Xb.shape)  * 0.5
 
     recons = np.concatenate((XX,XY), axis=1)
@@ -79,8 +80,8 @@ for i,t in enumerate(trials):
 
     #----
 
-    Yb, YX = run.get_series('YtoX', i=10000)
-    _, YY = run.get_series('YtoY', i=10000)
+    Yb, YX = run.get_series('YtoX', i=time_step)
+    _, YY = run.get_series('YtoY', i=time_step)
     Xb = np.ones(Xb.shape)  * 0.5
 
     recons = np.concatenate((YX,YY), axis=1)
@@ -92,7 +93,7 @@ for i,t in enumerate(trials):
 
     #----
 
-    Xb, Yb, X, Y = run.get_series('XjYjtoXY', i=10000)
+    Xb, Yb, X, Y = run.get_series('XjYjtoXY', i=time_step)
 
     recons = np.concatenate((X,Y), axis=1)
     origs = np.concatenate((Xb,Yb), axis=1)
