@@ -3,7 +3,7 @@ from collections import defaultdict
 import pickle
 
 
-class Series(Object):
+class Series(object):
     """
     Simple class to store single time series.
     """  
@@ -18,12 +18,12 @@ class Series(Object):
         self.series.append(value)
         self.sdict[i] = value
 
-    def get(self, ):
-        return self.steps, self.series
+    def get(self, i=None):
+        if i is None:
+            return self.steps, self.series
+        else:
+            return self.sdict[i]
 
-    def get(self, i):
-        return self.sdict[i]
-    
 
 
 class Trial(object):
@@ -57,13 +57,13 @@ class Trial(object):
 
     def get_series(self, name, i=None):
         """
-        Get series by name. Returns entire series if i is None, and single point if i is given.
+        Get series by name. Returns entire series or return single point.
         """
         if i is None:
             return self.series[name].get()
         else:
             return self.series[name].get(i)
-        
+
 
 
 class Results(object):
@@ -87,6 +87,13 @@ class Results(object):
         self.runs[name] = t
         self.last = t
 
+
+    def get(self, run_name):
+        """
+        Get experimental run by name.
+        """
+        return self.runs[run_name]
+    
     
     def add(self, i, value, series_name, run_name=None):
         """
@@ -105,7 +112,7 @@ class Results(object):
                 self.last.add_to_series(series_name, i, value)
         else:
             self.runs[run_name].add_to_series(series_name, i, value)
-        
+
 
     @staticmethod
     def save(result, file_path=None):

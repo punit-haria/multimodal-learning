@@ -53,7 +53,7 @@ class JointVAE(base.Model):
             n_x = tf.shape(self.X)[0]
             n_y = tf.shape(self.Y)[0]
             n_xy = tf.shape(self.X_joint)[0]
-            
+
 
             # q(z|x) and q(z|y) parameters
             self.zx_mean, self.zx_var, _ = self._q_z_x(self.X, self.x_dim, self.z_dim, 
@@ -346,10 +346,13 @@ class JointVAE(base.Model):
         write: indicates whether to write summary
         """
         feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        summary, _ = self.sess.run([self.summary, self.step], feed_dict=feed)
+        outputs = [self.summary, self.step, self.x_bound, self.y_bound, self.xy_bound]
+        summary, _, x, y, xy = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
+
+        return x, y, xy
     
 
     def test(self, X, Y, X_joint, Y_joint):
@@ -357,10 +360,11 @@ class JointVAE(base.Model):
         Writes summary for test data.
         """
         feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        loss, summary = self.sess.run([self.loss, self.summary], feed_dict=feed)
+        outputs = [self.summary, self.x_bound, self.y_bound, self.xy_bound]
+        summary, x, y, xy = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return loss
+        return x, y, xy
 
 
     def translate_x(self, X):
