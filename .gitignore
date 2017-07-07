@@ -3,3 +3,6 @@ logs/*
 saved_models/*
 plots/*
 results/*
+azure_logs/*
+azure_plots/*
+google_logs/*

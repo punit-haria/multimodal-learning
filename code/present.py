@@ -34,7 +34,7 @@ for i,t in enumerate(trials):
     steps, series = run.get_series('test_xy_bound')
     plt.plot(steps, series, label=labels[i], linewidth=2)
 
-plt.axis([0,6000,-200,-100])
+plt.axis([0,10000,-200,-100])
 plt.legend(loc='lower right', fontsize=18)
 plt.xlabel('Training Steps (minibatch = 250)')
 plt.ylabel('Variational Bound')
@@ -62,42 +62,49 @@ labels = [
 ]
 
 n_images = 18
-time_step = 10000
+time_steps = [2500, 5000, 7500, 10000, 20000, 40000, 65000, 80000, 100000]
 
-for i,t in enumerate(trials):
-    run = res.get(t)
+for time_step in time_steps:
+    
+    print("Timestep: ", time_step, flush=True)
 
-    Xb, XX = run.get_series('XtoX', i=time_step)
-    _, XY = run.get_series('XtoY', i=time_step)
-    Yb = np.ones(Xb.shape)  * 0.5
+    for i,t in enumerate(trials):
+        print("At trial: ", t, flush=True)
 
-    recons = np.concatenate((XX,XY), axis=1)
-    origs = np.concatenate((Xb,Yb), axis=1)
-    images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
-    images = np.reshape(images, [-1,28,28])
+        run = res.get(t)
 
-    plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_X.png')
+        Xb, XX = run.get_series('XtoX', i=time_step)
+        _, XY = run.get_series('XtoY', i=time_step)
+        Yb = np.ones(Xb.shape)  * 0.5
 
-    #----
+        recons = np.concatenate((XX,XY), axis=1)
+        origs = np.concatenate((Xb,Yb), axis=1)
+        images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
+        images = np.reshape(images, [-1,28,28])
 
-    Yb, YX = run.get_series('YtoX', i=time_step)
-    _, YY = run.get_series('YtoY', i=time_step)
-    Xb = np.ones(Xb.shape)  * 0.5
+        plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_X_'+str(time_step)+'.png')
 
-    recons = np.concatenate((YX,YY), axis=1)
-    origs = np.concatenate((Xb,Yb), axis=1)
-    images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
-    images = np.reshape(images, [-1,28,28])
+        #----
 
-    plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_Y.png')
+        Yb, YX = run.get_series('YtoX', i=time_step)
+        _, YY = run.get_series('YtoY', i=time_step)
+        Xb = np.ones(Xb.shape)  * 0.5
 
-    #----
+        recons = np.concatenate((YX,YY), axis=1)
+        origs = np.concatenate((Xb,Yb), axis=1)
+        images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
+        images = np.reshape(images, [-1,28,28])
 
-    Xb, Yb, X, Y = run.get_series('XjYjtoXY', i=time_step)
+        plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_Y_'+str(time_step)+'.png')
 
-    recons = np.concatenate((X,Y), axis=1)
-    origs = np.concatenate((Xb,Yb), axis=1)
-    images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
-    images = np.reshape(images, [-1,28,28])
+        #----
 
-    plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_XandY.png')
+        Xb, Yb, X, Y = run.get_series('XjYjtoXY', i=time_step)
+
+        recons = np.concatenate((X,Y), axis=1)
+        origs = np.concatenate((Xb,Yb), axis=1)
+        images = np.concatenate((origs[0:n_images],recons[0:n_images]), axis=0)
+        images = np.reshape(images, [-1,28,28])
+
+        plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_reconstruct_from_XandY_'+str(time_step)+'.png')
+
