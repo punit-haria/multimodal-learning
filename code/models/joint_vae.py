@@ -1,441 +1,306 @@
 import tensorflow as tf
-from models import modules as mod
-from models import base 
+from models import base
 
 
-class JointVAE(base.Model):
-    
-    def __init__(self, input_dim, latent_dim, learning_rate, n_hidden_units=200, joint_strategy='constrain',
-        name="JointVAE", session=None, log_dir=None, model_dir=None):
-        """
-        Joint Variational Auto-Encoder using marginal and joint variational bounds,
-        and constraining q(z|x,y) = q(z|x) q(z|y). Encoders and decoders are fully-
-        connected networks with 2 hidden layers. 
+class VAE(base.Model):
+    """
+    Variational Auto-Encoder with 2 inputs
 
-        input_dim: tuple of output variable dimensions (assumes 2 output variables)
-        latent_dim: latent space dimensionality
-        learning_rate: optimization learning rate
-        n_hidden_units: number of hidden units in each layer of encoder and decoder
-        joint_strategy: strategy for computing q(z|x,y)
-        """
-        # data and latent dimensionality
-        self.x_dim, self.y_dim = input_dim
-        self.z_dim = latent_dim
-        self.lr = learning_rate
-        self.n_hidden = n_hidden_units
-        self.strategy = joint_strategy
+    Arguments:
+    n_x1, n_x2, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_units: number of hidden units in fully-connected layers
+    """
+    def __init__(self, arguments, name="VAE", session=None, log_dir=None, model_dir=None):
+        # dictionary of model/inference arguments
+        self.args = arguments
 
-        # counter for number of executed training steps
+        # training steps counter
         self.n_steps = 0
 
         # base class constructor (initializes model)
-        super(JointVAE, self).__init__(name=name, session=session, 
-            log_dir=log_dir, model_dir=model_dir)
+        super(VAE, self).__init__(name=name, session=session, log_dir=log_dir, model_dir=model_dir)
 
 
     def _initialize(self,):
-        """
-        Initialize model components. This method is invoked in object constructor. 
-        """
-        with tf.variable_scope(self.name, reuse=False):  
-            
-            # paired inputs X and Y
-            self.X_joint = tf.placeholder(tf.float32, [None, self.x_dim], name='X_joint')
-            self.Y_joint = tf.placeholder(tf.float32, [None, self.y_dim], name='Y_joint')
+        # input/latent dimensions
+        n_x1 = self.args['n_x1']
+        n_x2 = self.args['n_x2']
+        n_z = self.args['n_z']
 
-            # X input with missing Y
-            self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+        # input placeholders
+        self.x1 = tf.placeholder(tf.float32, [None, n_x1], name='x1')
+        self.x2 = tf.placeholder(tf.float32, [None, n_x2], name='x2')
+        self.x1p = tf.placeholder(tf.float32, [None, n_x1], name='x1_paired')
+        self.x2p = tf.placeholder(tf.float32, [None, n_x2], name='x2_paired')
 
-            # Y input with missing X
-            self.Y = tf.placeholder(tf.float32, [None, self.y_dim], name='Y')
+        # encoders
+        self.z1_mu, self.z1_var = self._encoder(self.x1, n_x1, n_z, scope='x1_enc', reuse=False)
+        self.z2_mu, self.z2_var = self._encoder(self.x2, n_x2, n_z, scope='x2_enc', reuse=False)
+        z1p_mu, z1p_var = self._encoder(self.x1p, n_x1, n_z, scope='x1_enc', reuse=True)
+        z2p_mu, z2p_var = self._encoder(self.x2p, n_x2, n_z, scope='x2_enc', reuse=True)
 
-            # batch sizes for each case
-            n_x = tf.shape(self.X)[0]
-            n_y = tf.shape(self.Y)[0]
-            n_xy = tf.shape(self.X_joint)[0]
+        # constrain paired encoder
+        self.z12_mu, self.z12_var = self._constrain(z1p_mu, z1p_var, z2p_mu, z2p_var, scope='x1x2_enc', reuse=False)
 
+        # samples
+        self.z1 = self._sample(self.z1_mu, self.z1_var, n_z, scope='sample_1', reuse=False)
+        self.z2 = self._sample(self.z2_mu, self.z2_var, n_z, scope='sample_2', reuse=False)
+        self.z12 = self._sample(self.z12_mu, self.z12_var, n_z, scope='sample_12', reuse=False)
+        self.z1p = self._sample(z1p_mu, z1p_var, n_z, scope='sample_1p', reuse=False)
+        self.z2p = self._sample(z2p_mu, z2p_var, n_z, scope='sample_2p', reuse=False)
 
-            # q(z|x) and q(z|y) parameters
-            self.zx_mean, self.zx_var, _ = self._q_z_x(self.X, self.x_dim, self.z_dim, 
-                self.n_hidden, scope='q_z_x', reuse=False)
-            self.zy_mean, self.zy_var, _ = self._q_z_x(self.Y, self.y_dim, self.z_dim, 
-                self.n_hidden, scope='q_z_y', reuse=False)
+        # decoders
+        self.rx1_1, self.rx1_1_probs = self._decoder(self.z1, n_z, n_x1, scope='x1_dec', reuse=False)
+        self.rx1_2, self.rx1_2_probs = self._decoder(self.z2, n_z, n_x1, scope='x1_dec', reuse=True)
+        self.rx2_1, self.rx2_1_probs = self._decoder(self.z1, n_z, n_x2, scope='x2_dec', reuse=False)
+        self.rx2_2, self.rx2_2_probs = self._decoder(self.z2, n_z, n_x2, scope='x2_dec', reuse=True)
+        self.rx1p, self.rx1p_probs = self._decoder(self.z12, n_z, n_x1, scope='x1_dec', reuse=True)
+        self.rx2p, self.rx2p_probs = self._decoder(self.z12, n_z, n_x2, scope='x2_dec', reuse=True)
 
-            # q(z|x,y) parameters, defined using constraint q(z|x,y) = q(z|x) q(z|y)
-            self.zxm, self.zxv, self.hzxj = self._q_z_x(self.X_joint, self.x_dim, self.z_dim, 
-                self.n_hidden, scope='q_z_x', reuse=True)
-            self.zym, self.zyv, self.hzyj = self._q_z_x(self.Y_joint, self.y_dim, self.z_dim, 
-                self.n_hidden, scope='q_z_y', reuse=True)
-            self.zxy_mean, self.zxy_var = self._joint_moments(self.strategy, scope='q_z_given_x_y', reuse=False)
+        # additional decoders
+        self.rx1p_1, self.rx1p_1_probs = self._decoder(self.z1p, n_z, n_x1, scope='x1_dec', reuse=True)
+        self.rx1p_2, self.rx1p_2_probs = self._decoder(self.z2p, n_z, n_x1, scope='x1_dec', reuse=True)
+        self.rx2p_1, self.rx2p_1_probs = self._decoder(self.z1p, n_z, n_x2, scope='x2_dec', reuse=True)
+        self.rx2p_2, self.rx2p_2_probs = self._decoder(self.z2p, n_z, n_x2, scope='x2_dec', reuse=True)
 
-            # sampling 
-            self.Zx = self._sample(self.zx_mean, self.zx_var, self.z_dim, n_x)
-            self.Zy = self._sample(self.zy_mean, self.zy_var, self.z_dim, n_y)
-            self.Zxy = self._sample(self.zxy_mean, self.zxy_var, self.z_dim, n_xy)
-            self.Zxj = self._sample(self.zxm, self.zxv, self.z_dim, n_xy)
-            self.Zyj = self._sample(self.zym, self.zyv, self.z_dim, n_xy)
+        # choice of variational bounds
+        self.l_x1 = self._marginal_bound(self.rx1_1, self.x1, self.z1_mu, self.z1_var, scope='marginal_x1')
+        self.l_x2 = self._marginal_bound(self.rx2_2, self.x2, self.z2_mu, self.z2_var, scope='marginal_x2')
+        self.t_x1 = self._translation_bound(self.rx1p_2, self.x1p, scope='translate_to_x1')
+        self.t_x2 = self._translation_bound(self.rx2p_1, self.x2p, scope='translate_to_x2')
+        self.l_x1x2 = self._joint_bound(self.rx1p, self.x1p, self.rx2p, self.x2p, self.z12_mu, self.z12_var)
 
-            # p(x|z) parameters (X only)
-            self.xy_logits, self.xy_probs = self._p_x_z(self.Zy, self.z_dim, self.x_dim, self.n_hidden,
-                scope='p_x_z', reuse=False)
-            self.xx_logits, self.xx_probs = self._p_x_z(self.Zx, self.z_dim, self.x_dim, self.n_hidden,
-                scope='p_x_z', reuse=True)
-            
-            # p(y|z) parameters (Y only)
-            self.yx_logits, self.yx_probs = self._p_x_z(self.Zx, self.z_dim, self.y_dim, self.n_hidden,
-                scope='p_y_z', reuse=False)
-            self.yy_logits, self.yy_probs = self._p_x_z(self.Zy, self.z_dim, self.y_dim, self.n_hidden,
-                scope='p_y_z', reuse=True)
-            
-            # joint p(x|z) and p(y|z) parameters
-            self.x_logits_joint, self.x_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.x_dim, 
-                self.n_hidden, scope='p_x_z', reuse=True)
-            self.y_logits_joint, self.y_probs_joint = self._p_x_z(self.Zxy, self.z_dim, self.y_dim, 
-                self.n_hidden, scope='p_y_z', reuse=True)
+        # bound
+        self.bound = tf.reduce_mean(self.l_x1x2, axis=0)
 
-            # p(x|z) parameters (X and Y observed)
-            self.xxj_logits, self.xxj_probs = self._p_x_z(self.Zxj, self.z_dim, self.x_dim, 
-                self.n_hidden, scope='p_x_z', reuse=True)
-            self.xyj_logits, self.xyj_probs = self._p_x_z(self.Zyj, self.z_dim, self.x_dim, 
-                self.n_hidden, scope='p_x_z', reuse=True)
+        # loss function
+        self.loss = -self.bound
 
-            # p(y|z) parameters (X and Y observed)
-            self.yyj_logits, self.yyj_probs = self._p_x_z(self.Zyj, self.z_dim, self.y_dim, self.n_hidden,
-                scope='p_y_z', reuse=True)
-            self.yxj_logits, self.yxj_probs = self._p_x_z(self.Zxj, self.z_dim, self.y_dim, self.n_hidden,
-                scope='p_y_z', reuse=True)
-
-            # bound: X observed, Y missing
-            x_marg = self._marginal_bound(self.xx_logits, self.X, self.zx_mean, self.zx_var,
-                scope='marginal_x')
-            self.x_bound = tf.reduce_mean(x_marg, axis=0)
-            
-            # bound: Y observed, X missing
-            y_marg = self._marginal_bound(self.yy_logits, self.Y, self.zy_mean, self.zy_var,
-                scope='marginal_y')
-            self.y_bound = tf.reduce_mean(y_marg, axis=0)
-
-            # bound: X,Y observed
-            self.xy_bound = self._joint_bound(scope='joint_bound')
-
-            # loss
-            self.loss = -(self.x_bound + self.y_bound + self.xy_bound)
-
-            # optimization step
-            self.step = self._optimizer(self.loss, self.lr)
+        # optimizer
+        self.step = self._optimizer(self.loss)
 
 
-    def _q_z_x(self, X, x_dim, z_dim, n_hidden, scope, reuse):
-        """
-        Inference network.
+    def _encoder(self, x, n_x, n_z, scope, reuse):
 
-        X: input data
-        x_dim: dimensionality of input space 
-        z_dim: dimensionality of latent space
-        n_hidden: number of hidden units in each layer
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = self._affine_map(X, x_dim, n_hidden, "layer_1", reuse=reuse)
+            n_units = self.args['n_units']
+
+            a1 = self._linear(x, n_x, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
+
+            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            z_mean = self._affine_map(h2, n_hidden, z_dim, "mean_layer", reuse=reuse)
+            mean = self._linear(h2, n_units, n_z, "mean_layer", reuse=reuse)
 
-            a3_var = self._affine_map(h2, n_hidden, z_dim, "var_layer", reuse=reuse)
-            z_var = tf.nn.softplus(a3_var)
+            a3 = self._linear(h2, n_units, n_z, "var_layer", reuse=reuse)
+            var = tf.nn.softplus(a3)
 
-            return z_mean, z_var, h2
+            return mean, var
 
 
-    def _p_x_z(self, Z, z_dim, x_dim, n_hidden, scope, reuse):
-        """
-        Generator network. 
+    def _decoder(self, z, n_z, n_x, scope, reuse):
 
-        Z: latent data
-        z_dim: dimensionality of latent space
-        x_dim: dimensionality of output space
-        n_hidden: number of hidden units in each layer
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            a1 = self._affine_map(Z, z_dim, n_hidden, "layer_1", reuse=reuse)
+            n_units = self.args['n_units']
+
+            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
-            a2 = self._affine_map(h1, n_hidden, n_hidden, "layer_2", reuse=reuse)
+
+            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.relu(a2)
 
-            x_logits = self._affine_map(h2, n_hidden, x_dim, "layer_3", reuse=reuse)
-            x_probs = tf.nn.sigmoid(x_logits)
+            logits = self._linear(h2, n_units, n_x, "layer_3", reuse=reuse)
+            probs = tf.nn.sigmoid(logits)
 
-            return x_logits, x_probs
-
-
-    def _joint_moments(self, strategy, scope='q_z_given_x_y', reuse=False):
-        """
-        Computes moments of q(z|x,y) by either constraining q(z|x,y) = q(z|x) q(z|y), or
-        by sharing weights of the networks q(z|x) and q(z|y).
-
-        strategy: 'constrain', 'share_weights'
-        """
-        if strategy == 'constrain':
-            return self._constrain_joint(self.zxm, self.zxv, self.zym, self.zyv, scope, reuse)
-        elif strategy == 'share_weights':
-            return self._share_weights(self.hzxj, self.hzyj, self.z_dim, self.n_hidden, scope, reuse)
-        else:
-            raise Exception("Strategy not implemented...")
+            return logits, probs
 
 
-    def _sample(self, z_mean, z_var, z_dim, n_samples, scope='sampling', reuse=False):
-        """
-        Monte Carlo sampling from Gaussian distribution. Takes a single sample for each observation.
-        """
+    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
+
         with tf.variable_scope(scope, reuse=reuse):
-            z_std = tf.sqrt(z_var)
-            eps = tf.random_normal((n_samples, z_dim))
-            z = z_mean + tf.multiply(z_std, eps)
-            return z
-    
-
-    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound'):
-        """
-        Variational bound on marginal distribution p(x). 
-        """
-        with tf.variable_scope(scope, reuse=False):
-            # reconstruction
-            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, 
+            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
                 labels=labels), axis=1)
 
-            # penalty
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
 
-            # total bound
             return l1 + l2
-        
-
-    def _joint_bound(self, scope='joint_bound'):
-        """
-        Variational bound on joint distribution p(x,y).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            return tf.reduce_mean(self._Lxy(), axis=0)
-
-    
-    def _optimizer(self, loss, learning_rate):
-        """
-        Optimization method.
-        """
-        with tf.variable_scope("optimization", reuse=False):
-            step = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
-            return step
 
 
-    def _summaries(self,):
-        """
-        Merge summary variables for visualizing with tensorboard.
-        """
-        with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('x_bound', self.x_bound)
-            tf.summary.scalar('y_bound', self.y_bound)
-            tf.summary.scalar('joint_bound', self.xy_bound)
-            return tf.summary.merge_all()
+    def _joint_bound(self, x1_logits, x1_labels, x2_logits, x2_labels, mean, var, scope='joint_bound', reuse=False):
 
+        with tf.variable_scope(scope, reuse=reuse):
 
-    def _Lxy(self, scope='L_xy'):
-        """
-        Variational bound on joint distribution using inference distribution q(z|x,y).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            # reconstructions
-            l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits_joint, 
-                labels=self.X_joint), axis=1)
-            l1_y = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.y_logits_joint, 
-                labels=self.Y_joint), axis=1)
+            l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=x1_logits, labels=x1_labels), axis=1)
+            l1_y = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=x2_logits, labels=x2_labels), axis=1)
 
-            # penalty on q(z|x,y)
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.zxy_var) - tf.square(self.zxy_mean) - self.zxy_var, axis=1)
+            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
 
-            # total bound
             return l1_x + l1_y + l2
 
 
-    def _Txy(self, scope='T_xy'):
-        """
-        Variational bound on p(y|x) using inference distribution q(z|x).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.yxj_logits, 
-                labels=self.Y_joint), axis=1)
+    def _translation_bound(self, logits, labels, scope='translation_bound', reuse=False):
 
-    
-    def _Tyx(self, scope='T_yx'):
-        """
-        Variational bound on p(x|y) using inference distribution q(z|y).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.xyj_logits, 
-                labels=self.X_joint), axis=1)
-
-
-    def _Lx(self, scope='L_x'):
-        """
-        Variational bound on p(x) using inference distribution q(z|x).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            return self._marginal_bound(self.xxj_logits, self.X_joint, self.zxm, self.zxv)
-
-    
-    def _Ly(self, scope='L_y'):
-        """
-        Variational bound on p(y) using inference distribution q(z|y).
-        """
-        with tf.variable_scope(scope, reuse=False):
-            return self._marginal_bound(self.yyj_logits, self.Y_joint, self.zym, self.zyv)
-
-    
-    def _constrain_joint(self, x_mean, x_var, y_mean, y_var, scope, reuse):
-        """
-        Computes mean and variance of q(z|x,y) as the product of the two Gaussians q(z|x) and q(z|y).
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            xv_inv = tf.reciprocal(x_var)
-            yv_inv = tf.reciprocal(y_var)
-            xy_var = tf.reciprocal(xv_inv + yv_inv)
-            xx = tf.multiply(xv_inv, x_mean)
-            yy = tf.multiply(yv_inv, y_mean)
-            xy_mean = tf.multiply(xy_var, xx + yy)
+            return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
 
-            return xy_mean, xy_var
 
-    
-    def _share_weights(self, hx, hy, z_dim, n_hidden, scope, reuse):
-        """
-        Computes mean and variance of q(z|x,y) by sharing weights of inference networks q(z|x) and q(z|y).
+    def _optimizer(self, loss, scope='optimizer', reuse=False):
 
-        hx: final hidden layer of q(z|x)
-        hy: final hidden layer of q(z|y)
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            h = tf.concat([hx, hy], axis=1)
+            lr = self.args['learning_rate']
+            step = tf.train.RMSPropOptimizer(lr).minimize(loss)
 
-            z_mean = self._affine_map(h, n_hidden*2, z_dim, "joint_mean_layer", reuse=reuse)
+            return step
 
-            a_var = self._affine_map(h, n_hidden*2, z_dim, "joint_var_layer", reuse=reuse)
-            z_var = tf.nn.softplus(a_var)
 
-            return z_mean, z_var
+    def _sample(self, z_mu, z_var, n_z, scope='sampling', reuse=False):
 
-    
-    def _affine_map(self, input, in_dim, out_dim, scope, reuse):
-        """
-        Affine transform.
-
-        input: input tensor
-        in_dim/out_dim: input and output dimensions
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            W = tf.get_variable("W", shape=[in_dim,out_dim], 
-                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
-            b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
+            n_samples = tf.shape(z_mu)[0]
 
-            return tf.matmul(input,W) + b
+            z_std = tf.sqrt(z_var)
+            eps = tf.random_normal((n_samples, n_z))
+            z = z_mu + tf.multiply(z_std, eps)
+
+            return z
 
 
-    def train(self, X, Y, X_joint, Y_joint, write=True):
+    def _constrain(self, x1_mu, x1_var, x2_mu, x2_var, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            # Computes mean and variance of the product of two Gaussians.
+            x1v_inv = tf.reciprocal(x1_var)
+            x2v_inv = tf.reciprocal(x2_var)
+            x12_var = tf.reciprocal(x1v_inv + x2v_inv)
+            xx = tf.multiply(x1v_inv, x1_mu)
+            yy = tf.multiply(x2v_inv, x2_mu)
+            x12_mu = tf.multiply(x12_var, xx + yy)
+
+            return x12_mu, x12_var
+
+
+    def _summaries(self,):
+
+        with tf.variable_scope("summaries", reuse=False):
+            tf.summary.scalar('L_x1', self.l_x1)
+            tf.summary.scalar('L_x2', self.l_x2)
+            tf.summary.scalar('L_x1x2', self.l_x1x2)
+
+            return tf.summary.merge_all()
+
+
+    def _linear(self, x, n_x, n_w, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            w = tf.get_variable("W", shape=[n_x,n_w],
+                                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+            b = tf.get_variable("b", shape=[n_w], initializer=tf.constant_initializer(0.1))
+
+            return tf.matmul(x, w) + b
+
+
+    def train(self, x1, x2, x1_pairs, x2_pairs, write=True):
         """
-        Executes single training step.
-
-        write: indicates whether to write summary
+        Performs single training step.
         """
-        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        outputs = [self.summary, self.step, self.x_bound, self.y_bound, self.xy_bound]
-        summary, _, x, y, xy = self.sess.run(outputs, feed_dict=feed)
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
+        outputs = [self.summary, self.step, self.l_x1, self.l_x2, self.l_x1x2]
+
+        summary, _, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
 
-        return x, y, xy
-    
+        return x1_bound, x2_bound, joint_bound
 
-    def test(self, X, Y, X_joint, Y_joint):
+
+    def test(self, x1, x2, x1_pairs, x2_pairs):
         """
-        Writes summary for test data.
+        Computes variational bounds on test data.
         """
-        feed = {self.X: X, self.Y: Y, self.X_joint: X_joint, self.Y_joint: Y_joint}
-        outputs = [self.summary, self.x_bound, self.y_bound, self.xy_bound]
-        summary, x, y, xy = self.sess.run(outputs, feed_dict=feed)
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
+        outputs = [self.summary, self.l_x1, self.l_x2, self.l_x1x2]
+
+        summary, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return x, y, xy
+        return x1_bound, x2_bound, joint_bound
 
 
-    def translate_x(self, X):
+    def translate_x1(self, x1):
         """
-        Translate X to Y.
+        Translate x1 to x2.
         """
-        feed = {self.X: X}
-        return self.sess.run(self.yx_probs, feed_dict=feed)
+        feed = {self.x1: x1}
+        return self.sess.run(self.rx2_1_probs, feed_dict=feed)
 
 
-    def translate_y(self, Y):
+    def translate_x2(self, x2):
         """
-        Translate Y to X.
+        Translate x2 to x1.
         """
-        feed = {self.Y: Y}
-        return self.sess.run(self.xy_probs, feed_dict=feed)
+        feed = {self.x2: x2}
+        return self.sess.run(self.rx1_2_probs, feed_dict=feed)
 
 
-    def reconstruct(self, X, Y):
+    def reconstruct(self, x1, x2):
         """
-        Reconstruct X and Y, given paired input X and Y.
+        Reconstruct x1, x2 given both x1 and x2.
         """
-        feed = {self.X_joint: X, self.Y_joint: Y}
-        return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
+        feed = {self.x1p: x1, self.x2p: x2}
+        return self.sess.run([self.rx1p_probs, self.rx2p_probs], feed_dict=feed)
 
 
-    def reconstruct_from_x(self, X):
+    def reconstruct_from_x1(self, x1):
         """
-        Reconstruct X and Y, given only X. 
+        Reconstruct x1, x2 given only x1.
         """
-        feed = {self.X: X}
-        return self.sess.run([self.xx_probs, self.yx_probs], feed_dict=feed)
+        feed = {self.x1: x1}
+        return self.sess.run([self.rx1_1_probs, self.rx2_1_probs], feed_dict=feed)
 
 
-    def reconstruct_from_y(self, Y):
+    def reconstruct_from_x2(self, x2):
         """
-        Reconstruct X and Y, given only Y.
+        Reconstruct x1, x2 given only x2.
         """
-        feed = {self.Y: Y}
-        return self.sess.run([self.xy_probs, self.yy_probs], feed_dict=feed)
+        feed = {self.x2: x2}
+        return self.sess.run([self.rx1_2_probs, self.rx2_2_probs], feed_dict=feed)
 
 
-    def encode_x(self, X):
+    def encode_x1(self, x1):
         """
-        Computes mean of latent space, given input X.  
+        Encode x1.
         """
-        feed = {self.X: X}
-        return self.sess.run(self.zx_mean, feed_dict=feed)
+        feed = {self.x1: x1}
+        return self.sess.run(self.z1_mu, feed_dict=feed)
 
 
-    def encode_y(self, Y):
+    def encode_x2(self, x2):
         """
-        Computes mean of latent space, given input X.  
+        Encode x2.
         """
-        feed = {self.Y: Y}
-        return self.sess.run(self.zy_mean, feed_dict=feed)
+        feed = {self.x2: x2}
+        return self.sess.run(self.z2_mu, feed_dict=feed)
 
 
-    def encode_xy(self, X, Y):
+    def encode(self, x1, x2):
         """
-        Computes mean of latent space, given input X.  
+        Encode x1 and x2 jointly.
         """
-        feed = {self.X_joint: X, self.Y_joint: Y}
-        return self.sess.run(self.zxy_mean, feed_dict=feed)
+        feed = {self.x1p: x1, self.x2p: x2}
+        return self.sess.run(self.z12_mu, feed_dict=feed)
 
-    
-    def decode(self, Z):
+
+    def decode(self, z):
         """
-        Computes bernoulli probabilities in data space, given input Z.
+        Decodes x1 and x2.
         """
-        feed = {self.Zxy: Z}
-        return self.sess.run([self.x_probs_joint, self.y_probs_joint], feed_dict=feed)
+        feed = {self.z12: z}
+        return self.sess.run([self.rx1p_probs, self.rx2p_probs], feed_dict=feed)
+
 
 

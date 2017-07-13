@@ -1,15 +1,10 @@
+import numpy as np
 import tensorflow as tf
-import numpy as np 
-
-import utils
-
-from models.joint_vae import JointVAE 
+from models.joint_vae import JointVAE
 from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Average
-from models.joint_vae_cnn import JointVAE_CNN 
 
 from data import JointMNIST as MNIST
 from results import Results
-
 
 ### PARAMETERS ###
 

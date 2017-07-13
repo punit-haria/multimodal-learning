@@ -1,13 +1,8 @@
+import numpy as np
 import tensorflow as tf
-import numpy as np 
+from models.joint_vae_extended import JointVAE_Deeper
 
 import plot
-import utils
-
-from models.joint_vae import JointVAE 
-from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Average, JointVAE_Deeper
-from models.joint_vae_cnn import JointVAE_CNN 
-
 from data import ColouredMNIST as MNIST
 
 print("Starting experiment...", flush=True)

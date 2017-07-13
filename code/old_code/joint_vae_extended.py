@@ -1,7 +1,6 @@
 import tensorflow as tf
-from models import modules as mod
-from models.joint_vae import JointVAE
 
+from old_code.joint_vae import JointVAE
 
 
 class JointVAE_XtoY(JointVAE):
