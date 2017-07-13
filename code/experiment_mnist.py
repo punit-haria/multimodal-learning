@@ -1,110 +1,95 @@
 import numpy as np
 import tensorflow as tf
-from models.joint_vae import JointVAE
-from models.joint_vae_extended import JointVAE_XtoY, JointVAE_YtoX, JointVAE_Average
 
+from models.joint_vae import VAE, VAETranslate
 from data import JointMNIST as MNIST
+
 from results import Results
 
-### PARAMETERS ###
 
-learning_rate = 0.002                           
-batch_size = 250  
-z_dim = 50                
-n_hidden = 200
-n_paired = 1000
-strategy = 'constrain'
-
-x_dim = 392 
-y_dim = 392         
-image_dim = (14,28,1)          
-train_steps = 100000
-plot_steps = 2500
-
-# data set
-mnist = MNIST(n_paired)
-
-# models
-models = {
-    'joint_vae_Lxy': JointVAE,
-    'joint_vae_Txy_Lx': JointVAE_XtoY,
-    'joint_vae_Tyx_Ly': JointVAE_YtoX,
-    'joint_vae_average': JointVAE_Average
+# parameters
+parms = {
+    'n_z': 50,
+    'n_x1': 392,
+    'n_x2': 392,
+    'n_units': 200,
+    'learning_rate': 0.002,
+    'batch_size': 250,
+    'n_paired': 1000,
+    'image_dim': (14, 28, 1),
+    'train_steps': 10000,
+    'plot_steps': 2500
 }
 
-# strategies
-strategies = ['share_weights', 'constrain']
+models = {
+    'vae_joint': VAE,
+    'vae_translate': VAETranslate
+}
+
+# data
+mnist = MNIST(parms['n_paired'])
 
 
 # store experimental results
 results = Results('experiment_mnist')
 
-
 for name, model in models.items():
-    for strat in strategies:
-        
-        # load model
-        model_name = name + '__' + strat
-        vae = model((x_dim, y_dim), z_dim, learning_rate, n_hidden, strat, name=model_name)
 
-        # store next experimental run
-        results.create_run(model_name)
+    # load model
+    vae = model(arguments=parms, name=name)
 
-        # train model
-        for i in range(train_steps+1):
-            
-            # random minibatch 
-            X, Y, X_joint, Y_joint = mnist.sample('train', batch_size)
+    # store next experimental run
+    results.create_run(name)
 
-            # training step
-            x_bound, y_bound, xy_bound = vae.train(X, Y, X_joint, Y_joint)
+    # train model
+    for i in range(parms['train_steps'] + 1):
+
+        # random minibatch
+        x1, x2, x1p, x2p = mnist.sample(parms['batch_size'], dtype='train', binarize=True)
+
+        # training step
+        bound = vae.train(x1, x2, x1p, x2p)
+
+        # save results
+        results.add(i, bound, "training_lower_bound")
+
+        if i % 25 == 0:
+            print("At iteration ", i)
+
+            # test minibatch
+            x1, x2 = mnist.sample(1000, dtype='test', binarize=False)
+
+            # test model
+            bound = vae.test(x1, x2, x1, x2)
 
             # save results
-            results.add(i, x_bound, "train_x_bound")
-            results.add(i, y_bound, "train_y_bound")
-            results.add(i, xy_bound, "train_xy_bound")
+            results.add(i, bound, "test_lower_bound")
 
-            if i % 25 == 0:
-                print("At iteration ", i)
+            # plot reconstructions
+            if i % parms['plot_steps'] == 0:
+                n_examples = 100
 
-                # test minibatch
-                X, Y = mnist.sample('test', 1000)
+                x1b = x1[0:n_examples]
+                x2b = x2[0:n_examples]
+                x12b = np.concatenate((x1b, x2b), axis=1)
 
-                # test model
-                x_bound, y_bound, xy_bound = vae.test(X, Y, X, Y)
+                rx1_1, rx2_1 = vae.reconstruct_from_x1(x1b)
+                rx1_2, rx2_2 = vae.reconstruct_from_x2(x2b)
+                rx1p, rx2p = vae.reconstruct(x1b, x2b)
 
-                # save results
-                results.add(i, x_bound, "test_x_bound")
-                results.add(i, y_bound, "test_y_bound")
-                results.add(i, xy_bound, "test_xy_bound")
+                # save reconstructions
+                results.add(i, (x1b, rx1_1), "x1_1")
+                results.add(i, (x1b, rx2_1), "x2_1")
+                results.add(i, (x2b, rx1_2), "x1_2")
+                results.add(i, (x2b, rx2_2), "x2_2")
+                results.add(i, (x1b, x2b, rx1p, rx2p), "x12p")
 
-                # plot reconstructions 
-                if i % plot_steps == 0:
-                    n_examples = 100
+    # save final model
+    vae.save_state()
 
-                    Xb = X[0:n_examples]
-                    Yb = Y[0:n_examples]
-                    XYb = np.concatenate((Xb,Yb), axis=1)
-
-                    XX, YX = vae.reconstruct_from_x(Xb)
-                    XY, YY = vae.reconstruct_from_y(Yb)
-                    XXY, YXY = vae.reconstruct(Xb,Yb)
-
-                    # save reconstructions
-                    results.add(i, (Xb, XX), "XtoX")
-                    results.add(i, (Xb, YX), "XtoY")
-                    results.add(i, (Yb, XY), "YtoX")
-                    results.add(i, (Yb, YY), "YtoY")
-                    results.add(i, (Xb,Yb,XXY,YXY), "XjYjtoXY")
-                    
-
-        # save final model
-        vae.save_state()
-
-        # reset tensorflow session and graph
-        vae.sess.close()
-        tf.reset_default_graph()
-
+    # reset tensorflow session and graph
+    vae.sess.close()
+    tf.reset_default_graph()
 
 # save experimental results
 Results.save(results)
