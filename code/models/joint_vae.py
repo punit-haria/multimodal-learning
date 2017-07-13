@@ -68,12 +68,17 @@ class VAE(base.Model):
         # choice of variational bounds
         self.l_x1 = self._marginal_bound(self.rx1_1, self.x1, self.z1_mu, self.z1_var, scope='marginal_x1')
         self.l_x2 = self._marginal_bound(self.rx2_2, self.x2, self.z2_mu, self.z2_var, scope='marginal_x2')
+
         self.t_x1 = self._translation_bound(self.rx1p_2, self.x1p, scope='translate_to_x1')
         self.t_x2 = self._translation_bound(self.rx2p_1, self.x2p, scope='translate_to_x2')
+        self.l_x1p = self._marginal_bound(self.rx1p_1, self.x1p, z1p_mu, z1p_var, scope='marginal_x1p')
+        self.l_x2p = self._marginal_bound(self.rx2p_2, self.x2p, z2p_mu, z2p_var, scope='marginal_x2p')
+
         self.l_x1x2 = self._joint_bound(self.rx1p, self.x1p, self.rx2p, self.x2p, self.z12_mu, self.z12_var)
 
         # training and test bounds
-        self.bound = self._variational_bound()
+        self.bound = self._training_bound()
+        self.test_bound = self._test_bound()
 
         # loss function
         self.loss = -self.bound
@@ -118,10 +123,14 @@ class VAE(base.Model):
             return logits, probs
 
 
-    def _variational_bound(self,):
+    def _training_bound(self,):
         joint = tf.concat([self.l_x1x2, self.l_x1, self.l_x2], axis=0)
 
         return tf.reduce_mean(joint, axis=0)
+
+
+    def _test_bound(self,):
+        return tf.reduce_mean(self.l_x1x2, axis=0)
 
 
     def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
@@ -193,7 +202,8 @@ class VAE(base.Model):
     def _summaries(self,):
 
         with tf.variable_scope("summaries", reuse=False):
-            tf.summary.scalar('variational_bound', self.bound)
+            tf.summary.scalar('training_bound', self.bound)
+            tf.summary.scalar('lower_bound_on_log_p_x_y', self.test_bound)
 
             return tf.summary.merge_all()
 
@@ -227,15 +237,15 @@ class VAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        x1_shape = x1.shape
+        x1_shape = list(x1.shape)
         x1_shape[0] = 0
-        x2_shape = x2.shape
+        x2_shape = list(x2.shape)
         x2_shape[0] = 0
         x1_empty = np.zeros(shape=x1_shape)
         x2_empty = np.zeros(shape=x2_shape)
 
         feed = {self.x1: x1_empty, self.x2: x2_empty, self.x1p: x1, self.x2p: x2}
-        outputs = [self.summary, self.bound]
+        outputs = [self.summary, self.test_bound]
 
         summary, test_bound = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
@@ -324,37 +334,20 @@ class VAETranslate(VAE):
         super(VAETranslate, self).__init__(arguments=arguments, name=name, session=session,
                                               log_dir=log_dir, model_dir=model_dir)
 
-    def _variational_bound(self,):
 
-        x1_bound = tf.reduce_mean(self.t_x1 + self.l_x2)
-        x2_bound = tf.reduce_mean(self.t_x2 + self.l_x1)
+    def _training_bound(self,):
+        tx1 = self.t_x1 + self.l_x2p
+        tx2 = self.t_x2 + self.l_x1p
+        #tx = (tx1 + tx2) / 2
 
-        return (x1_bound + x2_bound) / 2
+        bound = tf.concat([tx1, tx2, self.l_x2, self.l_x1], axis=0)
 
-
-    def train(self, x1, x2, x1_pairs, x2_pairs, write=True):
-        """
-        Performs single training step.
-        """
-        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.step, self.bound]
-
-        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
-        if write:
-            self.tr_writer.add_summary(summary, self.n_steps)
-        self.n_steps = self.n_steps + 1
-
-        return bound
+        return tf.reduce_mean(bound, axis=0)
 
 
-    def test(self, x1, x2, x1_pairs, x2_pairs):
-        """
-        Computes variational bounds on test data.
-        """
-        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.l_x1, self.l_x2, self.l_x1x2]
+    def _test_bound(self,):
+        tx1 = self.t_x1 + self.l_x2p
+        tx2 = self.t_x2 + self.l_x1p
+        tx = (tx1 + tx2) / 2
 
-        summary, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
-        self.te_writer.add_summary(summary, self.n_steps)
-
-        return x1_bound, x2_bound, joint_bound
+        return tf.reduce_mean(tx, axis=0)

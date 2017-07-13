@@ -36,6 +36,7 @@ results = Results('experiment_mnist')
 for name, model in models.items():
 
     # load model
+    print("Training Model: ", name, flush=True)
     vae = model(arguments=parms, name=name)
 
     # store next experimental run
@@ -60,7 +61,7 @@ for name, model in models.items():
             x1, x2 = mnist.sample(1000, dtype='test', binarize=False)
 
             # test model
-            bound = vae.test(x1, x2, x1, x2)
+            bound = vae.test(x1, x2)
 
             # save results
             results.add(i, bound, "test_lower_bound")
