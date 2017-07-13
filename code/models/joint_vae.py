@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from models import base
 
 
@@ -71,8 +72,8 @@ class VAE(base.Model):
         self.t_x2 = self._translation_bound(self.rx2p_1, self.x2p, scope='translate_to_x2')
         self.l_x1x2 = self._joint_bound(self.rx1p, self.x1p, self.rx2p, self.x2p, self.z12_mu, self.z12_var)
 
-        # bound
-        self.bound = tf.reduce_mean(self.l_x1x2, axis=0)
+        # training and test bounds
+        self.bound = self._variational_bound()
 
         # loss function
         self.loss = -self.bound
@@ -115,6 +116,12 @@ class VAE(base.Model):
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
+
+
+    def _variational_bound(self,):
+        joint = tf.concat([self.l_x1x2, self.l_x1, self.l_x2], axis=0)
+
+        return tf.reduce_mean(joint, axis=0)
 
 
     def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
@@ -186,9 +193,7 @@ class VAE(base.Model):
     def _summaries(self,):
 
         with tf.variable_scope("summaries", reuse=False):
-            tf.summary.scalar('L_x1', self.l_x1)
-            tf.summary.scalar('L_x2', self.l_x2)
-            tf.summary.scalar('L_x1x2', self.l_x1x2)
+            tf.summary.scalar('variational_bound', self.bound)
 
             return tf.summary.merge_all()
 
@@ -208,27 +213,34 @@ class VAE(base.Model):
         Performs single training step.
         """
         feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.step, self.l_x1, self.l_x2, self.l_x1x2]
+        outputs = [self.summary, self.step, self.bound]
 
-        summary, _, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
+        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
 
-        return x1_bound, x2_bound, joint_bound
+        return bound
 
 
-    def test(self, x1, x2, x1_pairs, x2_pairs):
+    def test(self, x1, x2):
         """
-        Computes variational bounds on test data.
+        Computes lower bound on test data.
         """
-        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.l_x1, self.l_x2, self.l_x1x2]
+        x1_shape = x1.shape
+        x1_shape[0] = 0
+        x2_shape = x2.shape
+        x2_shape[0] = 0
+        x1_empty = np.zeros(shape=x1_shape)
+        x2_empty = np.zeros(shape=x2_shape)
 
-        summary, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
+        feed = {self.x1: x1_empty, self.x2: x2_empty, self.x1p: x1, self.x2p: x2}
+        outputs = [self.summary, self.bound]
+
+        summary, test_bound = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return x1_bound, x2_bound, joint_bound
+        return test_bound
 
 
     def translate_x1(self, x1):
@@ -304,3 +316,45 @@ class VAE(base.Model):
 
 
 
+class VAETranslate(VAE):
+
+    def __init__(self, arguments, name="VAETranslate", session=None, log_dir=None, model_dir=None):
+
+        # base class constructor (initializes model)
+        super(VAETranslate, self).__init__(arguments=arguments, name=name, session=session,
+                                              log_dir=log_dir, model_dir=model_dir)
+
+    def _variational_bound(self,):
+
+        x1_bound = tf.reduce_mean(self.t_x1 + self.l_x2)
+        x2_bound = tf.reduce_mean(self.t_x2 + self.l_x1)
+
+        return (x1_bound + x2_bound) / 2
+
+
+    def train(self, x1, x2, x1_pairs, x2_pairs, write=True):
+        """
+        Performs single training step.
+        """
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
+        outputs = [self.summary, self.step, self.bound]
+
+        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
+        if write:
+            self.tr_writer.add_summary(summary, self.n_steps)
+        self.n_steps = self.n_steps + 1
+
+        return bound
+
+
+    def test(self, x1, x2, x1_pairs, x2_pairs):
+        """
+        Computes variational bounds on test data.
+        """
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
+        outputs = [self.summary, self.l_x1, self.l_x2, self.l_x1x2]
+
+        summary, x1_bound, x2_bound, joint_bound = self.sess.run(outputs, feed_dict=feed)
+        self.te_writer.add_summary(summary, self.n_steps)
+
+        return x1_bound, x2_bound, joint_bound
