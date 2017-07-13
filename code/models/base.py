@@ -1,8 +1,9 @@
 import tensorflow as tf
 import os
 
+
 class Model(object):
-    
+
     def __init__(self, name, session=None, log_dir=None, model_dir=None):
         """
         Model base class to be used with tensorflow. Base class allows for 
