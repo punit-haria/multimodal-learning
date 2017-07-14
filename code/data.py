@@ -416,19 +416,19 @@ class ColouredStratifiedMNIST(ColouredMNIST):
         """
         n_paired: number of paired examples to create
         """
-        super(ColouredStratifiedMNIST, self).__init__()  # load data
+        super(ColouredStratifiedMNIST, self).__init__(n_paired)  # load data
 
-        self.x1_and_x2 = np.array(self.x_and_y)
-        self.x1_only = np.array(self.x_only)
-        self.x2_only = np.array(self.y_only)
+        self.x1_and_x2 = np.array(list(self.x_and_y))
+        self.x1_only = np.array(list(self.x_only))
+        self.x2_only = np.array(list(self.y_only))
 
         # separate the datasets
-        self.x1 = self.M1[self.x1_only, :]
+        self.x1 = self.M1[self.x1_only]
         self.y1 = self.ytr[self.x1_only]
-        self.x2 = self.M2[self.x2_only, :]
+        self.x2 = self.M2[self.x2_only]
         self.y2 = self.ytr[self.x2_only]
-        self.x1p = self.M1[self.x1_and_x2, :]
-        self.x2p = self.M2[self.x1_and_x2, :]
+        self.x1p = self.M1[self.x1_and_x2]
+        self.x2p = self.M2[self.x1_and_x2]
         self.yp = self.ytr[self.x1_and_x2]
 
 
@@ -437,6 +437,10 @@ class ColouredStratifiedMNIST(ColouredMNIST):
         if dtype == 'test':
 
             _, (x1, x2, y) = sample([self.M1_test, self.M2_test, self.yte], n_paired_samples)
+
+            # reshape
+            x1 = np.reshape(x1, newshape=[-1, 784 * 3])
+            x2 = np.reshape(x2, newshape=[-1, 784 * 3])
 
             if include_labels:
                 return (x1, y), (x2, y)
@@ -451,6 +455,12 @@ class ColouredStratifiedMNIST(ColouredMNIST):
             _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
             _, (x1, y1) = sample([self.x1, self.y1], n_x1)
             _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+
+            # reshape
+            x1 = np.reshape(x1, newshape=[-1, 784 * 3])
+            x2 = np.reshape(x2, newshape=[-1, 784 * 3])
+            x1p = np.reshape(x1p, newshape=[-1, 784 * 3])
+            x2p = np.reshape(x2p, newshape=[-1, 784 * 3])
 
             if include_labels:
                 return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)

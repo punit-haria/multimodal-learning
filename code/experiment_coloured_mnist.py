@@ -41,7 +41,7 @@ mnist = MNIST(parms['n_paired'])
 
 
 # store experimental results
-results = Results('experiment_mnist')
+results = Results('experiment_mnist_coloured')
 
 
 for name, model in models.items():
