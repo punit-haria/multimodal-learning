@@ -124,9 +124,9 @@ class VAE(base.Model):
 
 
     def _training_bound(self,):
-        joint = tf.concat([self.l_x1x2, self.l_x1, self.l_x2], axis=0)
+        joint = tf.reduce_mean(self.l_x1x2) + tf.reduce_mean(self.l_x1) + tf.reduce_mean(self.l_x2)
 
-        return tf.reduce_mean(joint, axis=0)
+        return joint
 
 
     def _test_bound(self,):
@@ -330,24 +330,22 @@ class VAETranslate(VAE):
 
     def __init__(self, arguments, name="VAETranslate", session=None, log_dir=None, model_dir=None):
 
-        # base class constructor (initializes model)
         super(VAETranslate, self).__init__(arguments=arguments, name=name, session=session,
                                               log_dir=log_dir, model_dir=model_dir)
 
 
     def _training_bound(self,):
-        tx1 = self.t_x1 + self.l_x2p
-        tx2 = self.t_x2 + self.l_x1p
-        #tx = (tx1 + tx2) / 2
+        tx1 = tf.reduce_mean(self.t_x1 + self.l_x2p)
+        tx2 = tf.reduce_mean(self.t_x2 + self.l_x1p)
+        #lx1x2 = tf.reduce_mean(self.l_x1x2)
+        bound = tx1 + tx2 + tf.reduce_mean(self.l_x1) + tf.reduce_mean(self.l_x2)
 
-        bound = tf.concat([tx1, tx2, self.l_x2, self.l_x1], axis=0)
-
-        return tf.reduce_mean(bound, axis=0)
+        return bound
 
 
     def _test_bound(self,):
-        tx1 = self.t_x1 + self.l_x2p
-        tx2 = self.t_x2 + self.l_x1p
-        tx = (tx1 + tx2) / 2
+        tx1 = tf.reduce_mean(self.t_x1 + self.l_x2p)
+        tx2 = tf.reduce_mean(self.t_x2 + self.l_x1p)
+        #lx1x2 = tf.reduce_mean(self.l_x1x2)
 
-        return tf.reduce_mean(tx, axis=0)
+        return (tx1 + tx2) / 2

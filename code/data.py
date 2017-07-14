@@ -8,12 +8,12 @@ import os.path
 
 
 def sample(data, batch_size):
-    '''
+    """
     Generic sampling function with uniform distribution.
 
     data: numpy array or list of numpy arrays
     batch_size: sample size
-    '''
+    """
     if not isinstance(data, list):
         n = len(data)
         idx = np.random.randint(len(data), size=batch_size)
@@ -26,11 +26,11 @@ def sample(data, batch_size):
         return idx, tuple(x[idx] for x in data)
 
 
+
 class MNIST(object):
     """
     Class to load MNIST data.
     """
-
     def __init__(self, ):
         self.train_path = '../data/mnist_train'
         self.test_path = '../data/mnist_test'
@@ -163,6 +163,76 @@ class JointMNIST(MNIST):
 
         else:
             return X, Y, X_joint, Y_joint
+
+
+
+class JointStratifiedMNIST(MNIST):
+    """
+    MNIST data treated as two output variables consisting of the top halves and bottom halves of
+    each image. Sampling scheme is stratified across the paired and unpaired datasets.
+    """
+    def __init__(self, n_paired):
+        """
+        n_paired: number of paired examples (remaining examples are split into one of top or bottom halves)
+        """
+        super(JointStratifiedMNIST, self).__init__()  # load data
+        self.n_paired = n_paired
+        self.split_point = int(784 / 2)
+
+        # joint and missing split
+        _n = len(self.Xtr)
+        self.x1_and_x2 = np.random.randint(_n, size=self.n_paired)
+        _remain = set(np.arange(_n)) - set(self.x1_and_x2)
+        _x_size = int(len(_remain) / 2)
+        self.x1_only = np.random.choice(list(_remain), size=_x_size, replace=False)
+        self.x2_only = np.array(list(_remain - set(self.x1_only)))
+
+        # separate the datasets
+        self.x1 = self.Xtr[self.x1_only, 0:self.split_point]
+        self.y1 = self.ytr[self.x1_only]
+        self.x2 = self.Xtr[self.x2_only, self.split_point:]
+        self.y2 = self.ytr[self.x2_only]
+        self.x12 = self.Xtr[self.x1_and_x2,:]
+        self.y12 = self.ytr[self.x1_and_x2]
+
+
+    def sample(self, n_paired_samples, n_unpaired_samples=200, dtype='train',
+               binarize=True, include_labels=False):
+
+        # test set case
+        if dtype == 'test':
+            idx, (batch, y) = sample([self.Xte, self.yte], n_paired_samples)
+            if binarize:
+                batch = self._binarize(batch)
+
+            x1 = batch[:, 0:self.split_point]
+            x2 = batch[:, self.split_point:]
+            if include_labels:
+                return (x1, y), (x2, y)
+            else:
+                return x1, x2
+
+        # training set case
+        elif dtype == 'train':
+            n_x1 = np.random.randint(n_unpaired_samples + 1)
+            n_x2 = n_unpaired_samples - n_x1
+
+            _, (batch_p, y12) = sample([self.x12, self.y12], n_paired_samples)
+            _, (x1, y1) = sample([self.x1, self.y1], n_x1)
+            _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+
+            if binarize:
+                batch_p = self._binarize(batch_p)
+                x1 = self._binarize(x1)
+                x2 = self._binarize(x2)
+
+            x1p = batch_p[:,0:self.split_point]
+            x2p = batch_p[:,self.split_point:]
+
+            if include_labels:
+                return (x1, y1), (x2, y2), (x1p, y12), (x2p, y12)
+            else:
+                return x1, x2, x1p, x2p
 
 
 

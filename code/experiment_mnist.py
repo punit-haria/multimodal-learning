@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from models.joint_vae import VAE, VAETranslate
-from data import JointMNIST as MNIST
+from data import JointStratifiedMNIST as MNIST
 
 from results import Results
 
@@ -14,9 +14,14 @@ parms = {
     'n_x2': 392,
     'n_units': 200,
     'learning_rate': 0.002,
-    'batch_size': 250,
+
     'n_paired': 1000,
     'image_dim': (14, 28, 1),
+
+    'batch_size': 250,
+    'n_unpaired_samples': 200,
+    'n_paired_samples': 50,
+
     'train_steps': 10000,
     'plot_steps': 2500
 }
@@ -46,13 +51,14 @@ for name, model in models.items():
     for i in range(parms['train_steps'] + 1):
 
         # random minibatch
-        x1, x2, x1p, x2p = mnist.sample(parms['batch_size'], dtype='train', binarize=True)
+        x1, x2, x1p, x2p = mnist.sample(parms['n_paired_samples'], parms['n_unpaired_samples'],
+                                        dtype='train', binarize=True)
 
         # training step
         bound = vae.train(x1, x2, x1p, x2p)
 
         # save results
-        results.add(i, bound, "training_lower_bound")
+        results.add(i, bound, "training_curve")
 
         if i % 25 == 0:
             print("At iteration ", i)
