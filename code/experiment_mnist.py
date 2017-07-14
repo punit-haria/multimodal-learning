@@ -18,8 +18,7 @@ parms = {
     'n_paired': 1000,
     'image_dim': (14, 28, 1),
 
-    'batch_size': 250,
-    'n_unpaired_samples': 200,
+    'n_unpaired_samples': 250,
     'n_paired_samples': 50,
 
     'train_steps': 10000,

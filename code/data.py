@@ -196,7 +196,7 @@ class JointStratifiedMNIST(MNIST):
         self.y12 = self.ytr[self.x1_and_x2]
 
 
-    def sample(self, n_paired_samples, n_unpaired_samples=200, dtype='train',
+    def sample(self, n_paired_samples, n_unpaired_samples=250, dtype='train',
                binarize=True, include_labels=False):
 
         # test set case
@@ -245,7 +245,6 @@ class ColouredMNIST(MNIST):
     A small paired dataset consists of a one-to-one mapping between colours in X and colours in Y of the same
     MNIST digit.
     """
-
     def __init__(self, n_paired):
         """
         n_paired: number of paired examples to create
@@ -401,5 +400,62 @@ class ColouredMNIST(MNIST):
         idx = np.random.randint(len(x_bank), size=n_samples)
 
         return x_bank[idx], y_bank[idx]
+
+
+
+class ColouredStratifiedMNIST(ColouredMNIST):
+    """
+    Based on dataset created in the paper: "Unsupervised Image-to-Image Translation Networks"
+
+    X dataset consists of MNIST digits with strokes coloured as red, blue, green.
+    Y dataset consists of MNIST digits transformed to an edge map, and then coloured as orange, magenta, teal.
+    A small paired dataset consists of a one-to-one mapping between colours in X and colours in Y of the same
+    MNIST digit.
+    """
+    def __init__(self, n_paired):
+        """
+        n_paired: number of paired examples to create
+        """
+        super(ColouredStratifiedMNIST, self).__init__()  # load data
+
+        self.x1_and_x2 = np.array(self.x_and_y)
+        self.x1_only = np.array(self.x_only)
+        self.x2_only = np.array(self.y_only)
+
+        # separate the datasets
+        self.x1 = self.M1[self.x1_only, :]
+        self.y1 = self.ytr[self.x1_only]
+        self.x2 = self.M2[self.x2_only, :]
+        self.y2 = self.ytr[self.x2_only]
+        self.x1p = self.M1[self.x1_and_x2, :]
+        self.x2p = self.M2[self.x1_and_x2, :]
+        self.yp = self.ytr[self.x1_and_x2]
+
+
+    def sample_stratified(self, n_paired_samples, n_unpaired_samples=250, dtype='train', include_labels=False):
+        # test set case
+        if dtype == 'test':
+
+            _, (x1, x2, y) = sample([self.M1_test, self.M2_test, self.yte], n_paired_samples)
+
+            if include_labels:
+                return (x1, y), (x2, y)
+            else:
+                return x1, x2
+
+        # training set case
+        elif dtype == 'train':
+            n_x1 = np.random.randint(n_unpaired_samples + 1)
+            n_x2 = n_unpaired_samples - n_x1
+
+            _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
+            _, (x1, y1) = sample([self.x1, self.y1], n_x1)
+            _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+
+            if include_labels:
+                return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
+            else:
+                return x1, x2, x1p, x2p
+
 
 
