@@ -30,7 +30,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
 
             name  = 'layer_' + str(i+2)
             c = conv2d_masked(c, k, n_ch, mask_type='B', bias=True, scope=name, reuse=reuse)
-            c = tf.nn.relu(c)
+            c = tf.nn.relu(c)   # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
 
         return c
 
