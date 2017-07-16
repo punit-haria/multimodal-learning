@@ -379,7 +379,7 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            n_units = self.args['n_units']
+            n_units = self.args['n_dec_units']
             n_layers = self.args['n_dec_layers']
             k = self.args['filter_w']
             im_dim = self.args['image_dim']

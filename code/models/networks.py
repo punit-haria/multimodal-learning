@@ -52,7 +52,7 @@ def conv2d_masked(x, k, out_ch, mask_type, scope, reuse):
                             initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
 
         # create mask
-        mask = np.zeros(shape=[k, k, in_ch, out_ch])
+        mask = np.zeros(shape=[k, k, in_ch, out_ch], dtype=np.float32)
         half_k = (k // 2) + 1
         for i in range(half_k):
             for j in range(k):
