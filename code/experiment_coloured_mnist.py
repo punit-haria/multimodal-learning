@@ -45,11 +45,11 @@ mnist = MNIST(parms['n_paired'])
 
 
 # store experimental results
-results = Results('experiment_mnist_coloured_cnn')
+results = Results('experiment_mnist_coloured')
 
 
 for name, model in models.items():
-    name = 'mnist_colored_cnn_'+name
+    name = 'mnist_colored_'+name
 
     print("Loading model...", flush=True)
     vae = model(arguments=parms, name=name)

@@ -12,15 +12,17 @@ res = Results.load(experiment)
 
 ### Figure 1 ###
 
-trials = ['mnist_colored_vae_joint', 'mnist_colored_vae_translate']
-labels = ['Joint Bound', 'Translation Bound']
+trials = ['mnist_colored_vae_joint', 'mnist_colored_vae_translate',
+          'mnist_colored_vae_cnn', 'mnist_colored_vae_cnn_color']
+labels = ['Joint Bound', 'Translation Bound', 'CNN Bound', 'CNN Color Bound']
 
 plt.figure(figsize=(12,9))
 
 for i,t in enumerate(trials):
-    run = res.get(t)
-    steps, series = run.get_series('test_lower_bound')
-    plt.plot(steps, series, label=labels[i], linewidth=2)
+    if res.contains(t):
+        run = res.get(t)
+        steps, series = run.get_series('test_lower_bound')
+        plt.plot(steps, series, label=labels[i], linewidth=2)
 
 plt.axis([0,5000,-700,-550])
 plt.legend(loc='lower right', fontsize=18)
@@ -39,7 +41,7 @@ trials = ['mnist_colored_vae_joint', 'mnist_colored_vae_translate']
 labels = ['Coloured Joint Bound', 'Coloured Translation Bound']
 
 n_images = 18
-time_steps = [500, 1000, 2000, 5000]
+time_steps = [500, 1000]
 
 for time_step in time_steps:
     
@@ -47,6 +49,9 @@ for time_step in time_steps:
 
     for i,t in enumerate(trials):
         print("At trial: ", t, flush=True)
+
+        if not res.contains(t):
+            continue
 
         run = res.get(t)
 
