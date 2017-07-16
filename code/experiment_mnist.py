@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from models.joint_vae import VAE, VAETranslate
+from models.joint_vae import VAE, VAETranslate, VAECNN
 from data import JointStratifiedMNIST as MNIST
 
 from results import Results
@@ -12,22 +12,26 @@ parms = {
     'n_z': 50,
     'n_x1': 392,
     'n_x2': 392,
-    'n_units': 200,
+    'n_enc_units': 200,
     'learning_rate': 0.002,
-
-    'n_paired': 1000,
-    'image_dim': (14, 28, 1),
-
     'n_unpaired_samples': 250,
     'n_paired_samples': 50,
 
-    'train_steps': 10000,
-    'plot_steps': 2500
+    'image_dim': [14, 28, 1],
+    'filter_w': 3,
+    'n_dec_units': 200,
+    'n_dec_layers': 3,
+    'n_paired': 1000,
+
+    'train_steps': 2000,
+    'plot_steps': 500
 }
 
+
 models = {
-    'vae_joint': VAE,
-    'vae_translate': VAETranslate
+    #'vae_joint': VAE,
+    #'vae_translate': VAETranslate,
+    'vae_cnn': VAECNN
 }
 
 # data
@@ -35,7 +39,7 @@ mnist = MNIST(parms['n_paired'])
 
 
 # store experimental results
-results = Results('experiment_mnist')
+results = Results('experiment_mnist_cnn')
 
 for name, model in models.items():
 

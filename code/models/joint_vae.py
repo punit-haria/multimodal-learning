@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
+
 from models import base
+from models import networks as nw
 
 
 class VAE(base.Model):
@@ -137,8 +139,7 @@ class VAE(base.Model):
     def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
-            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
-                labels=labels), axis=1)
+            l1 = self._reconstruction_loss(logits=logits, labels=labels)
 
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
 
@@ -149,10 +150,8 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            l1_x = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=x1_logits, labels=x1_labels), axis=1)
-            l1_y = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=x2_logits, labels=x2_labels), axis=1)
+            l1_x = self._reconstruction_loss(logits=x1_logits, labels=x1_labels)
+            l1_y = self._reconstruction_loss(logits=x2_logits, labels=x2_labels)
 
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
 
@@ -162,7 +161,12 @@ class VAE(base.Model):
     def _translation_bound(self, logits, labels, scope='translation_bound', reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
-            return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+            return self._reconstruction_loss(logits=logits, labels=labels)
+
+
+    def _reconstruction_loss(self, logits, labels):
+
+        return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
 
 
     def _optimizer(self, loss, scope='optimizer', reuse=False):
@@ -352,13 +356,13 @@ class VAETranslate(VAE):
         return (tx1 + tx2) / 2
 
 
-from models import networks as nw
+
 
 
 class VAECNN(VAE):
 
     """
-    Variational Auto-Encoder with PixelCNN Decoder
+    Variational Auto-Encoder with PixelCNN Decoder. Bernouli Output distribution.
 
     Arguments:
     n_x1, n_x2, n_z: dimensionality of input and latent variables
@@ -373,6 +377,33 @@ class VAECNN(VAE):
 
         super(VAECNN, self).__init__(arguments=arguments, name=name, session=session,
                                               log_dir=log_dir, model_dir=model_dir)
+
+
+    def _encoder(self, x, n_x, n_z, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            n_units = self.args['n_enc_units']
+            im_dim = self.args['image_dim']
+            in_ch = im_dim[2]
+
+            x_image = tf.reshape(x, shape=[-1]+im_dim)
+
+            h1 = nw.conv_pool(x_image, in_ch, 16, 'layer_1', reuse=reuse)
+
+            h2 = nw.conv_pool(h1, 16, 16, 'layer_2', reuse=reuse)
+
+            dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
+            flat = tf.reshape(h2, shape=[-1,dim])
+
+            fc = self._linear(flat, dim, n_units, 'layer_3', reuse=reuse)
+            h3 = tf.nn.relu(fc)
+
+            mean = self._linear(h3, n_units, n_z, "mean_layer", reuse=reuse)
+
+            a3 = self._linear(h3, n_units, n_z, "var_layer", reuse=reuse)
+            var = tf.nn.softplus(a3)
+
+            return mean, var
 
 
     def _decoder(self, z, n_z, n_x, scope, reuse):
@@ -396,8 +427,63 @@ class VAECNN(VAE):
 
             cnn = nw.pixel_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse=reuse)
 
-            logits = tf.reshape(cnn, shape=[-1, z_units])
-            probs = tf.nn.sigmoid(logits)
+            logits, probs = self._decoder_output(cnn, 'output_distr', reuse)
 
             return logits, probs
+
+
+    def _decoder_output(self, x, scope, reuse):
+
+        n_x = x.get_shape()[1].value * x.get_shape()[2].value * x.get_shape()[3].value
+
+        logits = tf.reshape(x, shape=[-1, n_x])
+        probs = tf.nn.sigmoid(logits)
+
+        return logits, probs
+
+
+
+
+class VAECNN_Color(VAECNN):
+
+    """
+    Variational Auto-Encoder with PixelCNN Decoder. 256-way Categorical output distribution.
+
+    Arguments:
+    n_x1, n_x2, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
+    image_dim: shape of input image
+    filter_w: width of convolutional filter (with width = height)
+    n_dec_layers: number of layers in decoder
+    """
+    def __init__(self, arguments, name="VAECNN_Color", session=None, log_dir=None, model_dir=None):
+
+        super(VAECNN_Color, self).__init__(arguments=arguments, name=name, session=session,
+                                              log_dir=log_dir, model_dir=model_dir)
+
+
+    def _decoder_output(self, x, scope, reuse):
+
+        h = x.get_shape()[1].value
+        w = x.get_shape()[2].value
+        ch = x.get_shape()[3].value
+
+        n_x = h * w * ch
+
+        flat = tf.reshape(x, shape=[-1, n_x])
+
+        a = self._linear(flat, n_x, 256*n_x, scope, reuse)
+
+        logits = tf.reshape(a, shape=[-1, n_x, 256])
+        probs = tf.nn.softmax(logits, dim=-1)
+
+        return logits, probs
+
+
+    def _reconstruction_loss(self, logits, labels):
+
+        return tf.reduce_sum(-tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+
 

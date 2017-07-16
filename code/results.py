@@ -88,6 +88,13 @@ class Results(object):
         self.last = t
 
 
+    def contains(self, run_name):
+        """
+        Check if key exists.
+        """
+        return run_name in self.runs
+
+
     def get(self, run_name):
         """
         Get experimental run by name.

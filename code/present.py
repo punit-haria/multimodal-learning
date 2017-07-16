@@ -6,23 +6,24 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
 
-experiment = "experiment_mnist.pickle"
+experiment = "experiment_mnist_cnn.pickle"
 res = Results.load(experiment)
 
 
 ### Figure 1 ###
 
-trials = ['vae_joint', 'vae_translate']
-labels = ['Joint Bound', 'Translation Bound']
+trials = ['vae_joint', 'vae_translate', 'vae_cnn']
+labels = ['Joint Bound', 'Translation Bound', 'CNN Joint Bound']
 
 plt.figure(figsize=(12,9))
 
 for i,t in enumerate(trials):
-    run = res.get(t)
-    steps, series = run.get_series('test_lower_bound')
-    plt.plot(steps, series, label=labels[i], linewidth=2)
+    if res.contains(t):
+        run = res.get(t)
+        steps, series = run.get_series('test_lower_bound')
+        plt.plot(steps, series, label=labels[i], linewidth=2)
 
-plt.axis([0,10000,-200,-100])
+plt.axis([0,5000,-5000,-100])
 plt.legend(loc='lower right', fontsize=18)
 plt.xlabel('Training Steps (minibatch = 250)')
 plt.ylabel('Log-Likelihood Lower Bound')
@@ -35,11 +36,8 @@ plt.close('all')
 
 ### Figure 2 ###
 
-trials = ['vae_joint', 'vae_translate']
-labels = ['Joint Bound', 'Translation Bound']
-
 n_images = 18
-time_steps = [2500, 5000, 7500, 10000]
+time_steps = [500, 1000, 2000]
 
 for time_step in time_steps:
     
@@ -47,6 +45,9 @@ for time_step in time_steps:
 
     for i,t in enumerate(trials):
         print("At trial: ", t, flush=True)
+
+        if not res.contains(t):
+            continue
 
         run = res.get(t)
 

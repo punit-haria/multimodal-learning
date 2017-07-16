@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from models.joint_vae import VAE, VAETranslate, VAECNN
+from models.joint_vae import VAE, VAETranslate, VAECNN, VAECNN_Color
 from data import ColouredStratifiedMNIST as MNIST
 
 from results import Results
@@ -18,17 +18,17 @@ parms = {
     'n_x2': 784 * 3,
     'n_enc_units': 500,
     'learning_rate': 0.001,
+    'n_unpaired_samples': 250,
+    'n_paired_samples': 50,
 
     'image_dim': [28, 28, 3],
     'filter_w': 3,
     'n_dec_units': 500,
     'n_dec_layers': 3,
 
-    'n_unpaired_samples': 250,
-    'n_paired_samples': 50,
-
     'n_paired': 1000,
-    'train_steps': 5000,
+
+    'train_steps': 1000,
     'plot_steps': 500
 }
 
@@ -36,7 +36,7 @@ parms = {
 models = {
     #'vae_joint': VAE,
     #'vae_translate': VAETranslate,
-    'vae_cnn': VAECNN
+    'vae_cnn_color': VAECNN_Color
 }
 
 # data
