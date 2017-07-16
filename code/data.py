@@ -329,6 +329,7 @@ class ColouredMNIST(MNIST):
             else:
                 return X, Y, X_joint, Y_joint
 
+
     def _create_modalities(self, data):
         """
         Creates X and Y datasets from input MNIST data.

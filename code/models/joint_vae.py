@@ -425,7 +425,7 @@ class VAECNN(VAE):
 
             z_image = tf.reshape(h2, shape=[-1]+im_dim)
 
-            logits, probs = self._decoder_cnn(z_image, 'pixel_cnn', reuse)
+            logits, probs = self._decoder_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse)
 
             return logits, probs
 
@@ -483,6 +483,12 @@ class VAECNN_Color(VAECNN):
 
     def _reconstruction_loss(self, logits, labels):
 
-        return tf.reduce_sum(-tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+        # labels have dimension [batch_size, h*w*ch]
+
+        labels = tf.cast(labels * 255, dtype=tf.uint8) # discretize pixel intensities to [0,255]
+        labels = tf.reshape(labels, shape=[-1]+self.args['image_dim'])  # reshape to images
+        labels = tf.one_hot(labels, depth=256, axis=-1)  # one-hot encoding
+
+        return tf.reduce_sum(-tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=[1,2,3])
 
 
