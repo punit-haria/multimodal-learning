@@ -388,9 +388,9 @@ class VAECNN(VAE):
 
             x_image = tf.reshape(x, shape=[-1]+im_dim)
 
-            h1 = nw.conv_pool(x_image, in_ch, 16, 'layer_1', reuse=reuse)
+            h1 = nw.conv_pool(x_image, in_ch, 32, 'layer_1', reuse=reuse)
 
-            h2 = nw.conv_pool(h1, 16, 16, 'layer_2', reuse=reuse)
+            h2 = nw.conv_pool(h1, 32, 32, 'layer_2', reuse=reuse)
 
             dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
             flat = tf.reshape(h2, shape=[-1,dim])
@@ -411,9 +411,9 @@ class VAECNN(VAE):
         with tf.variable_scope(scope, reuse=reuse):
 
             n_units = self.args['n_dec_units']
+            im_dim = self.args['image_dim']
             n_layers = self.args['n_dec_layers']
             k = self.args['filter_w']
-            im_dim = self.args['image_dim']
             out_ch = im_dim[2]
 
             a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
@@ -425,18 +425,25 @@ class VAECNN(VAE):
 
             z_image = tf.reshape(h2, shape=[-1]+im_dim)
 
-            cnn = nw.pixel_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse=reuse)
-
-            logits, probs = self._decoder_output(cnn, 'output_distr', reuse)
+            logits, probs = self._decoder_cnn(z_image, 'pixel_cnn', reuse)
 
             return logits, probs
 
 
-    def _decoder_output(self, x, scope, reuse):
+    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
+        """
+        Combines CNN network with output distribution.
 
-        n_x = x.get_shape()[1].value * x.get_shape()[2].value * x.get_shape()[3].value
+        x: tensor of images
+        n_layers: number of layers in CNN
+        k: convolution filter size
+        out_ch: network output channels
+        """
+        c = nw.pixel_cnn(x, n_layers, k, out_ch, scope, reuse=reuse)
 
-        logits = tf.reshape(x, shape=[-1, n_x])
+        n_c = c.get_shape()[1].value * c.get_shape()[2].value * c.get_shape()[3].value
+
+        logits = tf.reshape(c, shape=[-1, n_c])
         probs = tf.nn.sigmoid(logits)
 
         return logits, probs
@@ -464,19 +471,11 @@ class VAECNN_Color(VAECNN):
                                               log_dir=log_dir, model_dir=model_dir)
 
 
-    def _decoder_output(self, x, scope, reuse):
-
-        h = x.get_shape()[1].value
-        w = x.get_shape()[2].value
-        ch = x.get_shape()[3].value
-
-        n_x = h * w * ch
-
-        flat = tf.reshape(x, shape=[-1, n_x])
-
-        a = self._linear(flat, n_x, 256*n_x, scope, reuse)
-
-        logits = tf.reshape(a, shape=[-1, n_x, 256])
+    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
+        """
+        Combines CNN network with output distribution.
+        """
+        logits = nw.pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats=256, scope=scope, reuse=reuse)
         probs = tf.nn.softmax(logits, dim=-1)
 
         return logits, probs

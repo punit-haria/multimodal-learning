@@ -2,6 +2,26 @@ import tensorflow as tf
 import numpy as np
 
 
+def pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats, scope, reuse):
+    """
+    PixelCNN with an additional layer to model categorical distribution.
+
+    n_cats: number of categories in final transformation
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        cnn = pixel_cnn(x, n_layers, k, out_ch, 'pixel_cnn_convs', reuse)
+
+        n_channels = n_cats * out_ch
+        c = conv2d_masked(cnn, k, n_channels, mask_type='B', bias=False, scope='final_layer', reuse=reuse)
+        r = tf.nn.relu(c)
+
+        h = r.get_shape()[1].value
+        w = r.get_shape()[2].value
+
+        logits = tf.reshape(r, shape=[-1, h, w, out_ch, n_cats])
+
+        return logits
+
 
 def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
     """
@@ -19,7 +39,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         if n_layers == 1:
             n_ch = out_ch
         else:
-            n_ch = 16
+            n_ch = 32
 
         c = conv2d_masked(x, k, n_ch, mask_type='A', bias=True, scope='layer_1', reuse=reuse)
 
