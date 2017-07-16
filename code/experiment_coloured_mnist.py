@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from models.joint_vae import VAE, VAETranslate
+from models.joint_vae import VAE, VAETranslate, VAECNN
 from data import ColouredStratifiedMNIST as MNIST
 
 from results import Results
@@ -16,23 +16,27 @@ parms = {
     'n_z': 50,
     'n_x1': 784 * 3,
     'n_x2': 784 * 3,
-    'n_units': 500,
+    'n_enc_units': 500,
     'learning_rate': 0.001,
 
-    'n_paired': 1000,
-    'image_dim': (28, 28, 3),
+    'image_dim': [28, 28, 3],
+    'filter_w': 3,
+    'n_dec_units': 500,
+    'n_dec_layers': 3,
 
     'n_unpaired_samples': 250,
     'n_paired_samples': 50,
 
+    'n_paired': 1000,
     'train_steps': 5000,
     'plot_steps': 500
 }
 
 
 models = {
-    'vae_joint': VAE,
-    'vae_translate': VAETranslate
+    #'vae_joint': VAE,
+    #'vae_translate': VAETranslate,
+    'vae_cnn': VAECNN
 }
 
 # data
@@ -41,11 +45,11 @@ mnist = MNIST(parms['n_paired'])
 
 
 # store experimental results
-results = Results('experiment_mnist_coloured')
+results = Results('experiment_mnist_coloured_cnn')
 
 
 for name, model in models.items():
-    name = 'mnist_colored_'+name
+    name = 'mnist_colored_cnn_'+name
 
     print("Loading model...", flush=True)
     vae = model(arguments=parms, name=name)

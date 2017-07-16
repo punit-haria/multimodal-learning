@@ -10,7 +10,8 @@ class VAE(base.Model):
     Arguments:
     n_x1, n_x2, n_z: dimensionality of input and latent variables
     learning_rate: optimizer learning_rate
-    n_units: number of hidden units in fully-connected layers
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
     """
     def __init__(self, arguments, name="VAE", session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
@@ -90,7 +91,7 @@ class VAE(base.Model):
     def _encoder(self, x, n_x, n_z, scope, reuse):
 
         with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_units']
+            n_units = self.args['n_enc_units']
 
             a1 = self._linear(x, n_x, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
@@ -109,7 +110,7 @@ class VAE(base.Model):
     def _decoder(self, z, n_z, n_x, scope, reuse):
 
         with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_units']
+            n_units = self.args['n_dec_units']
 
             a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.relu(a1)
@@ -349,3 +350,54 @@ class VAETranslate(VAE):
         #lx1x2 = tf.reduce_mean(self.l_x1x2)
 
         return (tx1 + tx2) / 2
+
+
+from models import networks as nw
+
+
+class VAECNN(VAE):
+
+    """
+    Variational Auto-Encoder with PixelCNN Decoder
+
+    Arguments:
+    n_x1, n_x2, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
+    image_dim: shape of input image
+    filter_w: width of convolutional filter (with width = height)
+    n_dec_layers: number of layers in decoder
+    """
+    def __init__(self, arguments, name="VAECNN", session=None, log_dir=None, model_dir=None):
+
+        super(VAECNN, self).__init__(arguments=arguments, name=name, session=session,
+                                              log_dir=log_dir, model_dir=model_dir)
+
+
+    def _decoder(self, z, n_z, n_x, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+
+            n_units = self.args['n_units']
+            n_layers = self.args['n_dec_layers']
+            k = self.args['filter_w']
+            im_dim = self.args['image_dim']
+            out_ch = im_dim[2]
+
+            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
+
+            z_units = im_dim[0] * im_dim[1] * im_dim[2]
+            a2 = self._linear(h1, n_units, z_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
+
+            z_image = tf.reshape(h2, shape=[-1]+im_dim)
+
+            cnn = nw.pixel_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse=reuse)
+
+            logits = tf.reshape(cnn, shape=[-1, z_units])
+            probs = tf.nn.sigmoid(logits)
+
+            return logits, probs
+

@@ -3,28 +3,32 @@ import numpy as np
 
 
 
-def pixel_cnn(x, args, scope, reuse):
+def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
     """
     PixelCNN network based on architectures specified in:
         https://arxiv.org/abs/1601.06759
         https://arxiv.org/abs/1701.05517
 
     x: input tensor
-    args: dictionary with parameters --> n_layers, image_dim, filter_w
+    n_layers: number of layers in the network
+    k: width of convolution filter (note: height = width)
+    out_ch: number of output channels
     """
     with tf.variable_scope(scope, reuse=reuse):
 
-        n_layers = args['n_layers']
-        image_dim = args['image_dim']
-        k = args['filter_w']
+        if n_layers == 1:
+            n_ch = out_ch
+        else:
+            n_ch = 16
+        c = conv2d_masked(x, k, n_ch, 'A', 'layer_1', reuse)
 
-        x_image = tf.reshape(x, shape=image_dim)
+        for i in range(n_layers-1):
 
-        c = conv2d_masked(x_image, 3, 10, 'A', 'layer_1', reuse)
+            if i == n_layers - 2:
+                n_ch = out_ch
 
-        for i in range(n_layers):
             name  = 'layer_' + str(i+2)
-            c = conv2d_masked(c, 3, 10, 'B', name, reuse)
+            c = conv2d_masked(c, k, n_ch, 'B', name, reuse)
             c = tf.nn.relu(c)
 
         return c
