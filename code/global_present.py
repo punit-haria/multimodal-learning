@@ -8,18 +8,18 @@ plt.style.use('ggplot')
 
 ### PARAMETERS ###
 
-experiment = "experiment_vae_mnist"
+experiment = "experiment_vae_cnn_mnist"
 
 res = Results.load(experiment+'.pickle')
 
-test_axis = [0,res.i,-5000,-100]  # axis range for test lower bound
-train_axis = [0,res.i,-5000,-100]  # axis range for train lower bound
+test_axis = [0,res.i,-700,-400]  # axis range for test lower bound
+train_axis = [0,res.i,-700,-400]  # axis range for train lower bound
 image_dim = [28,28]
 
 
 ### Figure 1 ###
 
-runs = res.runs()
+runs = res.get_runs()
 labels = [_x + ' Lower Bound' for _x in runs]
 
 plt.figure(figsize=(12,9))
@@ -41,7 +41,7 @@ plt.close('all')
 
 ### Figure 2 ###
 
-runs = res.runs()
+runs = res.get_runs()
 labels = [_x + ' Lower Bound' for _x in runs]
 
 plt.figure(figsize=(12,9))
@@ -64,7 +64,7 @@ plt.close('all')
 ### Figure 3 ###
 
 n_images = 18
-labels = res.runs()
+labels = res.get_runs()
 
 for i,t in enumerate(runs):
     print("At trial: ", t, flush=True)
@@ -82,7 +82,7 @@ for i,t in enumerate(runs):
 
             xb, rx_probs = value
 
-            images = np.concatenate(xb, rx_probs, axis=0)
+            images = np.concatenate([xb, rx_probs], axis=0)
             images = np.reshape(images, [-1] + image_dim)
 
             plot.plot_images(images, 6, 6, '../plots/'+labels[i]+'_'+ser+'_'+str(time_step)+'.png')

@@ -46,15 +46,15 @@ class VAE(base.Model):
         # decoders
         self.rx, self.rx_probs = self._decoder(self.z, self.x, scope='x_dec', reuse=False)
 
-        # choice of variational bounds
-        self.l_x = self._marginal_bound(self.rx, self.x, self.z_mu, self.z_var, scope='marginal_x')
+        # reconstruction and penalty terms
+        self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
+        self.l2 = self._penalty(mean=self.z_mu, var=self.z_var, scope='penalty')
 
         # training and test bounds
-        self.bound = self._training_bound()
-        self.test_bound = self._test_bound()
+        self.bound = self._variational_bound(scope='lower_bound')
 
         # loss function
-        self.loss = -self.bound
+        self.loss = self._loss(scope='loss')
 
         # optimizer
         self.step = self._optimizer(self.loss)
@@ -66,14 +66,14 @@ class VAE(base.Model):
             n_units = 500
 
             a1 = self._linear(x, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
+            h1 = tf.nn.elu(a1)
 
             a2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            h2 = tf.nn.elu(a2)
 
             mean = self._linear(h2, self.n_z, "mean_layer", reuse=reuse)
 
-            a3 = self._linear(h2, n_units, self.n_z, "var_layer", reuse=reuse)
+            a3 = self._linear(h2, self.n_z, "var_layer", reuse=reuse)
             var = tf.nn.softplus(a3)
 
             return mean, var
@@ -85,10 +85,10 @@ class VAE(base.Model):
             n_units = 500
 
             a1 = self._linear(z, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
+            h1 = tf.nn.elu(a1)
 
             a2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            h2 = tf.nn.elu(a2)
 
             logits = self._linear(h2, self.n_x, "layer_3", reuse=reuse)
             probs = tf.nn.sigmoid(logits)
@@ -96,27 +96,32 @@ class VAE(base.Model):
             return logits, probs
 
 
-    def _training_bound(self,):
-        return tf.reduce_mean(self.l_x, axis=0)
-
-
-    def _test_bound(self,):
-        return tf.reduce_mean(self.l_x, axis=0)
-
-
-    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
+    def _reconstruction(self, logits, labels, scope, reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
-            l1 = self._reconstruction_loss(logits=logits, labels=labels)
+
+            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+            return tf.reduce_mean(l1, axis=0)
+
+
+    def _penalty(self, mean, var, scope, reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
 
             l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
+            return tf.reduce_mean(l2, axis=0)
 
-            return l1 + l2
+
+    def _variational_bound(self, scope, reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            return self.l1 + self.l2
 
 
-    def _reconstruction_loss(self, logits, labels):
+    def _loss(self, scope, reuse=False):
 
-        return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+        with tf.variable_scope(scope, reuse=reuse):
+            return -(self.l1 + self.l2)
 
 
     def _optimizer(self, loss, scope='optimizer', reuse=False):
@@ -143,8 +148,10 @@ class VAE(base.Model):
     def _summaries(self,):
 
         with tf.variable_scope("summaries", reuse=False):
-            tf.summary.scalar('training_curve', self.bound)
-            tf.summary.scalar('lower_bound_on_log_p_x_y', self.test_bound)
+            tf.summary.scalar('lower_bound', self.bound)
+            tf.summary.scalar('loss', self.loss)
+            tf.summary.scalar('reconstruction', self.l1)
+            tf.summary.scalar('penalty', self.l2)
 
             return tf.summary.merge_all()
 
@@ -241,14 +248,14 @@ class VAECNN(VAE):
 
             x_image = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_1', reuse=reuse)
+            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
 
-            h2 = nw.conv_pool(h1, out_ch=32, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_2', reuse=reuse)
+            h2 = nw.conv_pool(h1, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
 
             flat = tf.contrib.layers.flatten(h2)
 
             fc = self._linear(flat, n_out=500, scope='layer_3', reuse=reuse)
-            h3 = tf.nn.relu(fc)
+            h3 = tf.nn.elu(fc)
 
             mean = self._linear(h3, self.n_z, "mean_layer", reuse=reuse)
 
@@ -263,22 +270,26 @@ class VAECNN(VAE):
         with tf.variable_scope(scope, reuse=reuse):
 
             a1 = self._linear(z, n_out=500, scope='layer_1', reuse=reuse)
-            h1 = tf.nn.relu(a1)
+            h1 = tf.nn.elu(a1)
 
             h = int(self.h / 4)
             w = int(self.w / 4)
 
             dim = 32 * h * w
             a2 = self._linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            h2 = tf.nn.elu(a2)
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])
 
-            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_3', reuse=reuse)
+            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
 
-            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_4', reuse=reuse)
+            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
 
-            logits, probs = self._pixel_cnn(d2, scope='pixel_cnn', reuse=reuse)
+            #logits, probs = self._pixel_cnn(d2, scope='pixel_cnn', reuse=reuse)
+
+            n_c = self.h * self.w * self.n_ch
+            logits = tf.reshape(d2, shape=[-1, n_c])
+            probs = tf.nn.sigmoid(logits)
 
             return logits, probs
 
@@ -301,6 +312,21 @@ class VAECNN(VAE):
         probs = tf.nn.sigmoid(logits)
 
         return logits, probs
+
+
+    def _loss(self, scope, reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
+
+            alpha = -0.25
+
+            l2 = 0.5 * (1 + tf.log(self.z_var) - tf.square(self.z_mu) - self.z_var)
+            l2 = tf.reduce_mean(l2, axis=0)
+            l2 = tf.minimum(l2, alpha)
+
+            l2 = tf.reduce_sum(l2)
+
+            return -(self.l1 + l2)
 
 
 
@@ -345,16 +371,19 @@ class VAECNN_Color(VAECNN):
         return logits, probs
 
 
-    def _reconstruction_loss(self, logits, labels):
+    def _reconstruction(self, logits, labels, scope, reuse=False):
 
-        # note: labels have dimension [batch_size, h*w*ch]
+        with tf.variable_scope(scope, reuse=reuse):
+            # note: labels have dimension [batch_size, h*w*ch]
 
-        # scale and discretize pixel intensities
-        labels = tf.cast(labels * 255, dtype=tf.int32)
+            # scale and discretize pixel intensities
+            labels = tf.cast(labels * 255, dtype=tf.int32)
 
-        # reshape to images
-        labels = tf.reshape(labels, shape=[-1]+self.args['image_dim'])
+            # reshape to images
+            labels = tf.reshape(labels, shape=[-1, self.h, self.w, self.n_ch])
 
-        return tf.reduce_sum(-tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=[1,2,3])
+            l1 = tf.reduce_sum(-tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=[1,2,3])
+
+            return tf.reduce_mean(l1, axis=0)
 
 

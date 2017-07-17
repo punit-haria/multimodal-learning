@@ -103,11 +103,11 @@ class Results(object):
         return self.runs[run_name]
 
 
-    def runs(self, ):
+    def get_runs(self, ):
         """
         Return keys of runs dictionary.
         """
-        return self.runs.keys()
+        return list(self.runs.keys())
     
     
     def add(self, i, value, series_name, run_name=None):

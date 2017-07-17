@@ -21,7 +21,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         else:
             n_ch = 32
 
-        nonlinearity = tf.nn.relu  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
+        nonlinearity = tf.nn.elu  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
 
         c = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
 

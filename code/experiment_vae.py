@@ -21,8 +21,8 @@ parms = {
     'filter_w': 3,  # ????
     'n_pixelcnn_layers': 4,
 
-    'train_steps': 10000,
-    'plot_steps': 1000,
+    'train_steps': 1000,
+    'plot_steps': 500,
     'test_steps': 50,
     'n_plots': 18
 }
@@ -48,6 +48,8 @@ for name, model in models.items():
 
     # train model
     for i in range(parms['train_steps'] + 1):
+
+        print(i, flush=True)
 
         # random minibatch
         x = mnist.sample(parms['batch_size'], dtype='train', binarize=True)[0]
