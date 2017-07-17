@@ -55,11 +55,11 @@ for name, model in models.items():
         x = mnist.sample(parms['batch_size'], dtype='train', binarize=True)[0]
 
         # training step
-        curve, bound = vae.train(x)
+        bound, loss = vae.train(x)
 
         # save results
-        results.add(i, curve, "training_curve")
         results.add(i, bound, "train_lower_bound")
+        results.add(i, loss, "train_loss")
 
         if i % parms['test_steps'] == 0:
             print("At iteration ", i, flush=True)
@@ -68,10 +68,11 @@ for name, model in models.items():
             x = mnist.sample(1000, dtype='test', binarize=False)[0]
 
             # test model
-            bound = vae.test(x)
+            bound, loss = vae.test(x)
 
             # save results
             results.add(i, bound, "test_lower_bound")
+            results.add(i, loss, "test_loss")
 
             # plot reconstructions
             if i % parms['plot_steps'] == 0:

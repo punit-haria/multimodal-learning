@@ -173,14 +173,14 @@ class VAE(base.Model):
         Performs single training step.
         """
         feed = {self.x: x}
-        outputs = [self.summary, self.step, self.bound, self.test_bound]
+        outputs = [self.summary, self.step, self.bound, self.loss]
 
-        summary, _, curve, bound = self.sess.run(outputs, feed_dict=feed)
+        summary, _, bound, loss = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
 
-        return curve, bound
+        return bound, loss
 
 
     def test(self, x):
@@ -188,12 +188,12 @@ class VAE(base.Model):
         Computes lower bound on test data.
         """
         feed = {self.x: x}
-        outputs = [self.summary, self.test_bound]
+        outputs = [self.summary, self.bound, self.loss]
 
-        summary, test_bound = self.sess.run(outputs, feed_dict=feed)
+        summary, bound, loss = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return test_bound
+        return bound, loss
 
 
     def reconstruct(self, x):
