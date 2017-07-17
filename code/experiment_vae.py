@@ -38,7 +38,7 @@ mnist = MNIST()
 
 # tests
 alphas = [0.125, 0.5, 1]
-pixel_layers = [2, 3, 4]
+pixel_layers = [2, 3, 4, 6]
 learning_rates = [0.002, 0.0002]
 
 for n_layers in pixel_layers:
