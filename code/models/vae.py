@@ -318,7 +318,8 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            alpha = -0.25
+            #alpha = -0.25
+            alpha = self.args['alpha']
 
             l2 = 0.5 * (1 + tf.log(self.z_var) - tf.square(self.z_mu) - self.z_var)
             l2 = tf.reduce_mean(l2, axis=0)
