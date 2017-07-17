@@ -173,14 +173,14 @@ class VAE(base.Model):
         Performs single training step.
         """
         feed = {self.x: x}
-        outputs = [self.summary, self.step, self.bound, self.loss]
+        outputs = [self.summary, self.step, self.bound, self.loss, self.l1, self.l2]
 
-        summary, _, bound, loss = self.sess.run(outputs, feed_dict=feed)
+        summary, _, bound, loss, reconstruction, penalty = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
 
-        return bound, loss
+        return bound, loss, reconstruction, penalty
 
 
     def test(self, x):
@@ -188,12 +188,12 @@ class VAE(base.Model):
         Computes lower bound on test data.
         """
         feed = {self.x: x}
-        outputs = [self.summary, self.bound, self.loss]
+        outputs = [self.summary, self.bound, self.loss, self.l1, self.l2]
 
-        summary, bound, loss = self.sess.run(outputs, feed_dict=feed)
+        summary, bound, loss, reconstruction, penalty  = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return bound, loss
+        return bound, loss, reconstruction, penalty
 
 
     def reconstruct(self, x):
@@ -248,9 +248,9 @@ class VAECNN(VAE):
 
             x_image = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
 
-            h2 = nw.conv_pool(h1, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+            h2 = nw.conv_pool(h1, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
 
             flat = tf.contrib.layers.flatten(h2)
 
@@ -281,20 +281,21 @@ class VAECNN(VAE):
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])
 
-            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
 
-            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
+            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
 
-            #logits, probs = self._pixel_cnn(d2, scope='pixel_cnn', reuse=reuse)
+            x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
+            logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
 
-            n_c = self.h * self.w * self.n_ch
-            logits = tf.reshape(d2, shape=[-1, n_c])
-            probs = tf.nn.sigmoid(logits)
+            #n_c = self.h * self.w * self.n_ch
+            #logits = tf.reshape(d2, shape=[-1, n_c])
+            #probs = tf.nn.sigmoid(logits)
 
             return logits, probs
 
 
-    def _pixel_cnn(self, x, scope, reuse):
+    def _pixel_cnn(self, x, z, scope, reuse):
         """
         Combines CNN network with output distribution.
 
@@ -304,7 +305,9 @@ class VAECNN(VAE):
         n_layers = self.args['n_pixelcnn_layers']
         k = self.args['filter_w']
 
-        c = nw.pixel_cnn(x, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
+        #c = nw.pixel_cnn(x, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
+
+        c = nw.conditional_pixel_cnn(x, z, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
         n_c = self.h * self.w * self.n_ch
 
@@ -318,8 +321,7 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            #alpha = -0.25
-            alpha = self.args['alpha']
+            alpha = -0.25   # -0.25, -0.125, -0.0625
 
             l2 = 0.5 * (1 + tf.log(self.z_var) - tf.square(self.z_mu) - self.z_var)
             l2 = tf.reduce_mean(l2, axis=0)
@@ -328,7 +330,6 @@ class VAECNN(VAE):
             l2 = tf.reduce_sum(l2)
 
             return -(self.l1 + l2)
-
 
 
 
@@ -352,7 +353,7 @@ class VAECNN_Color(VAECNN):
                                               log_dir=log_dir, model_dir=model_dir)
 
 
-    def _pixel_cnn(self, x, scope, reuse):
+    def _pixel_cnn(self, x, z, scope, reuse):
         """
         Combines CNN network with output distribution.
         """

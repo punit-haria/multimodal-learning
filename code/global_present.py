@@ -8,12 +8,12 @@ plt.style.use('ggplot')
 
 ### PARAMETERS ###
 
-experiment = "experiment_vae_cnn_mnist"
+experiment = "experiment_vae_cnn_alphas"
 
 res = Results.load(experiment+'.pickle')
 
-test_axis = [0,res.i,-700,-400]  # axis range for test lower bound
-train_axis = [0,res.i,-700,-400]  # axis range for train lower bound
+test_axis = [0,res.i,-150,-60]  # axis range for test lower bound
+train_axis = [0,res.i,-150,-60]  # axis range for train lower bound
 image_dim = [28,28]
 
 

@@ -37,6 +37,39 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         return nonlinearity(c)
 
 
+def conditional_pixel_cnn(x, z, n_layers, k, out_ch, scope, reuse):
+    """
+    Conditional PixelCNN
+
+    x: input tensor
+    z: latent tensor
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        if n_layers == 1:
+            n_ch = out_ch
+        else:
+            n_ch = 32
+
+        nonlinearity = tf.nn.elu
+
+        cx = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
+        #cz = conv2d_masked(z, k, n_ch, mask_type='A', bias=False, scope='layer_1z', reuse=reuse)
+        cz = conv2d(z, n_ch, bias=True, scope='layer_1z', reuse=reuse)
+        c = cx + cz
+
+        for i in range(n_layers-1):
+
+            if i == n_layers - 2:
+                n_ch = out_ch
+
+            name  = 'layer_' + str(i+2)
+            c = nonlinearity(c)
+            c = conv2d_masked(c, k, n_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
+
+        return nonlinearity(c)
+
+
 def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
     """
     Masked 2D convolution
@@ -89,24 +122,24 @@ def conv_pool(x, out_ch, n_convs, nonlinearity, scope, reuse):
     Combined convolution and pooling layer.
     """
     with tf.variable_scope(scope, reuse=reuse):
-        in_ch = x.get_shape()[3].value
-        c = conv2d(x, in_ch, out_ch, bias=True, scope="conv_1", reuse=reuse)
+        c = conv2d(x, out_ch, bias=True, scope="conv_1", reuse=reuse)
 
         for i in range(n_convs-1):
             c = nonlinearity(c)
             name = "conv_"+str(i+2)
-            c = conv2d(c, out_ch, out_ch, bias=False, scope=name, reuse=reuse)
+            c = conv2d(c, out_ch, bias=False, scope=name, reuse=reuse)
 
         return pool(c, scope="pool", reuse=reuse)
 
 
-def conv2d(x, in_ch, out_ch, bias, scope, reuse):
+def conv2d(x, out_ch, bias, scope, reuse):
     """
     Convolution layer
     """
     with tf.variable_scope(scope, reuse=reuse):
 
         k = 3
+        in_ch = x.get_shape()[3].value
         w_shape = [k, k, in_ch, out_ch]
         w = tf.get_variable("w", shape=w_shape, initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
 
