@@ -14,19 +14,16 @@ results = Results('experiment_vae_mnist')
 # parameters
 parms = {
     'n_z': 50,
-    'n_x': 784,
-    'n_enc_units': 200,
-    'learning_rate': 0.002,
+    'learning_rate': 0.001,
     'batch_size': 250,
 
-    'image_dim': [28, 28, 1],
-    'filter_w': 3,
-    'n_dec_units': 200,
-    'n_dec_layers': 3,
+    'n_channels': 1,
+    'filter_w': 3,  # ????
+    'n_pixelcnn_layers': 3,
 
-    'train_steps': 500000,
-    'plot_steps': 40000,
-    'test_steps': 1000,
+    'train_steps': 20000,
+    'plot_steps': 4000,
+    'test_steps': 50,
     'n_plots': 18
 }
 
@@ -94,3 +91,6 @@ for name, model in models.items():
 
 # save experimental results
 Results.save(results)
+
+
+

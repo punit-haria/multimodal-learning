@@ -2,26 +2,6 @@ import tensorflow as tf
 import numpy as np
 
 
-def pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats, scope, reuse):
-    """
-    PixelCNN with an additional layer to model categorical distribution.
-
-    n_cats: number of categories in final transformation
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        cnn = pixel_cnn(x, n_layers, k, out_ch, 'pixel_cnn_convs', reuse)
-
-        n_channels = n_cats * out_ch
-        c = conv2d_masked(cnn, k, n_channels, mask_type='B', bias=False, scope='final_layer', reuse=reuse)
-        r = tf.nn.relu(c)  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
-
-        h = r.get_shape()[1].value
-        w = r.get_shape()[2].value
-
-        logits = tf.reshape(r, shape=[-1, h, w, out_ch, n_cats])
-
-        return logits
-
 
 def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
     """
@@ -41,7 +21,9 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         else:
             n_ch = 32
 
-        c = conv2d_masked(x, k, n_ch, mask_type='A', bias=True, scope='layer_1', reuse=reuse)
+        nonlinearity = tf.nn.relu  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
+
+        c = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
 
         for i in range(n_layers-1):
 
@@ -49,10 +31,10 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
                 n_ch = out_ch
 
             name  = 'layer_' + str(i+2)
-            c = conv2d_masked(c, k, n_ch, mask_type='B', bias=True, scope=name, reuse=reuse)
-            c = tf.nn.relu(c)   # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
+            c = nonlinearity(c)
+            c = conv2d_masked(c, k, n_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
 
-        return c
+        return nonlinearity(c)
 
 
 def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
@@ -102,25 +84,35 @@ def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
         return c
 
 
-def conv_pool(x, in_ch, out_ch, scope, reuse):
+def conv_pool(x, out_ch, n_convs, nonlinearity, scope, reuse):
     """
     Combined convolution and pooling layer.
     """
     with tf.variable_scope(scope, reuse=reuse):
-        c = conv2d(x, in_ch, out_ch, scope="conv", reuse=reuse)
+        in_ch = x.get_shape()[3].value
+        c = conv2d(x, in_ch, out_ch, bias=True, scope="conv", reuse=reuse)
+
+        for i in range(n_convs-1):
+            c = nonlinearity(c)
+            c = conv2d(c, out_ch, out_ch, bias=False, scope="conv", reuse=reuse)
+
         return pool(c, scope="pool", reuse=reuse)
 
 
-def conv2d(x, in_ch, out_ch, scope, reuse):
+def conv2d(x, in_ch, out_ch, bias, scope, reuse):
     """
     Convolution layer
-
-    in_ch/out_ch: number of input and output channels
     """
     with tf.variable_scope(scope, reuse=reuse):
-        w_shape = [3, 3, in_ch, out_ch]
+
+        k = 3
+        w_shape = [k, k, in_ch, out_ch]
         w = tf.get_variable("w", shape=w_shape, initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
-        b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
+
+        if bias:
+            b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
+        else:
+            b = 0
 
         return tf.nn.conv2d(x, w, strides=[1,1,1,1], padding='SAME') + b
 
@@ -131,6 +123,51 @@ def pool(x, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
+
+def deconv_layer(x, out_ch, n_convs, nonlinearity, scope, reuse):
+    """
+    Multiple deconvolution layers.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        in_ch = x.get_shape()[3].value
+
+        c = deconv(x, in_ch, out_ch, stride=True, bias=True, scope="conv", reuse=reuse)
+
+        for i in range(n_convs-1):
+            c = deconv(c, out_ch, out_ch, stride=False, bias=False, scope="conv", reuse=reuse)
+            c = nonlinearity(c)
+
+        return c
+
+
+def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
+    """
+    Deconvolution layer (transpose of convolution)
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        batch_size = tf.shape(input)[0]
+        height = x.get_shape()[1].value
+        width = x.get_shape()[2].value
+
+        k = 3
+        w_shape = [k, k, out_ch, in_ch]
+        w = tf.get_variable("w", shape=w_shape, initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+
+        if bias:
+            b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
+        else:
+            b = 0
+
+        if stride:
+            out_shape = [batch_size, height*2, width*2, out_ch]
+            stride = [1, 2, 2, 1]
+        else:
+            out_shape = [batch_size, height, width, out_ch]
+            stride = [1, 1, 1, 1]
+
+        return tf.nn.conv2d_transpose(x, w, output_shape=out_shape,
+                                      strides=stride, padding='SAME') + b
 
 
 def linear(x, n_x, n_w, scope, reuse):

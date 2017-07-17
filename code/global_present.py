@@ -8,7 +8,7 @@ plt.style.use('ggplot')
 
 ### PARAMETERS ###
 
-experiment = "experiment_mnist_cnn"
+experiment = "experiment_vae_mnist"
 
 res = Results.load(experiment+'.pickle')
 
