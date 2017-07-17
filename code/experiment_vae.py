@@ -8,7 +8,7 @@ from results import Results
 
 
 # store experimental results
-results = Results('experiment_vae_mnist')
+results = Results('experiment_vae_cnn_mnist')
 
 
 # parameters
@@ -19,19 +19,18 @@ parms = {
 
     'n_channels': 1,
     'filter_w': 3,  # ????
-    'n_pixelcnn_layers': 3,
+    'n_pixelcnn_layers': 4,
 
-    'train_steps': 20000,
-    'plot_steps': 4000,
+    'train_steps': 10000,
+    'plot_steps': 1000,
     'test_steps': 50,
     'n_plots': 18
 }
 
 
 models = {
-    'VAE': VAE
-    #'vae_translate': VAETranslate,
-    #'VAE_CNN': VAECNN
+    #'VAE': VAE
+    'VAE_CNN': VAECNN
 }
 
 # data

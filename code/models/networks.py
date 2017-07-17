@@ -90,11 +90,12 @@ def conv_pool(x, out_ch, n_convs, nonlinearity, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         in_ch = x.get_shape()[3].value
-        c = conv2d(x, in_ch, out_ch, bias=True, scope="conv", reuse=reuse)
+        c = conv2d(x, in_ch, out_ch, bias=True, scope="conv_1", reuse=reuse)
 
         for i in range(n_convs-1):
             c = nonlinearity(c)
-            c = conv2d(c, out_ch, out_ch, bias=False, scope="conv", reuse=reuse)
+            name = "conv_"+str(i+2)
+            c = conv2d(c, out_ch, out_ch, bias=False, scope=name, reuse=reuse)
 
         return pool(c, scope="pool", reuse=reuse)
 
@@ -132,10 +133,12 @@ def deconv_layer(x, out_ch, n_convs, nonlinearity, scope, reuse):
     with tf.variable_scope(scope, reuse=reuse):
         in_ch = x.get_shape()[3].value
 
-        c = deconv(x, in_ch, out_ch, stride=True, bias=True, scope="conv", reuse=reuse)
+        c = deconv(x, in_ch, out_ch, stride=True, bias=True, scope="conv_1", reuse=reuse)
 
         for i in range(n_convs-1):
-            c = deconv(c, out_ch, out_ch, stride=False, bias=False, scope="conv", reuse=reuse)
+
+            name = "conv_"+str(i+2)
+            c = deconv(c, out_ch, out_ch, stride=False, bias=False, scope=name, reuse=reuse)
             c = nonlinearity(c)
 
         return c
@@ -146,7 +149,7 @@ def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
     Deconvolution layer (transpose of convolution)
     """
     with tf.variable_scope(scope, reuse=reuse):
-        batch_size = tf.shape(input)[0]
+        batch_size = tf.shape(x)[0]
         height = x.get_shape()[1].value
         width = x.get_shape()[2].value
 
@@ -166,8 +169,11 @@ def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
             out_shape = [batch_size, height, width, out_ch]
             stride = [1, 1, 1, 1]
 
-        return tf.nn.conv2d_transpose(x, w, output_shape=out_shape,
-                                      strides=stride, padding='SAME') + b
+        dcv = tf.nn.conv2d_transpose(x, w, output_shape=out_shape, strides=stride, padding='SAME')
+        out_shape[0] = None
+        dcv.set_shape(out_shape)
+
+        return dcv + b
 
 
 def linear(x, n_x, n_w, scope, reuse):

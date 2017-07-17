@@ -276,7 +276,7 @@ class VAECNN(VAE):
 
             d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_3', reuse=reuse)
 
-            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_3', reuse=reuse)
+            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=3, nonlinearity=tf.nn.relu, scope='layer_4', reuse=reuse)
 
             logits, probs = self._pixel_cnn(d2, scope='pixel_cnn', reuse=reuse)
 
