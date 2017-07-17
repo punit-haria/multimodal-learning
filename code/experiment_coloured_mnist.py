@@ -24,7 +24,7 @@ parms = {
     'image_dim': [28, 28, 3],
     'filter_w': 3,
     'n_dec_units': 500,
-    'n_dec_layers': 2,
+    'n_dec_layers': 3,
 
     'n_paired': 1000,
 

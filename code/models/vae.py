@@ -1,207 +1,347 @@
 import tensorflow as tf
-from models import modules as mod
-from models import base 
+import numpy as np
+
+from models import base
+from models import networks as nw
 
 
-class VariationalAutoEncoder(base.Model):
-    
-    def __init__(self, input_dim, latent_dim, learning_rate, epsilon = 1e-3, decay = 0.99, 
-        name="VAE", session=None, log_dir=None, model_dir=None):
-        """
-        Variational Auto-Encoder. 
+class VAE(base.Model):
+    """
+    Variational Auto-Encoder with 2 inputs
 
-        input_dim: input data dimensions
-        latent_dim: latent space dimensionality
-        learning_rate: optimization learning rate
-        """
-        # data and latent dimensionality
-        self.x_dim = input_dim
-        self.z_dim = latent_dim
-        self.lr = learning_rate
+    Arguments:
+    n_x, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
+    """
+    def __init__(self, arguments, name="VAE", session=None, log_dir=None, model_dir=None):
+        # dictionary of model/inference arguments
+        self.args = arguments
 
-        # counter for number of executed training steps
+        # training steps counter
         self.n_steps = 0
 
         # base class constructor (initializes model)
-        super(VariationalAutoEncoder, self).__init__(name=name, session=session, 
-            log_dir=log_dir, model_dir=model_dir)
+        super(VAE, self).__init__(name=name, session=session, log_dir=log_dir, model_dir=model_dir)
 
 
     def _initialize(self,):
-        """
-        Initialize model components. 
-        """
-        with tf.variable_scope(self.name, reuse=False):  
-            # input placeholder
-            self.X = tf.placeholder(tf.float32, [None, self.x_dim], name='X')
+        # input/latent dimensions
+        n_x1 = self.args['n_x']
+        n_z = self.args['n_z']
 
-            # latent space parameters
-            self.z_mean, self.z_var = self._encoder()
+        # input placeholders
+        self.x = tf.placeholder(tf.float32, [None, n_x1], name='x')
 
-            # samples from latent space
-            self.Z = self._sample_latent_space()
+        # encoder
+        self.z_mu, self.z_var = self._encoder(self.x, n_x, n_z, scope='x_enc', reuse=False)
 
-            # model parameters
-            self.x_logits, self.x_probs = self._decoder()      
+        # samples
+        self.z = self._sample(self.z_mu, self.z_var, n_z, scope='sampler', reuse=False)
 
-            # variational bound
-            self.bound = self._variational_bound()
+        # decoders
+        self.rx, self.rx_probs = self._decoder(self.z, n_z, n_x, scope='x_dec', reuse=False)
 
-            # loss
-            self.loss = -self.bound  
+        # choice of variational bounds
+        self.l_x = self._marginal_bound(self.rx, self.x, self.z_mu, self.z_var, scope='marginal_x')
 
-            # optimization step
-            self.step = self._optimizer()
+        # training and test bounds
+        self.bound = self._training_bound()
+        self.test_bound = self._test_bound()
 
+        # loss function
+        self.loss = -self.bound
 
-    def _encoder(self,):
-        """
-        Recognition network.
-        """
-        with tf.variable_scope("encoder", reuse=False):
-            a1 = self._affine_map(self.X, self.x_dim, 500, "layer_1")
-            h1 = tf.nn.relu(a1)
-            a2 = self._affine_map(h1, 500, 500, "layer_2")
-            h2 = tf.nn.relu(a2)
-
-            z_mean = self._affine_map(h2, 500, self.z_dim, "mean_layer")
-
-            a3_var = self._affine_map(h2, 500, self.z_dim, "var_layer")
-            z_var = tf.nn.softplus(a3_var)
-
-            return z_mean, z_var
+        # optimizer
+        self.step = self._optimizer(self.loss)
 
 
-    def _decoder(self,):
-        """
-        Generator network. 
-        """
-        with tf.variable_scope("decoder", reuse=False):
-            a1 = self._affine_map(self.Z, self.z_dim, 500, "layer_1")
-            h1 = tf.nn.relu(a1)
-            a2 = self._affine_map(h1, 500, 500, "layer_2")
-            h2 = tf.nn.relu(a2)
+    def _encoder(self, x, n_x, n_z, scope, reuse):
 
-            x_logits = self._affine_map(h2, 500, self.x_dim, "layer_3")
-            x_probs = tf.nn.sigmoid(x_logits)
-
-            return x_logits, x_probs
-
-
-    def _affine_map(self, input, in_dim, out_dim, scope, reuse):
-        """
-        Affine transform.
-
-        input: input tensor
-        in_dim/out_dim: input and output dimensions
-        """
         with tf.variable_scope(scope, reuse=reuse):
-            W = tf.get_variable("W", shape=[in_dim,out_dim], 
-                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
-            b = tf.get_variable("b", shape=[out_dim], initializer=tf.constant_initializer(0.1))
+            n_units = self.args['n_enc_units']
 
-            return tf.matmul(input,W) + b
+            a1 = self._linear(x, n_x, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
 
-    
-    def _sample_latent_space(self,):
-        """
-        Monte Carlo sampling from Latent distribution. Takes a single sample for each observation.
-        """
-        with tf.variable_scope("sampling", reuse=False):
-            z_std = tf.sqrt(self.z_var)
-            batch_size = tf.shape(self.X)[0]
-            eps = tf.random_normal((batch_size, self.z_dim))
-            z = self.z_mean + tf.multiply(z_std, eps)
-            return z
-    
+            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
 
-    def _variational_bound(self,):
-        """
-        Variational Bound.
-        """
-        with tf.variable_scope("variational_bound", reuse=False):
-            # reconstruction
-            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=self.x_logits, 
-                labels=self.X), axis=1)
+            mean = self._linear(h2, n_units, n_z, "mean_layer", reuse=reuse)
 
-            # penalty
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(self.z_var) - tf.square(self.z_mean) - self.z_var, axis=1)
+            a3 = self._linear(h2, n_units, n_z, "var_layer", reuse=reuse)
+            var = tf.nn.softplus(a3)
 
-            # total bound
-            return tf.reduce_mean(l1+l2, axis=0)
-        
+            return mean, var
 
-    def _optimizer(self,):
-        """
-        Optimization method.
-        """
-        with tf.variable_scope("optimization", reuse=False):
-            step = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+
+    def _decoder(self, z, n_z, n_x, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            n_units = self.args['n_dec_units']
+
+            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
+
+            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
+
+            logits = self._linear(h2, n_units, n_x, "layer_3", reuse=reuse)
+            probs = tf.nn.sigmoid(logits)
+
+            return logits, probs
+
+
+    def _training_bound(self,):
+        return tf.reduce_mean(self.l_x, axis=0)
+
+
+    def _test_bound(self,):
+        return tf.reduce_mean(self.l_x, axis=0)
+
+
+    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            l1 = self._reconstruction_loss(logits=logits, labels=labels)
+
+            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
+
+            return l1 + l2
+
+
+    def _reconstruction_loss(self, logits, labels):
+
+        return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+
+
+    def _optimizer(self, loss, scope='optimizer', reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            lr = self.args['learning_rate']
+            step = tf.train.RMSPropOptimizer(lr).minimize(loss)
+
             return step
 
 
+    def _sample(self, z_mu, z_var, n_z, scope='sampling', reuse=False):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            n_samples = tf.shape(z_mu)[0]
+
+            z_std = tf.sqrt(z_var)
+            eps = tf.random_normal((n_samples, n_z))
+            z = z_mu + tf.multiply(z_std, eps)
+
+            return z
+
+
     def _summaries(self,):
-        """
-        Summary variables for visualizing with tensorboard.
-        """
-        with tf.variable_scope("summary", reuse=False):
-            tf.summary.scalar('variational_bound', self.bound)
+
+        with tf.variable_scope("summaries", reuse=False):
+            tf.summary.scalar('training_bound', self.bound)
+            tf.summary.scalar('lower_bound_on_log_p_x_y', self.test_bound)
+
             return tf.summary.merge_all()
 
 
-    def train(self, batch_X, write=True):
-        """
-        Executes single training step.
+    def _linear(self, x, n_x, n_w, scope, reuse):
 
-        batch_X: minibatch of input data
-        write: indicates whether to write summary
+        with tf.variable_scope(scope, reuse=reuse):
+            w = tf.get_variable("W", shape=[n_x,n_w],
+                                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+            b = tf.get_variable("b", shape=[n_w], initializer=tf.constant_initializer(0.1))
+
+            return tf.matmul(x, w) + b
+
+
+    def train(self, x, write=True):
         """
-        feed = {self.X: batch_X}
-        summary, _ = self.sess.run([self.summary, self.step], feed_dict=feed)
+        Performs single training step.
+        """
+        feed = {self.x: x}
+        outputs = [self.summary, self.step, self.bound]
+
+        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
-    
 
-    def test(self, batch_X):
-        """
-        Writes summary for test data.
+        return bound
 
-        batch_X: minibatch of input data
+
+    def test(self, x):
         """
-        feed = {self.X: batch_X}
-        loss, summary = self.sess.run([self.loss, self.summary], feed_dict=feed)
+        Computes lower bound on test data.
+        """
+        feed = {self.x: x}
+        outputs = [self.summary, self.test_bound]
+
+        summary, test_bound = self.sess.run(outputs, feed_dict=feed)
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return loss
-        
+        return test_bound
 
-    def reconstruct(self, batch_X):
-        """
-        Reconstructed data, given input X.
 
-        batch_X: minibatch of input data
+    def reconstruct(self, x):
         """
-        feed = {self.X: batch_X}
-        return self.sess.run(self.x_probs, feed_dict=feed)
+        Reconstruct x.
+        """
+        feed = {self.x: x}
+        return self.sess.run(self.rx_probs, feed_dict=feed)
 
-    
-    def encode(self, batch_X):
-        """
-        Computes mean of latent space, given input X.
 
-        batch_X: minibatch of input data        
+    def encode(self, x):
         """
-        feed = {self.X: batch_X}
-        return self.sess.run(self.z_mean, feed_dict=feed)
+        Encode x1.
+        """
+        feed = {self.x: x}
+        return self.sess.run(self.z_mu, feed_dict=feed)
 
-    
-    def decode(self, batch_Z):
-        """
-        Computes bernoulli probabilities in data space, given input Z.
 
-        batch_Z: minibatch in latent space
+    def decode(self, z):
         """
-        feed = {self.Z: batch_Z}
-        return self.sess.run(self.x_probs, feed_dict=feed)
+        Decodes x1 and x2.
+        """
+        feed = {self.z: z}
+        return self.sess.run(self.rx_probs, feed_dict=feed)
+
+
+
+
+class VAECNN(VAE):
+
+    """
+    Variational Auto-Encoder with PixelCNN Decoder. Bernouli Output distribution.
+
+    Arguments:
+    n_x1, n_x2, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
+    image_dim: shape of input image
+    filter_w: width of convolutional filter (with width = height)
+    n_dec_layers: number of layers in decoder
+    """
+    def __init__(self, arguments, name="VAECNN", session=None, log_dir=None, model_dir=None):
+
+        super(VAECNN, self).__init__(arguments=arguments, name=name, session=session,
+                                              log_dir=log_dir, model_dir=model_dir)
+
+
+    def _encoder(self, x, n_x, n_z, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+            n_units = self.args['n_enc_units']
+            im_dim = self.args['image_dim']
+            in_ch = im_dim[2]
+
+            x_image = tf.reshape(x, shape=[-1]+im_dim)
+
+            h1 = nw.conv_pool(x_image, in_ch, 32, 'layer_1', reuse=reuse)
+
+            h2 = nw.conv_pool(h1, 32, 32, 'layer_2', reuse=reuse)
+
+            dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
+            flat = tf.reshape(h2, shape=[-1,dim])
+
+            fc = self._linear(flat, dim, n_units, 'layer_3', reuse=reuse)
+            h3 = tf.nn.relu(fc)
+
+            mean = self._linear(h3, n_units, n_z, "mean_layer", reuse=reuse)
+
+            a3 = self._linear(h3, n_units, n_z, "var_layer", reuse=reuse)
+            var = tf.nn.softplus(a3)
+
+            return mean, var
+
+
+    def _decoder(self, z, n_z, n_x, scope, reuse):
+
+        with tf.variable_scope(scope, reuse=reuse):
+
+            n_units = self.args['n_dec_units']
+            im_dim = self.args['image_dim']
+            n_layers = self.args['n_dec_layers']
+            k = self.args['filter_w']
+            out_ch = im_dim[2]
+
+            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.relu(a1)
+
+            z_units = im_dim[0] * im_dim[1] * im_dim[2]
+            a2 = self._linear(h1, n_units, z_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.relu(a2)
+
+            z_image = tf.reshape(h2, shape=[-1]+im_dim)
+
+            logits, probs = self._decoder_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse)
+
+            return logits, probs
+
+
+    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
+        """
+        Combines CNN network with output distribution.
+
+        x: tensor of images
+        n_layers: number of layers in CNN
+        k: convolution filter size
+        out_ch: network output channels
+        """
+        c = nw.pixel_cnn(x, n_layers, k, out_ch, scope, reuse=reuse)
+
+        n_c = c.get_shape()[1].value * c.get_shape()[2].value * c.get_shape()[3].value
+
+        logits = tf.reshape(c, shape=[-1, n_c])
+        probs = tf.nn.sigmoid(logits)
+
+        return logits, probs
+
+
+
+
+class VAECNN_Color(VAECNN):
+
+    """
+    Variational Auto-Encoder with PixelCNN Decoder. 256-way Categorical output distribution.
+
+    Arguments:
+    n_x1, n_x2, n_z: dimensionality of input and latent variables
+    learning_rate: optimizer learning_rate
+    n_enc_units: number of hidden units in encoder fully-connected layers
+    n_dec_units: number of hidden units in decoder fully-connected layers
+    image_dim: shape of input image
+    filter_w: width of convolutional filter (with width = height)
+    n_dec_layers: number of layers in decoder
+    """
+    def __init__(self, arguments, name="VAECNN_Color", session=None, log_dir=None, model_dir=None):
+
+        super(VAECNN_Color, self).__init__(arguments=arguments, name=name, session=session,
+                                              log_dir=log_dir, model_dir=model_dir)
+
+
+    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
+        """
+        Combines CNN network with output distribution.
+        """
+        logits = nw.pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats=256, scope=scope, reuse=reuse)
+        probs = tf.nn.softmax(logits, dim=-1)
+
+        return logits, probs
+
+
+    def _reconstruction_loss(self, logits, labels):
+
+        # note: labels have dimension [batch_size, h*w*ch]
+
+        # scale and discretize pixel intensities
+        labels = tf.cast(labels * 255, dtype=tf.int32)
+
+        # reshape to images
+        labels = tf.reshape(labels, shape=[-1]+self.args['image_dim'])
+
+        return tf.reduce_sum(-tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=[1,2,3])
+
 

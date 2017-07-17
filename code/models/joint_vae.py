@@ -15,7 +15,7 @@ class VAE(base.Model):
     n_enc_units: number of hidden units in encoder fully-connected layers
     n_dec_units: number of hidden units in decoder fully-connected layers
     """
-    def __init__(self, arguments, name="VAE", session=None, log_dir=None, model_dir=None):
+    def __init__(self, arguments, name="JointVAE", session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
         self.args = arguments
 
