@@ -60,7 +60,7 @@ for name, model in models.items():
         results.add(i, bound, "train_lower_bound")
 
         if i % parms['test_steps'] == 0:
-            print("At iteration ", i)
+            print("At iteration ", i, flush=True)
 
             # test minibatch
             x = mnist.sample(1000, dtype='test', binarize=False)[0]
