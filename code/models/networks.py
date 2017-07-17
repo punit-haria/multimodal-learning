@@ -19,7 +19,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         if n_layers == 1:
             n_ch = out_ch
         else:
-            n_ch = 32
+            n_ch = 16
 
         nonlinearity = tf.nn.elu  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
 
@@ -37,7 +37,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         return nonlinearity(c)
 
 
-def conditional_pixel_cnn(x, z, n_layers, k, out_ch, scope, reuse):
+def conditional_pixel_cnn(x, z, n_layers, out_ch, scope, reuse):
     """
     Conditional PixelCNN
 
@@ -49,23 +49,31 @@ def conditional_pixel_cnn(x, z, n_layers, k, out_ch, scope, reuse):
         if n_layers == 1:
             n_ch = out_ch
         else:
-            n_ch = 32
+            n_ch = 16
 
+        k = 3
         nonlinearity = tf.nn.elu
 
-        cx = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
-        #cz = conv2d_masked(z, k, n_ch, mask_type='A', bias=False, scope='layer_1z', reuse=reuse)
-        cz = conv2d(z, n_ch, bias=True, scope='layer_1z', reuse=reuse)
-        c = cx + cz
+        c = tf.concat([x, z], axis=3)
+        c = conv2d_masked(c, k, n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
 
         for i in range(n_layers-1):
 
-            if i == n_layers - 2:
-                n_ch = out_ch
+            name = 'layer_' + str(i + 2)
 
-            name  = 'layer_' + str(i+2)
             c = nonlinearity(c)
-            c = conv2d_masked(c, k, n_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
+
+            if i == n_layers - 2:  # last layer
+                c = conv2d_masked(c, k=k, out_ch=out_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
+
+            else:
+                inter_ch = n_ch // 2
+                c1 = conv2d_masked(c, k=1, out_ch=inter_ch, mask_type='B', bias=False, scope=name+'_1x1_a', reuse=reuse)
+                c1 = nonlinearity(c1)
+                c1 = conv2d_masked(c1, k=k, out_ch=inter_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
+                c1 = nonlinearity(c1)
+                c1 = conv2d_masked(c1, k=1, out_ch=n_ch, mask_type='B', bias=False, scope=name+'_1x1_b', reuse=reuse)
+                c = c1 + c
 
         return nonlinearity(c)
 
@@ -89,20 +97,25 @@ def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
                             initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
 
         # create mask
-        mask = np.zeros(shape=[k, k, in_ch, out_ch], dtype=np.float32)
-        half_k = (k // 2) + 1
-        for i in range(half_k):
-            for j in range(k):
-                if i < half_k - 1 or j < half_k - 1:
-                    mask[i,j,:,:] = 1
+        if k == 1:
+            assert mask_type == 'B'
+            mask = np.ones(shape=[k, k, in_ch, out_ch], dtype=np.float32)
 
-        # mask type
-        if mask_type == 'A':
-            mask[half_k-1,half_k-1,:,:] = 0
-        elif mask_type == 'B':
-            mask[half_k - 1, half_k - 1, :, :] = 1
         else:
-            raise Exception("Masking type not implemented..")
+            mask = np.zeros(shape=[k, k, in_ch, out_ch], dtype=np.float32)
+            half_k = (k // 2) + 1
+            for i in range(half_k):
+                for j in range(k):
+                    if i < half_k - 1 or j < half_k - 1:
+                        mask[i,j,:,:] = 1
+
+            # mask type
+            if mask_type == 'A':
+                mask[half_k-1,half_k-1,:,:] = 0
+            elif mask_type == 'B':
+                mask[half_k - 1, half_k - 1, :, :] = 1
+            else:
+                raise Exception("Masking type not implemented..")
 
         # incorporate bias term
         if bias:

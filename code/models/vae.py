@@ -283,7 +283,7 @@ class VAECNN(VAE):
 
             d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
 
-            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
+            d2 = nw.deconv_layer(d1, out_ch=4, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
 
             x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
             logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
@@ -298,16 +298,12 @@ class VAECNN(VAE):
     def _pixel_cnn(self, x, z, scope, reuse):
         """
         Combines CNN network with output distribution.
-
-        x: tensor of images
-        out_ch: network output channels
         """
         n_layers = self.args['n_pixelcnn_layers']
-        k = self.args['filter_w']
 
         #c = nw.pixel_cnn(x, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
-        c = nw.conditional_pixel_cnn(x, z, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
+        c = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
         n_c = self.h * self.w * self.n_ch
 
@@ -321,7 +317,8 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            alpha = -0.25   # -0.25, -0.125, -0.0625
+            #alpha = -0.5   # -0.25, -0.125, -0.0625
+            alpha = self.args['alpha']
 
             l2 = 0.5 * (1 + tf.log(self.z_var) - tf.square(self.z_mu) - self.z_var)
             l2 = tf.reduce_mean(l2, axis=0)
