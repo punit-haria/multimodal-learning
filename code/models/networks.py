@@ -13,7 +13,7 @@ def pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats, scope, reuse):
 
         n_channels = n_cats * out_ch
         c = conv2d_masked(cnn, k, n_channels, mask_type='B', bias=False, scope='final_layer', reuse=reuse)
-        r = tf.nn.relu(c)
+        r = tf.nn.relu(c)  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
 
         h = r.get_shape()[1].value
         w = r.get_shape()[2].value
