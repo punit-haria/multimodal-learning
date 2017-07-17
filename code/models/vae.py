@@ -28,11 +28,11 @@ class VAE(base.Model):
 
     def _initialize(self,):
         # input/latent dimensions
-        n_x1 = self.args['n_x']
+        n_x = self.args['n_x']
         n_z = self.args['n_z']
 
         # input placeholders
-        self.x = tf.placeholder(tf.float32, [None, n_x1], name='x')
+        self.x = tf.placeholder(tf.float32, [None, n_x], name='x')
 
         # encoder
         self.z_mu, self.z_var = self._encoder(self.x, n_x, n_z, scope='x_enc', reuse=False)
@@ -140,7 +140,7 @@ class VAE(base.Model):
     def _summaries(self,):
 
         with tf.variable_scope("summaries", reuse=False):
-            tf.summary.scalar('training_bound', self.bound)
+            tf.summary.scalar('training_curve', self.bound)
             tf.summary.scalar('lower_bound_on_log_p_x_y', self.test_bound)
 
             return tf.summary.merge_all()
@@ -161,14 +161,14 @@ class VAE(base.Model):
         Performs single training step.
         """
         feed = {self.x: x}
-        outputs = [self.summary, self.step, self.bound]
+        outputs = [self.summary, self.step, self.bound, self.test_bound]
 
-        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
+        summary, _, curve, bound = self.sess.run(outputs, feed_dict=feed)
         if write:
             self.tr_writer.add_summary(summary, self.n_steps)
         self.n_steps = self.n_steps + 1
 
-        return bound
+        return curve, bound
 
 
     def test(self, x):

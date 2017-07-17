@@ -8,7 +8,7 @@ from results import Results
 
 
 # store experimental results
-results = Results('experiment_mnist_cnn')
+results = Results('experiment_vae_mnist')
 
 
 # parameters
@@ -24,16 +24,17 @@ parms = {
     'n_dec_units': 200,
     'n_dec_layers': 3,
 
-    'train_steps': 2000,
-    'plot_steps': 500,
-    'n_plots': 10
+    'train_steps': 500000,
+    'plot_steps': 40000,
+    'test_steps': 1000,
+    'n_plots': 18
 }
 
 
 models = {
-    'vae': VAE
+    'VAE': VAE
     #'vae_translate': VAETranslate,
-    #'vae_cnn': VAECNN
+    #'VAE_CNN': VAECNN
 }
 
 # data
@@ -53,19 +54,20 @@ for name, model in models.items():
     for i in range(parms['train_steps'] + 1):
 
         # random minibatch
-        x, _ = mnist.sample(parms['batch_size'], dtype='train', binarize=True)
+        x = mnist.sample(parms['batch_size'], dtype='train', binarize=True)[0]
 
         # training step
-        bound = vae.train(x)
+        curve, bound = vae.train(x)
 
         # save results
-        results.add(i, bound, "training_curve")
+        results.add(i, curve, "training_curve")
+        results.add(i, bound, "train_lower_bound")
 
-        if i % 25 == 0:
+        if i % parms['test_steps'] == 0:
             print("At iteration ", i)
 
             # test minibatch
-            x, _ = mnist.sample(1000, dtype='test', binarize=False)
+            x = mnist.sample(1000, dtype='test', binarize=False)[0]
 
             # test model
             bound = vae.test(x)

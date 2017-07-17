@@ -77,6 +77,7 @@ class Results(object):
         self.name = name
         self.runs = {}
         self.last = None  # tracks last added Trial
+        self.i = 0  # track maximum time step across all trials
 
 
     def create_run(self, name):
@@ -100,6 +101,13 @@ class Results(object):
         Get experimental run by name.
         """
         return self.runs[run_name]
+
+
+    def runs(self, ):
+        """
+        Return keys of runs dictionary.
+        """
+        return self.runs.keys()
     
     
     def add(self, i, value, series_name, run_name=None):
@@ -119,6 +127,8 @@ class Results(object):
                 self.last.add_to_series(series_name, i, value)
         else:
             self.runs[run_name].add_to_series(series_name, i, value)
+
+        self.i = max(i, self.i)
 
 
     @staticmethod
