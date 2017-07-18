@@ -20,16 +20,16 @@ parms = {
     'n_channels': 1,
     'n_pixelcnn_layers': 3,
 
-    'train_steps': 100000,
-    'plot_steps': 10000,
+    'train_steps': 50000,
+    'plot_steps': 25000,
     'test_steps': 50,
     'n_plots': 18
 }
 
 
 models = {
-    'VAE': VAE
-    #'VAE_CNN': VAECNN
+    #'VAE_batch_norm_4_layers': VAE
+    'VAE_CNN_Salisman': VAECNN
 }
 
 # data

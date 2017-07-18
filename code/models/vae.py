@@ -27,7 +27,6 @@ class VAE(base.Model):
 
     def _initialize(self,):
         # input/latent dimensions
-
         self.n_z = self.args['n_z']
         self.n_ch = self.args['n_channels']
         self.h = 28
@@ -70,7 +69,6 @@ class VAE(base.Model):
             h1 = tf.nn.elu(h1)
             h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
-
             h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.elu(h2)
             h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
@@ -96,7 +94,7 @@ class VAE(base.Model):
             h2 = tf.nn.elu(h2)
             h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
-            logits = self._linear(h2, self.n_x, "layer_3", reuse=reuse)
+            logits = self._linear(h2, self.n_x, "logits_layer", reuse=reuse)
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
@@ -135,7 +133,9 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope, reuse=reuse):
             lr = self.args['learning_rate']
-            step = tf.train.RMSPropOptimizer(lr).minimize(loss)
+
+            #step = tf.train.RMSPropOptimizer(lr).minimize(loss)
+            step = tf.train.AdamOptimizer(lr).minimize(loss)
 
             return step
 
@@ -254,17 +254,16 @@ class VAECNN(VAE):
 
             x_image = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
-            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
+            h1 = nw.conv_pool(x_image, k=5, out_ch=16, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
 
-            h2 = nw.conv_pool(h1, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
-            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
+            h2 = nw.conv_pool(h1, k=5, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
 
-            flat = tf.contrib.layers.flatten(h2)
+            h3 = nw.conv_pool(h2, k=3, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
 
-            fc = self._linear(flat, n_out=200, scope='layer_3', reuse=reuse)
+            flat = tf.contrib.layers.flatten(h3)
+
+            fc = self._linear(flat, n_out=200, scope='layer_4', reuse=reuse)
             h3 = tf.nn.elu(fc)
-            h3 = nw.batch_norm(h3, self.is_training, scope='bnorm_3', reuse=reuse)
 
             mean = self._linear(h3, self.n_z, "mean_layer", reuse=reuse)
 
@@ -281,27 +280,27 @@ class VAECNN(VAE):
             h1 = self._linear(z, n_out=200, scope='layer_1', reuse=reuse)
             h1 = tf.nn.elu(h1)
 
-            h = int(self.h / 4)
-            w = int(self.w / 4)
+            h = 3
+            w = 3
 
             dim = 32 * h * w
             h2 = self._linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
             h2 = tf.nn.elu(h2)
-            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_1', reuse=reuse)
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])
 
-            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
-            d1 = nw.batch_norm(d1, self.is_training, scope='bnorm_2', reuse=reuse)
+            d1 = nw.deconv_layer(z_image, k=3, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+            d1 = tf.pad(d1, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
 
-            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
-            d2 = nw.batch_norm(d2, self.is_training, scope='bnorm_3', reuse=reuse)
+            d2 = nw.deconv_layer(d1, k=5, out_ch=16, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
+
+            d3 = nw.deconv_layer(d2, k=5, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_5', reuse=reuse)
 
             #x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
             #logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
 
             n_c = self.h * self.w * self.n_ch
-            logits = tf.reshape(d2, shape=[-1, n_c])
+            logits = tf.reshape(d3, shape=[-1, n_c])
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
@@ -329,7 +328,7 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            alpha = -0.625   # -0.25, -0.125, -0.0625
+            alpha = -0.25   # -0.0625, -0.125, -0.25
 
             l2 = 0.5 * (1 + 2*tf.log(self.z_sigma) - tf.square(self.z_mu) - tf.square(self.z_sigma))
             l2 = tf.reduce_mean(l2, axis=0)

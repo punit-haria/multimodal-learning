@@ -21,7 +21,7 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
         else:
             n_ch = 16
 
-        nonlinearity = tf.nn.elu  # USE GATED ACTIVATION UNIT INSTEAD?  (SEE CONDITIONAL PIXELCNN PAPER)
+        nonlinearity = tf.nn.elu
 
         c = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
 
@@ -130,29 +130,28 @@ def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
         return c
 
 
-def conv_pool(x, out_ch, n_convs, nonlinearity, scope, reuse):
+def conv_pool(x, k, out_ch, n_convs, nonlinearity, scope, reuse):
     """
     Combined convolution and pooling layer.
     """
     with tf.variable_scope(scope, reuse=reuse):
-        c = conv2d(x, out_ch, bias=True, scope="conv_1", reuse=reuse)
+        c = conv2d(x, k, out_ch, bias=True, scope="conv_1", reuse=reuse)
         c = nonlinearity(c)
 
         for i in range(n_convs-1):
             name = "conv_"+str(i+2)
-            c = conv2d(c, out_ch, bias=False, scope=name, reuse=reuse)
+            c = conv2d(c, k, out_ch, bias=False, scope=name, reuse=reuse)
             c = nonlinearity(c)
 
         return pool(c, scope="pool", reuse=reuse)
 
 
-def conv2d(x, out_ch, bias, scope, reuse):
+def conv2d(x, k, out_ch, bias, scope, reuse):
     """
     Convolution layer
     """
     with tf.variable_scope(scope, reuse=reuse):
 
-        k = 3
         in_ch = x.get_shape()[3].value
         w_shape = [k, k, in_ch, out_ch]
         w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
@@ -173,26 +172,26 @@ def pool(x, scope, reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
 
-def deconv_layer(x, out_ch, n_convs, nonlinearity, scope, reuse):
+def deconv_layer(x, k, out_ch, n_convs, nonlinearity, scope, reuse):
     """
     Multiple deconvolution layers.
     """
     with tf.variable_scope(scope, reuse=reuse):
         in_ch = x.get_shape()[3].value
 
-        c = deconv(x, in_ch, out_ch, stride=True, bias=True, scope="conv_1", reuse=reuse)
+        c = deconv(x, k, in_ch, out_ch, stride=True, bias=True, scope="conv_1", reuse=reuse)
         c = nonlinearity(c)
 
         for i in range(n_convs-1):
 
             name = "conv_"+str(i+2)
-            c = deconv(c, out_ch, out_ch, stride=False, bias=False, scope=name, reuse=reuse)
+            c = deconv(c, k, out_ch, out_ch, stride=False, bias=False, scope=name, reuse=reuse)
             c = nonlinearity(c)
 
         return c
 
 
-def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
+def deconv(x, k, in_ch, out_ch, stride, bias, scope, reuse):
     """
     Deconvolution layer (transpose of convolution)
     """
@@ -201,7 +200,6 @@ def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
         height = x.get_shape()[1].value
         width = x.get_shape()[2].value
 
-        k = 3
         w_shape = [k, k, out_ch, in_ch]
         w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
 
@@ -247,6 +245,17 @@ def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='ba
       http://r2rt.com/implementing-batch-normalization-in-tensorflow.html
     """
     with tf.variable_scope(scope, reuse=reuse):
+
+        is_conv = False
+        if len(x.get_shape()) == 4:  # convolution layer
+            xh = x.get_shape()[1].value
+            xw = x.get_shape()[2].value
+            xch = x.get_shape()[3].value
+
+            x = tf.transpose(x, perm=[0,3,1,2])
+            x = tf.contrib.layers.flatten(x)
+            is_conv = True
+
         # number of features in input matrix
         dim = x.get_shape()[1].value
         # scaling coefficients
@@ -273,13 +282,25 @@ def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='ba
             pop_var_new = popvar * decay + batch_var * (1 - decay)
             with tf.control_dependencies([popmean.assign(pop_mean_new), popvar.assign(pop_var_new)]):
                 # batch normalization
-                return tf.nn.batch_normalization(x, mean=batch_mean, variance=batch_var,
+                bn = tf.nn.batch_normalization(x, mean=batch_mean, variance=batch_var,
                     offset=beta, scale=gamma, variance_epsilon=epsilon)
+
+                if is_conv:
+                    bn = tf.reshape(bn, shape=[-1,xch,xh,xw])
+                    bn = tf.transpose(bn, perm=[0,2,3,1])
+
+                return bn
 
         def predict():
             # batch normalization (using population moments)
-            return tf.nn.batch_normalization(x, mean=popmean, variance=popvar,
+            bn = tf.nn.batch_normalization(x, mean=popmean, variance=popvar,
                 offset=beta, scale=gamma, variance_epsilon=epsilon)
+
+            if is_conv:
+                bn = tf.reshape(bn, shape=[-1, xch, xh, xw])
+                bn = tf.transpose(bn, perm=[0, 2, 3, 1])
+
+            return bn
 
         # conditional evaluation in tf graph
         return tf.cond(is_training, update_and_train, predict)
