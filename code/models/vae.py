@@ -38,17 +38,17 @@ class VAE(base.Model):
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
 
         # encoder
-        self.z_mu, self.z_var = self._encoder(self.x, scope='x_enc', reuse=False)
+        self.z_mu, self.z_sigma = self._encoder(self.x, scope='x_enc', reuse=False)
 
         # samples
-        self.z = self._sample(self.z_mu, self.z_var, scope='sampler', reuse=False)
+        self.z = self._sample(self.z_mu, self.z_sigma, scope='sampler', reuse=False)
 
         # decoders
         self.rx, self.rx_probs = self._decoder(self.z, self.x, scope='x_dec', reuse=False)
 
         # reconstruction and penalty terms
         self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
-        self.l2 = self._penalty(mean=self.z_mu, var=self.z_var, scope='penalty')
+        self.l2 = self._penalty(mean=self.z_mu, std=self.z_sigma, scope='penalty')
 
         # training and test bounds
         self.bound = self._variational_bound(scope='lower_bound')
@@ -104,11 +104,13 @@ class VAE(base.Model):
             return tf.reduce_mean(l1, axis=0)
 
 
-    def _penalty(self, mean, var, scope, reuse=False):
+    def _penalty(self, mean, std, scope, reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
+            #l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
+            l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(std) - tf.square(mean) - tf.sqrt(std), axis=1)
+
             return tf.reduce_mean(l2, axis=0)
 
 
@@ -133,14 +135,13 @@ class VAE(base.Model):
             return step
 
 
-    def _sample(self, z_mu, z_var, scope='sampling', reuse=False):
+    def _sample(self, z_mu, z_sigma, scope='sampling', reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
             n_samples = tf.shape(z_mu)[0]
 
-            z_std = tf.sqrt(z_var)
             eps = tf.random_normal((n_samples, self.n_z))
-            z = z_mu + tf.multiply(z_std, eps)
+            z = z_mu + tf.multiply(z_sigma, eps)
 
             return z
 
@@ -248,13 +249,13 @@ class VAECNN(VAE):
 
             x_image = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+            h1 = nw.conv_pool(x_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
 
-            h2 = nw.conv_pool(h1, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+            h2 = nw.conv_pool(h1, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
 
             flat = tf.contrib.layers.flatten(h2)
 
-            fc = self._linear(flat, n_out=500, scope='layer_3', reuse=reuse)
+            fc = self._linear(flat, n_out=200, scope='layer_3', reuse=reuse)
             h3 = tf.nn.elu(fc)
 
             mean = self._linear(h3, self.n_z, "mean_layer", reuse=reuse)
@@ -269,7 +270,7 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            a1 = self._linear(z, n_out=500, scope='layer_1', reuse=reuse)
+            a1 = self._linear(z, n_out=200, scope='layer_1', reuse=reuse)
             h1 = tf.nn.elu(a1)
 
             h = int(self.h / 4)
@@ -281,16 +282,16 @@ class VAECNN(VAE):
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])
 
-            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=3, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+            d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
 
-            d2 = nw.deconv_layer(d1, out_ch=4, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
+            d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
 
-            x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
-            logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
+            #x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
+            #logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
 
-            #n_c = self.h * self.w * self.n_ch
-            #logits = tf.reshape(d2, shape=[-1, n_c])
-            #probs = tf.nn.sigmoid(logits)
+            n_c = self.h * self.w * self.n_ch
+            logits = tf.reshape(d2, shape=[-1, n_c])
+            probs = tf.nn.sigmoid(logits)
 
             return logits, probs
 
@@ -317,10 +318,9 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            #alpha = -0.5   # -0.25, -0.125, -0.0625
-            alpha = self.args['alpha']
+            alpha = -0.625   # -0.25, -0.125, -0.0625
 
-            l2 = 0.5 * (1 + tf.log(self.z_var) - tf.square(self.z_mu) - self.z_var)
+            l2 = 0.5 * (1 + 2*tf.log(self.z_sigma) - tf.square(self.z_mu) - tf.sqrt(self.z_sigma))
             l2 = tf.reduce_mean(l2, axis=0)
             l2 = tf.minimum(l2, alpha)
 
