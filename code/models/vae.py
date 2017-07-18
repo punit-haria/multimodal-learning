@@ -36,6 +36,7 @@ class VAE(base.Model):
 
         # input placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
+        self.is_training = tf.placeholder(tf.bool, name='is_training')
 
         # encoder
         self.z_mu, self.z_sigma = self._encoder(self.x, scope='x_enc', reuse=False)
@@ -63,13 +64,16 @@ class VAE(base.Model):
     def _encoder(self, x, scope, reuse):
 
         with tf.variable_scope(scope, reuse=reuse):
-            n_units = 500
+            n_units = 200
 
-            a1 = self._linear(x, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.elu(a1)
+            h1 = self._linear(x, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.elu(h1)
+            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
-            a2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.elu(a2)
+
+            h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.elu(h2)
+            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
             mean = self._linear(h2, self.n_z, "mean_layer", reuse=reuse)
 
@@ -82,13 +86,15 @@ class VAE(base.Model):
     def _decoder(self, z, x, scope, reuse):
 
         with tf.variable_scope(scope, reuse=reuse):
-            n_units = 500
+            n_units = 200
 
-            a1 = self._linear(z, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.elu(a1)
+            h1 = self._linear(z, n_units, "layer_1", reuse=reuse)
+            h1 = tf.nn.elu(h1)
+            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
-            a2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.elu(a2)
+            h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
+            h2 = tf.nn.elu(h2)
+            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
             logits = self._linear(h2, self.n_x, "layer_3", reuse=reuse)
             probs = tf.nn.sigmoid(logits)
@@ -108,8 +114,7 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            #l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
-            l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(std) - tf.square(mean) - tf.sqrt(std), axis=1)
+            l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(std) - tf.square(mean) - tf.square(std), axis=1)
 
             return tf.reduce_mean(l2, axis=0)
 
@@ -163,7 +168,7 @@ class VAE(base.Model):
             n_x = x.get_shape()[-1].value
 
             w = tf.get_variable("W", shape=[n_x, n_out],
-                                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=True))
             b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
 
             return tf.matmul(x, w) + b
@@ -173,7 +178,7 @@ class VAE(base.Model):
         """
         Performs single training step.
         """
-        feed = {self.x: x}
+        feed = {self.x: x, self.is_training: True}
         outputs = [self.summary, self.step, self.bound, self.loss, self.l1, self.l2]
 
         summary, _, bound, loss, reconstruction, penalty = self.sess.run(outputs, feed_dict=feed)
@@ -188,7 +193,7 @@ class VAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        feed = {self.x: x}
+        feed = {self.x: x, self.is_training: False}
         outputs = [self.summary, self.bound, self.loss, self.l1, self.l2]
 
         summary, bound, loss, reconstruction, penalty  = self.sess.run(outputs, feed_dict=feed)
@@ -201,7 +206,7 @@ class VAE(base.Model):
         """
         Reconstruct x.
         """
-        feed = {self.x: x}
+        feed = {self.x: x, self.is_training: False}
         return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
@@ -209,7 +214,7 @@ class VAE(base.Model):
         """
         Encode x1.
         """
-        feed = {self.x: x}
+        feed = {self.x: x, self.is_training: False}
         return self.sess.run(self.z_mu, feed_dict=feed)
 
 
@@ -217,7 +222,7 @@ class VAE(base.Model):
         """
         Decodes x1 and x2.
         """
-        feed = {self.z: z}
+        feed = {self.x: x, self.is_training: False}
         return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
@@ -250,13 +255,16 @@ class VAECNN(VAE):
             x_image = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
             h1 = nw.conv_pool(x_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
             h2 = nw.conv_pool(h1, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
             flat = tf.contrib.layers.flatten(h2)
 
             fc = self._linear(flat, n_out=200, scope='layer_3', reuse=reuse)
             h3 = tf.nn.elu(fc)
+            h3 = nw.batch_norm(h3, self.is_training, scope='bnorm_3', reuse=reuse)
 
             mean = self._linear(h3, self.n_z, "mean_layer", reuse=reuse)
 
@@ -270,21 +278,24 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            a1 = self._linear(z, n_out=200, scope='layer_1', reuse=reuse)
-            h1 = tf.nn.elu(a1)
+            h1 = self._linear(z, n_out=200, scope='layer_1', reuse=reuse)
+            h1 = tf.nn.elu(h1)
 
             h = int(self.h / 4)
             w = int(self.w / 4)
 
             dim = 32 * h * w
-            a2 = self._linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
-            h2 = tf.nn.elu(a2)
+            h2 = self._linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
+            h2 = tf.nn.elu(h2)
+            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_1', reuse=reuse)
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])
 
             d1 = nw.deconv_layer(z_image, out_ch=32, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+            d1 = nw.batch_norm(d1, self.is_training, scope='bnorm_2', reuse=reuse)
 
             d2 = nw.deconv_layer(d1, out_ch=self.n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_4', reuse=reuse)
+            d2 = nw.batch_norm(d2, self.is_training, scope='bnorm_3', reuse=reuse)
 
             #x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
             #logits, probs = self._pixel_cnn(x=x, z=d2, scope='pixel_cnn', reuse=reuse)
@@ -320,7 +331,7 @@ class VAECNN(VAE):
 
             alpha = -0.625   # -0.25, -0.125, -0.0625
 
-            l2 = 0.5 * (1 + 2*tf.log(self.z_sigma) - tf.square(self.z_mu) - tf.sqrt(self.z_sigma))
+            l2 = 0.5 * (1 + 2*tf.log(self.z_sigma) - tf.square(self.z_mu) - tf.square(self.z_sigma))
             l2 = tf.reduce_mean(l2, axis=0)
             l2 = tf.minimum(l2, alpha)
 

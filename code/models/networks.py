@@ -94,7 +94,7 @@ def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
         in_ch = x.get_shape()[3].value  # number of input channels
 
         w = tf.get_variable("W", shape=[k, k, in_ch, out_ch],
-                            initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+                            initializer=tf.contrib.layers.xavier_initializer(uniform=True))
 
         # create mask
         if k == 1:
@@ -136,11 +136,12 @@ def conv_pool(x, out_ch, n_convs, nonlinearity, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         c = conv2d(x, out_ch, bias=True, scope="conv_1", reuse=reuse)
+        c = nonlinearity(c)
 
         for i in range(n_convs-1):
-            c = nonlinearity(c)
             name = "conv_"+str(i+2)
             c = conv2d(c, out_ch, bias=False, scope=name, reuse=reuse)
+            c = nonlinearity(c)
 
         return pool(c, scope="pool", reuse=reuse)
 
@@ -154,7 +155,7 @@ def conv2d(x, out_ch, bias, scope, reuse):
         k = 3
         in_ch = x.get_shape()[3].value
         w_shape = [k, k, in_ch, out_ch]
-        w = tf.get_variable("w", shape=w_shape, initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+        w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
 
         if bias:
             b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
@@ -180,6 +181,7 @@ def deconv_layer(x, out_ch, n_convs, nonlinearity, scope, reuse):
         in_ch = x.get_shape()[3].value
 
         c = deconv(x, in_ch, out_ch, stride=True, bias=True, scope="conv_1", reuse=reuse)
+        c = nonlinearity(c)
 
         for i in range(n_convs-1):
 
@@ -201,7 +203,7 @@ def deconv(x, in_ch, out_ch, stride, bias, scope, reuse):
 
         k = 3
         w_shape = [k, k, out_ch, in_ch]
-        w = tf.get_variable("w", shape=w_shape, initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+        w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
 
         if bias:
             b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
@@ -228,14 +230,14 @@ def linear(x, n_x, n_w, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         w = tf.get_variable("W", shape=[n_x, n_w],
-                            initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
+                            initializer=tf.contrib.layers.xavier_initializer(uniform=True))
         b = tf.get_variable("b", shape=[n_w], initializer=tf.constant_initializer(0.1))
 
         return tf.matmul(x, w) + b
 
 
 
-def batch_norm(x, scope, decay, epsilon, is_training, center=True, reuse=False):
+def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm', reuse=False):
     """
     Batch normalization layer
 

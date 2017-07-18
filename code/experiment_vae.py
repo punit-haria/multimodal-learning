@@ -13,23 +13,23 @@ results = Results('experiment_vae_cnn')
 
 # parameters
 parms = {
-    'n_z': 50,
+    'n_z': 200,
     'learning_rate': 0.002,
-    'batch_size': 250,
+    'batch_size': 200,
 
     'n_channels': 1,
     'n_pixelcnn_layers': 3,
 
-    'train_steps': 5000,
-    'plot_steps': 2500,
+    'train_steps': 100000,
+    'plot_steps': 10000,
     'test_steps': 50,
     'n_plots': 18
 }
 
 
 models = {
-    #'VAE': VAE
-    'VAE_CNN_sigma': VAECNN
+    'VAE': VAE
+    #'VAE_CNN': VAECNN
 }
 
 # data
