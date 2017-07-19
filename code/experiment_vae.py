@@ -19,6 +19,7 @@ parms = {
 
     'n_channels': 1,
     'n_pixelcnn_layers': 2,
+    'concat': True,
 
     'train_steps': 50000,
     'plot_steps': 25000,
@@ -28,7 +29,7 @@ parms = {
 
 
 models = {
-    'VAE_with_pixelCNN_bsize_64': VAE
+    'VAE_with_conditional_pixelCNN_bsize_64': VAE
     #'VAE_CNN': VAECNN
 }
 

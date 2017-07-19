@@ -40,6 +40,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
 
     x: input tensor
     z: latent tensor
+    concat: choice of concatenating tensors or adding them
     """
     with tf.variable_scope(scope, reuse=reuse):
 
@@ -54,7 +55,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
             cz = conv2d(z, k=ka, out_ch=n_ch, bias=False, scope='layer_1z', reuse=reuse)
             c = cx + cz
 
-        for i in range(n_layers-1):
+        for i in range(n_layers):
             name = 'residual_block_' + str(i + 2)
             c = residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
 

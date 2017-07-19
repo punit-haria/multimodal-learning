@@ -95,12 +95,14 @@ class VAE(base.Model):
             # logits = self._linear(z, self.n_x, "logits_layer", reuse=reuse)
 
             n_layers = self.args['n_pixelcnn_layers']
+            concat = self.args['concat']
 
             z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
 
-            rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope=scope, reuse=reuse)
+            #rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=reuse)
 
-            #rx = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
+            rx = nw.conditional_pixel_cnn(x, z, n_layers, ka=7, kb=3, out_ch=self.n_ch, concat=concat,
+                                     scope='pixel_cnn', reuse=reuse)
 
             logits = tf.reshape(rx, shape=[-1, self.n_x])
 
