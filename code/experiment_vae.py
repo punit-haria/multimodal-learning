@@ -15,7 +15,7 @@ results = Results('experiment_vae')
 parms = {
     'n_z': 200,
     'learning_rate': 0.002,
-    'batch_size': 16,
+    'batch_size': 64,
 
     'n_channels': 1,
     'n_pixelcnn_layers': 2,
@@ -28,7 +28,7 @@ parms = {
 
 
 models = {
-    'VAE_with_pixelCNN': VAE
+    'VAE_with_pixelCNN_bsize_64': VAE
     #'VAE_CNN': VAECNN
 }
 

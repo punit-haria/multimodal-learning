@@ -34,6 +34,38 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, scope, reuse):
         return c
 
 
+def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
+    """
+    Conditional PixelCNN
+
+    x: input tensor
+    z: latent tensor
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        n_ch = 32
+        nonlinearity = tf.nn.elu
+
+        if concat:
+            c = tf.concat([x, z], axis=3)
+            c = conv2d_masked(c, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
+        else:
+            cx = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
+            cz = conv2d(z, k=ka, out_ch=n_ch, bias=False, scope='layer_1z', reuse=reuse)
+            c = cx + cz
+
+        for i in range(n_layers-1):
+            name = 'residual_block_' + str(i + 2)
+            c = residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
+
+        c = nonlinearity(c)
+        c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
+        c = nonlinearity(c)
+        c = conv2d_masked(c, k=1, out_ch=out_ch, mask_type='B', bias=False, scope='final_1x1_b', reuse=reuse)
+
+        return c
+
+
 def residual_block(c, k, nonlinearity, scope, reuse):
     """
     Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
@@ -54,47 +86,6 @@ def residual_block(c, k, nonlinearity, scope, reuse):
         c = c1 + c
 
         return c
-
-
-def conditional_pixel_cnn(x, z, n_layers, out_ch, scope, reuse):
-    """
-    Conditional PixelCNN
-
-    x: input tensor
-    z: latent tensor
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        if n_layers == 1:
-            n_ch = out_ch
-        else:
-            n_ch = 16
-
-        k = 3
-        nonlinearity = tf.nn.elu
-
-        c = tf.concat([x, z], axis=3)
-        c = conv2d_masked(c, k, n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
-
-        for i in range(n_layers-1):
-
-            name = 'layer_' + str(i + 2)
-
-            c = nonlinearity(c)
-
-            if i == n_layers - 2:  # last layer
-                c = conv2d_masked(c, k=k, out_ch=out_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
-
-            else:
-                inter_ch = n_ch // 2
-                c1 = conv2d_masked(c, k=1, out_ch=inter_ch, mask_type='B', bias=False, scope=name+'_1x1_a', reuse=reuse)
-                c1 = nonlinearity(c1)
-                c1 = conv2d_masked(c1, k=k, out_ch=inter_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
-                c1 = nonlinearity(c1)
-                c1 = conv2d_masked(c1, k=1, out_ch=n_ch, mask_type='B', bias=False, scope=name+'_1x1_b', reuse=reuse)
-                c = c1 + c
-
-        return nonlinearity(c)
 
 
 def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):

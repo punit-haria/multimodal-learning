@@ -86,21 +86,24 @@ class VAE(base.Model):
         with tf.variable_scope(scope, reuse=reuse):
             n_units = 200
 
-            h1 = self._linear(z, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.elu(h1)
-            #h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
+            z = self._linear(z, n_units, "layer_1", reuse=reuse)
+            z = tf.nn.elu(z)
 
-            h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.elu(h2)
-            #h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
+            z = self._linear(z, self.n_x, "layer_2", reuse=reuse)
+            z = tf.nn.elu(z)
 
-            #logits = self._linear(h2, self.n_x, "logits_layer", reuse=reuse)
+            # logits = self._linear(z, self.n_x, "logits_layer", reuse=reuse)
 
             n_layers = self.args['n_pixelcnn_layers']
-            c = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope=scope, reuse=reuse)
-            #c = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
-            logits = tf.reshape(c, shape=[-1, self.n_x])
+            z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
+
+            rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope=scope, reuse=reuse)
+
+            #rx = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
+
+            logits = tf.reshape(rx, shape=[-1, self.n_x])
+
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
