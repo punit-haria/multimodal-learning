@@ -52,7 +52,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
             c = conv2d_masked(c, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
         else:
             cx = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
-            cz = conv2d(z, k=ka, out_ch=n_ch, bias=False, scope='layer_1z', reuse=reuse)
+            cz = conv2d(z, k=ka, out_ch=n_ch, bias=True, scope='layer_1z', reuse=reuse)
             c = cx + cz
 
         for i in range(n_layers):

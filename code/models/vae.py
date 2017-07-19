@@ -98,8 +98,9 @@ class VAE(base.Model):
             concat = self.args['concat']
 
             z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
+            x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            #rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=reuse)
+            # rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=reuse)
 
             rx = nw.conditional_pixel_cnn(x, z, n_layers, ka=7, kb=3, out_ch=self.n_ch, concat=concat,
                                      scope='pixel_cnn', reuse=reuse)
@@ -233,9 +234,47 @@ class VAE(base.Model):
         """
         Decodes x1 and x2.
         """
-        feed = {self.x: x, self.is_training: False}
+        feed = {self.z: z, self.is_training: False}
         return self.sess.run(self.rx_probs, feed_dict=feed)
 
+
+    def autoregressive_reconstruct(self, x, n_pixels):
+        """
+        Synthesize images.
+
+        n_pixels: number of pixels to condition on (in row-wise order)
+        """
+        def _locate_2d(idx, w):
+            pos = idx + 1
+            r = np.ceil(pos / w)
+            c = pos - (r-1)*w
+
+            return int(r-1), int(c-1)
+
+        h = self.h
+        w = self.w
+        ch = self.n_ch
+        n_x = h * w * ch
+
+        x = x.copy()
+
+        remain = h*w - n_pixels
+
+        feed = {self.x: x, self.is_training: False}
+        z = self.sess.run(self.z, feed_dict=feed)
+
+        for i in range(remain):
+            feed = {self.z: z, self.x: x, self.is_training: False}
+            probs = self.sess.run(self.rx_probs, feed_dict=feed)
+            probs = np.reshape(probs, newshape=[-1, h, w, ch])
+
+            hp, wp = _locate_2d(n_pixels + i, w)
+
+            x = np.reshape(x, newshape=[-1, h, w, ch])
+            x[:, hp, wp, :] = np.random.binomial(n=1, p=probs[:, hp, wp, :])
+            x = np.reshape(x, newshape=[-1, n_x])
+
+        return x
 
 
 

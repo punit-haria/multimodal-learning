@@ -59,7 +59,7 @@ for name, model in models.items():
             print("At iteration ", i, flush=True)
 
             # test minibatch
-            x = mnist.sample(1000, dtype='test', binarize=False)[0]
+            x = mnist.sample(1000, dtype='test', binarize=True)[0]
 
             # test model
             loss = vae.test(x)

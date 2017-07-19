@@ -8,7 +8,7 @@ plt.style.use('ggplot')
 
 ### PARAMETERS ###
 
-experiment = "experiment_pixelcnn"
+experiment = "experiment_vae_conditional_pixelcnn"
 
 res = Results.load(experiment+'.pickle')
 
