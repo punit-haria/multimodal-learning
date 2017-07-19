@@ -13,13 +13,13 @@ results = Results('experiment_pixelcnn')
 # parameters
 parms = {
     'learning_rate': 0.002,
-    'batch_size': 200,
+    'batch_size': 16,
 
     'n_channels': 1,
-    'n_layers': 3,
+    'n_layers': 15,
 
-    'train_steps': 1000,
-    'plot_steps': 1000,
+    'train_steps': 20000,
+    'plot_steps': 5000,
     'test_steps': 50,
     'n_plots': 18,
     'n_pixels': 300
@@ -72,7 +72,7 @@ for name, model in models.items():
 
                 n_examples = parms['n_plots']
                 xb = x[0:n_examples]
-                rx_probs = vae.reconstruct(xb)
+                rx_probs = vae.sample(xb, parms['n_pixels'])
 
                 # save reconstructions
                 results.add(i, (xb, rx_probs), "x_reconstructed")

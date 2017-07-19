@@ -3,7 +3,7 @@ import numpy as np
 
 
 
-def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
+def pixel_cnn(x, n_layers, ka, kb, out_ch, scope, reuse):
     """
     PixelCNN network based on architectures specified in:
         https://arxiv.org/abs/1601.06759
@@ -11,30 +11,49 @@ def pixel_cnn(x, n_layers, k, out_ch, scope, reuse):
 
     x: input tensor
     n_layers: number of layers in the network
-    k: width of convolution filter (note: height = width)
+    ka/kb: widths of mask A and B convolution filters
     out_ch: number of output channels
     """
     with tf.variable_scope(scope, reuse=reuse):
 
-        if n_layers == 1:
-            n_ch = out_ch
-        else:
-            n_ch = 16
-
+        n_ch = 32
         nonlinearity = tf.nn.elu
 
-        c = conv2d_masked(x, k, n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
+        c = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
+        #c = nonlinearity(c)
 
-        for i in range(n_layers-1):
+        for i in range(n_layers):
+            name  = 'residual_block_' + str(i+2)
+            c = residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
 
-            if i == n_layers - 2:
-                n_ch = out_ch
+        c = nonlinearity(c)
+        c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
+        c = nonlinearity(c)
+        c = conv2d_masked(c, k=1, out_ch=out_ch, mask_type='B', bias=False, scope='final_1x1_b', reuse=reuse)
 
-            name  = 'layer_' + str(i+2)
-            c = nonlinearity(c)
-            c = conv2d_masked(c, k, n_ch, mask_type='B', bias=False, scope=name, reuse=reuse)
+        return c
 
-        return nonlinearity(c)
+
+def residual_block(c, k, nonlinearity, scope, reuse):
+    """
+    Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
+    c: input tensor
+    k: filter size
+    nonlinearity: activation function
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        n_ch = c.get_shape()[3].value
+        half_ch = n_ch // 2
+        c1 = nonlinearity(c)
+        c1 = conv2d_masked(c, k=1, out_ch=half_ch, mask_type='B', bias=False, scope='1x1_a', reuse=reuse)
+        c1 = nonlinearity(c1)
+        c1 = conv2d_masked(c1, k=k, out_ch=half_ch, mask_type='B', bias=False, scope='conv', reuse=reuse)
+        c1 = nonlinearity(c1)
+        c1 = conv2d_masked(c1, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='1x1_b', reuse=reuse)
+        c = c1 + c
+
+        return c
 
 
 def conditional_pixel_cnn(x, z, n_layers, out_ch, scope, reuse):

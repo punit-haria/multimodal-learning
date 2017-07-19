@@ -40,6 +40,9 @@ class MNIST(object):
         self.Xtr, self.ytr = self._get_data(self.train_path, self.train_labels_path)
         self.Xte, self.yte = self._get_data(self.test_path, self.test_labels_path)
 
+        self.mu = np.mean(self.Xtr, axis=0)
+        self.sigma = np.std(self.Xtr, axis=0) + 1e-12
+
 
     def train_set(self, ):
         return self.Xtr, self.ytr

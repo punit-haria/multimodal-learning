@@ -67,11 +67,11 @@ class VAE(base.Model):
 
             h1 = self._linear(x, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.elu(h1)
-            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
+            #h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
             h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.elu(h2)
-            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
+            #h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
             mean = self._linear(h2, self.n_z, "mean_layer", reuse=reuse)
 
@@ -88,13 +88,19 @@ class VAE(base.Model):
 
             h1 = self._linear(z, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.elu(h1)
-            h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
+            #h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
             h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.elu(h2)
-            h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
+            #h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
-            logits = self._linear(h2, self.n_x, "logits_layer", reuse=reuse)
+            #logits = self._linear(h2, self.n_x, "logits_layer", reuse=reuse)
+
+            n_layers = self.args['n_pixelcnn_layers']
+            c = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope=scope, reuse=reuse)
+            #c = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
+
+            logits = tf.reshape(c, shape=[-1, self.n_x])
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
@@ -134,8 +140,8 @@ class VAE(base.Model):
         with tf.variable_scope(scope, reuse=reuse):
             lr = self.args['learning_rate']
 
-            #step = tf.train.RMSPropOptimizer(lr).minimize(loss)
-            step = tf.train.AdamOptimizer(lr).minimize(loss)
+            step = tf.train.RMSPropOptimizer(lr).minimize(loss)
+            #step = tf.train.AdamOptimizer(lr).minimize(loss)
 
             return step
 
@@ -312,7 +318,7 @@ class VAECNN(VAE):
         """
         n_layers = self.args['n_pixelcnn_layers']
 
-        #c = nw.pixel_cnn(x, n_layers, k, out_ch=self.n_ch, scope=scope, reuse=reuse)
+        #c = nw.pixel_cnn(x, n_layers, ka, kb, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
         c = nw.conditional_pixel_cnn(x, z, n_layers, out_ch=self.n_ch, scope=scope, reuse=reuse)
 
@@ -369,7 +375,7 @@ class VAECNN_Color(VAECNN):
 
         n_cats = 256
         n_channels = self.n_ch * n_cats
-        cnn = nw.pixel_cnn(x, n_layers, k, n_channels, scope=scope, reuse=reuse)
+        cnn = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=n_channels, scope=scope, reuse=reuse)
 
         h = cnn.get_shape()[1].value
         w = cnn.get_shape()[2].value

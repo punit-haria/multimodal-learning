@@ -8,12 +8,12 @@ plt.style.use('ggplot')
 
 ### PARAMETERS ###
 
-experiment = "experiment_vae_cnn_alphas"
+experiment = "experiment_pixelcnn"
 
 res = Results.load(experiment+'.pickle')
 
-test_axis = [0,res.i,-150,-60]  # axis range for test lower bound
-train_axis = [0,res.i,-150,-60]  # axis range for train lower bound
+test_axis = [0,res.i,460,550]  # axis range for test lower bound
+train_axis = [0,res.i,460,550]  # axis range for train lower bound
 image_dim = [28,28]
 
 
@@ -26,7 +26,7 @@ plt.figure(figsize=(12,9))
 
 for i,t in enumerate(runs):
     run = res.get(t)
-    steps, series = run.get_series('test_lower_bound')
+    steps, series = run.get_series('test_loss')  # test_lower_bound
     plt.plot(steps, series, label=labels[i], linewidth=2)
 
 plt.axis(test_axis)
@@ -48,7 +48,7 @@ plt.figure(figsize=(12,9))
 
 for i,t in enumerate(runs):
     run = res.get(t)
-    steps, series = run.get_series('train_lower_bound')
+    steps, series = run.get_series('train_loss')  # train_lower_bound
     plt.plot(steps, series, label=labels[i], linewidth=2)
 
 plt.axis(train_axis)

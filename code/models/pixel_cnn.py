@@ -40,7 +40,7 @@ class PixelCNN(base.Model):
         x = tf.reshape(self.x, shape=[-1, self.h, self.w, self.n_ch])
 
         # pixel cnn model
-        x = nw.pixel_cnn(x, n_layers, k=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=False)
+        x = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=False)
 
         # flatten
         logits = tf.reshape(x, shape=[-1, self.n_x])
@@ -113,7 +113,7 @@ class PixelCNN(base.Model):
         return loss
 
 
-    def predict(self, x, n_pixels):
+    def sample(self, x, n_pixels):
         """
         Synthesize images.
 
@@ -130,6 +130,8 @@ class PixelCNN(base.Model):
         w = self.w
         ch = self.n_ch
         n_x = h * w * ch
+
+        x = x.copy()
 
         remain = h*w - n_pixels
 
