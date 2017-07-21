@@ -1,6 +1,43 @@
-import numpy as np
-from collections import defaultdict
+import tensorflow as tf
 import pickle
+
+
+
+def train(name, model, parameters, data, tracker):
+
+    # load model
+    print("Training Model: ", name, flush=True)
+    model = model(arguments=parameters, name=name, tracker=tracker)
+
+    # train model
+    for i in range(parameters['train_steps'] + 1):
+
+        x = data.sample(parameters['batch_size'], dtype='train')
+        if type(x) in [list, tuple]:
+            x = x[0]
+
+        model.train(x)
+
+        if i % parameters['test_steps'] == 0:
+            print("At iteration ", i, flush=True)
+
+            x = data.sample(parameters['test_sample_size'], dtype='test')
+            if type(x) in [list, tuple]:
+                x = x[0]
+
+            model.test(x)
+
+        if i % parameters['save_steps'] == 0:
+            if i != 0:
+                model.save_state(suffix=str(i))
+
+    # reset tensorflow session and graph
+    model.sess.close()
+    tf.reset_default_graph()
+
+    # save model performance results
+    Results.save(tracker)
+
 
 
 class Series(object):
@@ -76,17 +113,15 @@ class Results(object):
         """
         self.name = name
         self.runs = {}
-        self.last = None  # tracks last added Trial
         self.i = 0  # track maximum time step across all trials
 
 
-    def create_run(self, name):
+    def _create_run(self, name):
         """
         name: name of the new run
         """
-        t = Trial(name)
-        self.runs[name] = t
-        self.last = t
+        if not self.contains(name):
+            self.runs[name] = Trial(name)
 
 
     def contains(self, run_name):
@@ -110,7 +145,7 @@ class Results(object):
         return list(self.runs.keys())
     
     
-    def add(self, i, value, series_name, run_name=None):
+    def add(self, i, value, series_name, run_name):
         """
         Adds timestep and value to a given series in a given trial. If trial name is None, then 
         add to last added trial.
@@ -120,13 +155,8 @@ class Results(object):
         series_name: name of time series 
         run_name: name of experimental run (i.e. trial)
         """
-        if run_name is None:
-            if self.last is None:
-                raise Exception("Result object is empty. No runs to add to. Create a run first.")
-            else:
-                self.last.add_to_series(series_name, i, value)
-        else:
-            self.runs[run_name].add_to_series(series_name, i, value)
+        self._create_run(run_name)
+        self.runs[run_name].add_to_series(series_name, i, value)
 
         self.i = max(i, self.i)
 

@@ -23,7 +23,7 @@ class Model(object):
         if self.log_dir is None:
             self.log_dir = '../logs/'
         if self.model_dir is None: 
-            self.model_dir = '../saved_models/'
+            self.model_dir = '../models/'
 
         # create directories if they don't exist
         if not os.path.exists(self.model_dir):
@@ -65,22 +65,26 @@ class Model(object):
         pass
 
 
-    def save_state(self, name=None):
+    def save_state(self, name=None, suffix=None):
         """
         Save model.
         """
         if name is None:
             name = self.name
+        if suffix is not None:
+            name = name + '_' + suffix
         saver = tf.train.Saver()
         saver.save(self.sess, self.model_dir+name)
 
 
-    def load_state(self, name=None):
+    def load_state(self, name=None, suffix=None):
         """
         Load model.
         """
         if name is None:
             name = self.name
+        if suffix is not None:
+            name = name + '_' + suffix
         saver = tf.train.Saver()
         saver.restore(self.sess, self.model_dir+name)
 

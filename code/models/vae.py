@@ -14,9 +14,12 @@ class VAE(base.Model):
     n_channels: number of channels in input images
     learning_rate: optimizer learning_rate
     """
-    def __init__(self, arguments, name="VAE", session=None, log_dir=None, model_dir=None):
+    def __init__(self, arguments, name="VAE", tracker=None, session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
         self.args = arguments
+
+        # object to track model performance
+        self.tracker = tracker
 
         # training steps counter
         self.n_steps = 0
@@ -65,17 +68,17 @@ class VAE(base.Model):
         with tf.variable_scope(scope, reuse=reuse):
             n_units = 200
 
-            h1 = self._linear(x, n_units, "layer_1", reuse=reuse)
+            h1 = nw.linear(x, n_units, "layer_1", reuse=reuse)
             h1 = tf.nn.elu(h1)
             #h1 = nw.batch_norm(h1, self.is_training, scope='bnorm_1', reuse=reuse)
 
-            h2 = self._linear(h1, n_units, "layer_2", reuse=reuse)
+            h2 = nw.linear(h1, n_units, "layer_2", reuse=reuse)
             h2 = tf.nn.elu(h2)
             #h2 = nw.batch_norm(h2, self.is_training, scope='bnorm_2', reuse=reuse)
 
-            mean = self._linear(h2, self.n_z, "mean_layer", reuse=reuse)
+            mean = nw.linear(h2, self.n_z, "mean_layer", reuse=reuse)
 
-            a3 = self._linear(h2, self.n_z, "var_layer", reuse=reuse)
+            a3 = nw.linear(h2, self.n_z, "var_layer", reuse=reuse)
             var = tf.nn.softplus(a3)
 
             return mean, var
@@ -86,13 +89,13 @@ class VAE(base.Model):
         with tf.variable_scope(scope, reuse=reuse):
             n_units = 200
 
-            z = self._linear(z, n_units, "layer_1", reuse=reuse)
+            z = nw.linear(z, n_units, "layer_1", reuse=reuse)
             z = tf.nn.elu(z)
 
-            z = self._linear(z, self.n_x, "layer_2", reuse=reuse)
+            z = nw.linear(z, self.n_x, "layer_2", reuse=reuse)
             z = tf.nn.elu(z)
 
-            # logits = self._linear(z, self.n_x, "logits_layer", reuse=reuse)
+            # logits = nw.linear(z, self.n_x, "logits_layer", reuse=reuse)
 
             n_layers = self.args['n_pixelcnn_layers']
             concat = self.args['concat']
@@ -174,19 +177,15 @@ class VAE(base.Model):
             return tf.summary.merge_all()
 
 
-    def _linear(self, x, n_out, scope, reuse):
+    def _track(self, terms, prefix):
 
-        with tf.variable_scope(scope, reuse=reuse):
-            n_x = x.get_shape()[-1].value
+        if self.tracker is not None:
 
-            w = tf.get_variable("W", shape=[n_x, n_out],
-                                initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-            b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
-
-            return tf.matmul(x, w) + b
+            for name, term in terms.items():
+                self.tracker.add(self.n_steps, series_name=prefix+name, run_name=self.name)
 
 
-    def train(self, x, write=True):
+    def train(self, x):
         """
         Performs single training step.
         """
@@ -194,11 +193,13 @@ class VAE(base.Model):
         outputs = [self.summary, self.step, self.bound, self.loss, self.l1, self.l2]
 
         summary, _, bound, loss, reconstruction, penalty = self.sess.run(outputs, feed_dict=feed)
-        if write:
-            self.tr_writer.add_summary(summary, self.n_steps)
-        self.n_steps = self.n_steps + 1
 
-        return bound, loss, reconstruction, penalty
+        # track performance
+        terms = {'lower_bound': bound, 'loss': loss, 'reconstruction': reconstruction, 'penalty': penalty}
+        self._track(terms, prefix='train_')
+        self.tr_writer.add_summary(summary, self.n_steps)
+
+        self.n_steps = self.n_steps + 1
 
 
     def test(self, x):
@@ -209,9 +210,11 @@ class VAE(base.Model):
         outputs = [self.summary, self.bound, self.loss, self.l1, self.l2]
 
         summary, bound, loss, reconstruction, penalty  = self.sess.run(outputs, feed_dict=feed)
-        self.te_writer.add_summary(summary, self.n_steps)
 
-        return bound, loss, reconstruction, penalty
+        # track performance
+        terms = {'lower_bound': bound, 'loss': loss, 'reconstruction': reconstruction, 'penalty': penalty}
+        self._track(terms, prefix='_test')
+        self.te_writer.add_summary(summary, self.n_steps)
 
 
     def reconstruct(self, x):
@@ -312,12 +315,12 @@ class VAECNN(VAE):
 
             flat = tf.contrib.layers.flatten(h3)
 
-            fc = self._linear(flat, n_out=200, scope='layer_4', reuse=reuse)
+            fc = nw.linear(flat, n_out=200, scope='layer_4', reuse=reuse)
             h3 = tf.nn.elu(fc)
 
-            mean = self._linear(h3, self.n_z, "mean_layer", reuse=reuse)
+            mean = nw.linear(h3, self.n_z, "mean_layer", reuse=reuse)
 
-            a3 = self._linear(h3, self.n_z, "var_layer", reuse=reuse)
+            a3 = nw.linear(h3, self.n_z, "var_layer", reuse=reuse)
             var = tf.nn.softplus(a3)
 
             return mean, var
@@ -327,14 +330,14 @@ class VAECNN(VAE):
 
         with tf.variable_scope(scope, reuse=reuse):
 
-            h1 = self._linear(z, n_out=200, scope='layer_1', reuse=reuse)
+            h1 = nw.linear(z, n_out=200, scope='layer_1', reuse=reuse)
             h1 = tf.nn.elu(h1)
 
             h = 3
             w = 3
 
             dim = 32 * h * w
-            h2 = self._linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
+            h2 = nw.linear(h1, n_out=dim, scope='layer_2', reuse=reuse)
             h2 = tf.nn.elu(h2)
 
             z_image = tf.reshape(h2, shape=[-1, h, w, 32])

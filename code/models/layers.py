@@ -233,14 +233,16 @@ def deconv(x, k, in_ch, out_ch, stride, bias, scope, reuse):
         return dcv + b
 
 
-def linear(x, n_x, n_w, scope, reuse):
+def linear(x, n_out, scope, reuse):
     """
     Linear tranform
     """
     with tf.variable_scope(scope, reuse=reuse):
-        w = tf.get_variable("W", shape=[n_x, n_w],
+        n_x = x.get_shape()[-1].value
+
+        w = tf.get_variable("W", shape=[n_x, n_out],
                             initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-        b = tf.get_variable("b", shape=[n_w], initializer=tf.constant_initializer(0.1))
+        b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
 
         return tf.matmul(x, w) + b
 

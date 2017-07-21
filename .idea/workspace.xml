@@ -2,59 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/experiment_vae_cnn_alphas.pickle" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.0625_test/events.out.tfevents.1500309306.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.0625_train/events.out.tfevents.1500309306.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.125_test/events.out.tfevents.1500309677.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.125_train/events.out.tfevents.1500309677.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.25_test/events.out.tfevents.1500310062.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.25_train/events.out.tfevents.1500310062.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.5_test/events.out.tfevents.1500310449.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_0.5_train/events.out.tfevents.1500310449.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_1_test/events.out.tfevents.1500310840.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_1_train/events.out.tfevents.1500310840.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_2_test/events.out.tfevents.1500311248.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_2_train/events.out.tfevents.1500311248.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_4_test/events.out.tfevents.1500311646.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/annealing_experiment/logs/VAE_CNN_alpha_4_train/events.out.tfevents.1500311646.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/experiment_vae_pixel_cnn.pickle" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_0.125_test/events.out.tfevents.1500332905.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_0.125_train/events.out.tfevents.1500332905.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_0.5_test/events.out.tfevents.1500334582.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_0.5_train/events.out.tfevents.1500334582.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_1_test/events.out.tfevents.1500336266.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.0002_alpha_1_train/events.out.tfevents.1500336266.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_0.125_test/events.out.tfevents.1500328094.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_0.125_train/events.out.tfevents.1500328094.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_0.5_test/events.out.tfevents.1500329697.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_0.5_train/events.out.tfevents.1500329697.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_1_test/events.out.tfevents.1500331302.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_2_lrate_0.002_alpha_1_train/events.out.tfevents.1500331302.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_0.125_test/events.out.tfevents.1500345011.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_0.125_train/events.out.tfevents.1500345011.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_0.5_test/events.out.tfevents.1500347488.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_0.5_train/events.out.tfevents.1500347488.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_1_test/events.out.tfevents.1500349969.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.0002_alpha_1_train/events.out.tfevents.1500349968.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_0.125_test/events.out.tfevents.1500337945.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_0.125_train/events.out.tfevents.1500337945.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_0.5_test/events.out.tfevents.1500340302.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_0.5_train/events.out.tfevents.1500340302.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_1_test/events.out.tfevents.1500342660.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_3_lrate_0.002_alpha_1_train/events.out.tfevents.1500342660.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_0.125_test/events.out.tfevents.1500361759.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_0.125_train/events.out.tfevents.1500361759.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_0.5_test/events.out.tfevents.1500365026.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_0.5_train/events.out.tfevents.1500365026.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_1_test/events.out.tfevents.1500368405.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.0002_alpha_1_train/events.out.tfevents.1500368405.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_0.125_test/events.out.tfevents.1500352445.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_0.125_train/events.out.tfevents.1500352445.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_0.5_test/events.out.tfevents.1500355546.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_0.5_train/events.out.tfevents.1500355546.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_1_test/events.out.tfevents.1500358654.punit-vm" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/pixel_cnn_experiment_1/logs/VAE_CNN_layers_4_lrate_0.002_alpha_1_train/events.out.tfevents.1500358653.punit-vm" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/experiment_coloured_mnist.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/experiment_mnist.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/experiment_pixelcnn.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/experiment_vae.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/experiment_semi_supervised.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/experiment_vae.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/results.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/base.py" afterPath="$PROJECT_DIR$/code/models/base.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/layers.py" afterPath="$PROJECT_DIR$/code/models/layers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/vae.py" afterPath="$PROJECT_DIR$/code/models/vae.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -77,18 +35,8 @@
       <file leaf-file-name="vae.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/models/vae.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1335">
-              <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="networks.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/models/networks.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="118">
-              <caret line="42" column="29" lean-forward="false" selection-start-line="42" selection-start-column="29" selection-end-line="42" selection-end-column="29" />
+            <state relative-caret-position="353">
+              <caret line="206" column="42" lean-forward="true" selection-start-line="206" selection-start-column="42" selection-end-line="206" selection-end-column="42" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -96,56 +44,46 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="base.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="training.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/training.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="20" column="45" lean-forward="true" selection-start-line="20" selection-start-column="45" selection-end-line="20" selection-end-column="45" />
+              <folding>
+                <element signature="e#0#23#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="base.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/models/base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-392">
-              <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+            <state relative-caret-position="337">
+              <caret line="78" column="0" lean-forward="true" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="experiment_vae.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/experiment_vae.py">
+      <file leaf-file-name="data.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="62" column="0" lean-forward="true" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+            <state relative-caret-position="48">
+              <caret line="43" column="53" lean-forward="true" selection-start-line="43" selection-start-column="53" selection-end-line="43" selection-end-column="53" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="pixel_cnn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/models/pixel_cnn.py">
+      <file leaf-file-name="trial_vae.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/code/trial_vae.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1620">
-              <caret line="112" column="15" lean-forward="false" selection-start-line="112" selection-start-column="15" selection-end-line="113" selection-end-column="0" />
+            <state relative-caret-position="480">
+              <caret line="32" column="0" lean-forward="true" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="experiment_pixelcnn.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/experiment_pixelcnn.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="735">
-              <caret line="54" column="22" lean-forward="false" selection-start-line="54" selection-start-column="22" selection-end-line="54" selection-end-column="22" />
-              <folding>
-                <element signature="e#0#23#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="global_present.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/global_present.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="345">
-              <caret line="27" column="20" lean-forward="false" selection-start-line="27" selection-start-column="20" selection-end-line="27" selection-end-column="20" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -170,6 +108,10 @@
       <find>runs()</find>
       <find>tf.nn.relu</find>
       <find>truncat</find>
+      <find>linear</find>
+      <find>linear(</find>
+      <find>_linear</find>
+      <find>tf</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -179,22 +121,26 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/code/models/__init__.py" />
-        <option value="$PROJECT_DIR$/code/models/base.py" />
         <option value="$PROJECT_DIR$/code/models/new_vae.py" />
         <option value="$PROJECT_DIR$/code/experiment_mnist.py" />
         <option value="$PROJECT_DIR$/code/present.py" />
         <option value="$PROJECT_DIR$/code/present_coloured.py" />
         <option value="$PROJECT_DIR$/code/experiment_coloured_mnist.py" />
         <option value="$PROJECT_DIR$/code/models/joint_vae.py" />
-        <option value="$PROJECT_DIR$/code/results.py" />
         <option value="$PROJECT_DIR$/code/models/modules.py" />
-        <option value="$PROJECT_DIR$/code/models/pixel_cnn.py" />
         <option value="$PROJECT_DIR$/code/data.py" />
         <option value="$PROJECT_DIR$/code/models/networks.py" />
-        <option value="$PROJECT_DIR$/code/models/vae.py" />
         <option value="$PROJECT_DIR$/code/global_present.py" />
         <option value="$PROJECT_DIR$/code/experiment_vae.py" />
         <option value="$PROJECT_DIR$/code/experiment_pixelcnn.py" />
+        <option value="$PROJECT_DIR$/code/models/pixel_cnn.py" />
+        <option value="$PROJECT_DIR$/code/results.py" />
+        <option value="$PROJECT_DIR$/code/models/layers.py" />
+        <option value="$PROJECT_DIR$/code/models/vae.py" />
+        <option value="$PROJECT_DIR$/code/train.py" />
+        <option value="$PROJECT_DIR$/code/models/base.py" />
+        <option value="$PROJECT_DIR$/code/training.py" />
+        <option value="$PROJECT_DIR$/code/trial_vae.py" />
       </list>
     </option>
   </component>
@@ -675,7 +621,14 @@
       <option name="project" value="LOCAL" />
       <updated>1500466570857</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="update">
+      <created>1500653747065</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1500653747065</updated>
+    </task>
+    <option name="localTasksCounter" value="45" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -746,7 +699,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1335">
           <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -772,9 +727,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="735">
           <caret line="54" column="22" lean-forward="true" selection-start-line="54" selection-start-column="22" selection-end-line="54" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -790,9 +743,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="630">
           <caret line="42" column="29" lean-forward="false" selection-start-line="42" selection-start-column="29" selection-end-line="42" selection-end-column="29" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -844,32 +795,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/experiment_coloured_mnist.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/old_vae.py" />
-    <entry file="file://$PROJECT_DIR$/code/present.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="18" column="0" lean-forward="true" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/old_code/joint_vae_cnn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="377">
           <caret line="92" column="0" lean-forward="true" selection-start-line="92" selection-start-column="0" selection-end-line="92" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/results.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-12">
-          <caret line="116" column="0" lean-forward="false" selection-start-line="116" selection-start-column="0" selection-end-line="116" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -923,30 +853,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/data.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="43" column="53" lean-forward="true" selection-start-line="43" selection-start-column="53" selection-end-line="43" selection-end-column="53" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/experiment_mnist.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/pixel_cnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1620">
-          <caret line="112" column="15" lean-forward="false" selection-start-line="112" selection-start-column="15" selection-end-line="113" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/joint_vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="382">
@@ -954,28 +860,50 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/global_present.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="27" column="20" lean-forward="false" selection-start-line="27" selection-start-column="20" selection-end-line="27" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/experiment_pixelcnn.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="735">
           <caret line="54" column="22" lean-forward="false" selection-start-line="54" selection-start-column="22" selection-end-line="54" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/vae.py">
+    <entry file="file://$PROJECT_DIR$/code/present.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1335">
-          <caret line="93" column="0" lean-forward="false" selection-start-line="93" selection-start-column="0" selection-end-line="93" selection-end-column="0" />
+        <state relative-caret-position="-507">
+          <caret line="18" column="0" lean-forward="true" selection-start-line="18" selection-start-column="0" selection-end-line="18" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/global_present.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/temp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/experiment_mnist.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-29">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -984,25 +912,121 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="118">
           <caret line="42" column="29" lean-forward="false" selection-start-line="42" selection-start-column="29" selection-end-line="42" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/plot.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1042">
+          <caret line="71" column="0" lean-forward="false" selection-start-line="71" selection-start-column="0" selection-end-line="71" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/old/experiment_vae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-247">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/experiment_coloured_mnist.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="131">
+          <caret line="33" column="0" lean-forward="true" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/experiment_vae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="53">
+          <caret line="62" column="0" lean-forward="true" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/pixel_cnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="35" lean-forward="false" selection-start-line="12" selection-start-column="35" selection-end-line="12" selection-end-column="35" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/experiment_vae.py">
+    <entry file="file://$PROJECT_DIR$/code/results.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="141">
-          <caret line="62" column="0" lean-forward="true" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+        <state relative-caret-position="45">
+          <caret line="5" column="0" lean-forward="true" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/layers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="408">
+          <caret line="247" column="0" lean-forward="true" selection-start-line="247" selection-start-column="0" selection-end-line="247" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#23#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="48">
+          <caret line="43" column="53" lean-forward="true" selection-start-line="43" selection-start-column="53" selection-end-line="43" selection-end-column="53" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="21" column="0" lean-forward="true" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/vae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="353">
+          <caret line="206" column="42" lean-forward="true" selection-start-line="206" selection-start-column="42" selection-end-line="206" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/code/models/base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-392">
-          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+        <state relative-caret-position="337">
+          <caret line="78" column="0" lean-forward="true" selection-start-line="78" selection-start-column="0" selection-end-line="78" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/training.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="20" column="45" lean-forward="true" selection-start-line="20" selection-start-column="45" selection-end-line="20" selection-end-column="45" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/trial_vae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="480">
+          <caret line="32" column="0" lean-forward="true" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
