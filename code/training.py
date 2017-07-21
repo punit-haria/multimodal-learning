@@ -179,5 +179,5 @@ class Results(object):
         """
         if file_path is None:
             file_path = '../results/'
-        with open(file_path+result_name, 'rb') as f:
+        with open(file_path+result_name+'.pickle', 'rb') as f:
             return pickle.load(f)

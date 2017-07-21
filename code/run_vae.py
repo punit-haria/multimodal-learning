@@ -7,10 +7,10 @@ from training import train, Results
 tracker = Results('trial_vae')
 
 models = {
-    'VAE': vae.VAE,
-    'VAE_AR': vae.VAE_AR,
-    'VAE_CNN': vae.VAE_CNN,
-    'VAE_CNN_AR': vae.VAE_CNN_AR
+    #'VAE': vae.VAE,
+    'VAE_AR': vae.VAE_AR
+    #'VAE_CNN': vae.VAE_CNN,
+    #'VAE_CNN_AR': vae.VAE_CNN_AR
 }
 
 # parameters
@@ -26,7 +26,7 @@ parms = {
     'n_feature_maps': 32,
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 2,
+    'n_pixelcnn_layers': 6,
     'conditional': True,
     'concat': True,
 
@@ -37,20 +37,24 @@ parms = {
     'learning_rate': 0.002,
     'batch_size': 64,
     'n_conditional_pixels': 300,
-    'test_sample_size': 100,
-    'train_steps': 100,
-    'test_steps': 10,
-    'save_steps': 50
+    'test_sample_size': 1000,
+    'train_steps': 10000,
+    'test_steps': 50,
+    'save_steps': 5000
 }
 
 
 # data
 mnist = MNIST()
 
+for cond in [False, True]:
+    parms['conditional'] = cond
 
-# train models
-for name, model in models.items():
-    train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+    for name, model in models.items():
+
+        name = name + '_conditioned_' + str(cond)
+
+        train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
 
 

@@ -13,6 +13,10 @@ import numpy as np
 import queue
 
 
+
+
+
+
 def plot_images(images, n_rows, n_cols, path):
     """
     Plot images in a grid.
@@ -64,7 +68,7 @@ def plot_latent_space(Z, Y, path):
 
     # plot with seaborn 
     fig = sns.FacetGrid(data=df, hue='digit', aspect=1, size=6)
-    fig.map(plt.scatter, 'z1', 'z2').add_legend()
+    fig.map(plt.scatter, 'z1', 'z2')
     
     # save
     plt.savefig(path)
