@@ -159,7 +159,8 @@ class VAE(base.Model):
         if self.tracker is not None:
 
             for name, term in terms.items():
-                self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name, run_name=self.name)
+                self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name,
+                                 run_name=self.name, model_name=self.__class__.__name__)
 
 
     def train(self, x):
@@ -216,6 +217,15 @@ class VAE(base.Model):
         """
         feed = {self.z: z, self.is_training: False}
         return self.sess.run(self.rx_probs, feed_dict=feed)
+
+
+    def sample(self, n_samples):
+        """
+        Generate samples from model.
+        """
+        z = np.random.normal(size=[n_samples, self.n_z])
+        return self.decode(z)
+
 
 
 

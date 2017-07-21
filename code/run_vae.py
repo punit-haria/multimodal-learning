@@ -7,12 +7,14 @@ from training import train, Results
 experiment_name = 'vae_fc'
 
 
-models = {
-    #'VAE': vae.VAE,
-    'VAE_AR': vae.VAE_AR
-    #'VAE_CNN': vae.VAE_CNN,
-    #'VAE_CNN_AR': vae.VAE_CNN_AR
-}
+models = [
+    #vae.VAE,
+    vae.VAE_AR
+    #vae.VAE_CNN,
+    #vae.VAE_CNN_AR
+]
+models = {x.__name__: x for x in models}
+
 
 # parameters
 parms = {
@@ -45,19 +47,21 @@ parms = {
 }
 
 
-mnist = MNIST()    # data
+if __name__ == "__main__":
 
-tracker = Results(experiment_name)  # performance tracker
+    mnist = MNIST()    # data
+    tracker = Results(experiment_name)  # performance tracker
 
 
-for cond in [False, True]:
-    parms['conditional'] = cond
+    # train models
+    for cond in [False, True]:
+        parms['conditional'] = cond
 
-    for name, model in models.items():
+        for name, model in zip(names, models):
 
-        name = name + '_conditioned_' + str(cond)
+            name = name + '_conditioned_' + str(cond)
 
-        train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
 
 

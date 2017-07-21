@@ -1,26 +1,28 @@
 from data import MNIST
 from training import Results
-from run_vae import parms
+from results import image_plot
 
 
-tracker = Results.load('trial_vae')
+from run_vae import models, parms, experiment_name
+
 
 parms['n_conditional_pixels'] = 300
-
 suffix = str(parms['train_steps'])
 
+
+tracker = Results.load(experiment_name)  # performance tracker
+names = tracker.get_runs()
 
 mnist = MNIST()  # data
 
 
 
-# plot curves
-curve_plot()
+for name, model in models.items():
 
-# synthesize data
-image_plot()
+    image_plot()
 
     train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+
 
 
 

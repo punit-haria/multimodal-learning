@@ -89,6 +89,15 @@ class Model(object):
         saver.restore(self.sess, self.model_dir+name)
 
 
+    def close(self, ):
+        """
+        Close session (Need to close session before loading another model)
+        """
+        self.sess.close()
+        tf.reset_default_graph()
+
+
+
 
 
 

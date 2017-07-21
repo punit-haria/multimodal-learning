@@ -47,18 +47,59 @@ def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by
 
 
 
-def image_plot(tracker, parms, ):
+def image_plot(tracker, models, parms, data, suffix, n_rows, n_cols,
+               spacing=0, synthesis_type='default'):
+
+    names = tracker.get_runs()
+
+    for name in names:
+        trial = tracker.get(name)
+        _model = models[trial.model_name]
+
+        model = _model(arguments=parms, name=name, tracker=None)
+        model.load_state(suffix=suffix)
+
+        x = data.sample(n_images, dtype='test')
+        if type(x) in [list, tuple]:
+            x = x[0]
+
+        if synthesis_type == 'default':
+            rx = model.reconstruct(x)
+        elif synthesis_type == 'autoregressive':
+            rx = model.reconstruct(x)
+        elif synthesis_type == 'sample':
+            rx = model.sample(n_images)
+        elif synthesis_type == 'translation':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+
+        # do plotting...
+
+        # reset tensorflow session
+        model.close()
+
+
+
+
+
+def _image_plot(images, parms, n_rows, n_cols, spacing, path):
 
     h = parms['height']
     w = parms['width']
     n_ch = parms['n_channels']
-
     image_dim = [h, w, n_ch]
 
+    if images.ndim < 3:
+        np.reshape(images, newshape=[-1]+image_dim)
 
 
 
-def plot_images(images, n_rows, n_cols, path):
+
+
+
+def _plot_images(images, n_rows, n_cols, path):
     """
     Plot images in a grid.
 
