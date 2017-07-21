@@ -67,6 +67,66 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
         return c
 
 
+def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
+    """
+    Convolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
+
+        x = conv_pool(x, k=7, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+        x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+        x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+
+        x = tf.contrib.layers.flatten(x)
+
+        x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
+        x = tf.nn.elu(x)
+
+        mu = linear(x, n_z, "mu_layer", reuse=reuse)
+        sigma = linear(x, n_z, "sigma_layer", reuse=reuse)
+        sigma = tf.nn.softplus(sigma)
+
+        return mu, sigma
+
+
+def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
+    """
+    Deconvolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        h = 3
+        w = 3
+        dim = n_feature_maps * h * w
+
+        z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
+        z = tf.nn.elu(z)
+
+        z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
+        z = tf.nn.elu(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
+
+        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
+        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+        z = deconv_layer(z, k=7, out_ch=n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+
+        return z
+
+
+def freebits_penalty(mu, sigma, alpha):
+    """
+    Freebits penalty function as specified in the Inverse Autoregressive Flow paper (Kingma et al).
+    """
+    l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
+    l2 = tf.reduce_mean(l2, axis=0)
+    l2 = tf.minimum(l2, alpha)
+
+    return tf.reduce_sum(l2)
+
+
 def residual_block(c, k, nonlinearity, scope, reuse):
     """
     Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
