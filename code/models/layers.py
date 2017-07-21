@@ -3,7 +3,7 @@ import numpy as np
 
 
 
-def pixel_cnn(x, n_layers, ka, kb, out_ch, scope, reuse):
+def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, scope, reuse):
     """
     PixelCNN network based on architectures specified in:
         https://arxiv.org/abs/1601.06759
@@ -16,7 +16,7 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
 
-        n_ch = 32
+        n_ch = n_feature_maps
         nonlinearity = tf.nn.elu
 
         c = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
@@ -34,7 +34,7 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, scope, reuse):
         return c
 
 
-def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
+def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat, scope, reuse):
     """
     Conditional PixelCNN
 
@@ -44,7 +44,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, concat, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
 
-        n_ch = 32
+        n_ch = n_feature_maps
         nonlinearity = tf.nn.elu
 
         if concat:

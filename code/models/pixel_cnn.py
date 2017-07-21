@@ -14,9 +14,12 @@ class PixelCNN(base.Model):
     n_layers: number of residual blocks in pixel cnn
     learning_rate: optimizer learning_rate
     """
-    def __init__(self, arguments, name="PixelCNN", session=None, log_dir=None, model_dir=None):
+    def __init__(self, arguments, name, tracker, session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
         self.args = arguments
+
+        # object to track model performance (can be None)
+        self.tracker = tracker
 
         # training steps counter
         self.n_steps = 0
@@ -27,11 +30,12 @@ class PixelCNN(base.Model):
 
     def _initialize(self, ):
         # input dimensions
+        n_layers = self.args['n_pixelcnn_layers']
+        n_fmaps = self.args['n_feature_maps']
         self.n_ch = self.args['n_channels']
-        self.h = 28
-        self.w = 28
+        self.h = self.args['height']
+        self.w = self.args['width']
         self.n_x = self.h * self.w * self.n_ch
-        n_layers = self.args['n_layers']
 
         # input placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
@@ -40,7 +44,8 @@ class PixelCNN(base.Model):
         x = tf.reshape(self.x, shape=[-1, self.h, self.w, self.n_ch])
 
         # pixel cnn model
-        x = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=self.n_ch, scope='pixel_cnn', reuse=False)
+        x = nw.pixel_cnn(x, n_layers, ka=7, kb=3, out_ch=self.n_ch, n_feature_maps=n_fmaps,
+                         scope='pixel_cnn', reuse=False)
 
         # flatten
         logits = tf.reshape(x, shape=[-1, self.n_x])
@@ -85,7 +90,15 @@ class PixelCNN(base.Model):
             return tf.summary.merge_all()
 
 
-    def train(self, x, write=True):
+    def _track(self, terms, prefix):
+
+        if self.tracker is not None:
+
+            for name, term in terms.items():
+                self.tracker.add(self.n_steps, series_name=prefix+name, run_name=self.name)
+
+
+    def train(self, x):
         """
         Performs single training step.
         """
@@ -93,11 +106,13 @@ class PixelCNN(base.Model):
         outputs = [self.summary, self.step, self.loss]
 
         summary, _, loss = self.sess.run(outputs, feed_dict=feed)
-        if write:
-            self.tr_writer.add_summary(summary, self.n_steps)
-        self.n_steps = self.n_steps + 1
 
-        return loss
+        # track performance
+        terms = {'loss': loss}
+        self._track(terms, prefix='train_')
+        self.tr_writer.add_summary(summary, self.n_steps)
+
+        self.n_steps = self.n_steps + 1
 
 
     def test(self, x):
@@ -108,17 +123,19 @@ class PixelCNN(base.Model):
         outputs = [self.summary, self.loss]
 
         summary, loss  = self.sess.run(outputs, feed_dict=feed)
+
+        # track performance
+        terms = {'loss': loss}
+        self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
 
-        return loss
 
-
-    def sample(self, x, n_pixels):
+    def reconstruct(self, x):
         """
-        Synthesize images.
-
-        n_pixels: number of pixels to condition on (in row-wise order)
+        Synthesize images autoregressively.
         """
+        n_pixels = self.args['n_conditional_pixels']
+
         def _locate_2d(idx, w):
             pos = idx + 1
             r = np.ceil(pos / w)
