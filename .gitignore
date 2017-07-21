@@ -1,6 +1,7 @@
 data/*
 logs/*
-saved_models/*
+models/*
+old_experiments/*
 plots/*
 results/*
 azure_logs/*
