@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 from models import base
-from models import networks as nw
+from models import layers as nw
 
 
 class PixelCNN(base.Model):
