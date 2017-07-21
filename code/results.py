@@ -1,18 +1,59 @@
-"""
-Plotting functions. 
-"""
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-cm_choice = cm.Greys  # Greys_r
 
 import seaborn as sns
 import pandas as pd
 import numpy as np 
 import queue
 
+cm_choice = cm.Greys  # Greys_r
+plt.style.use('ggplot')
 
+
+
+def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by_batch=True,
+               legend='lower right', legend_font=18, xlab='x', ylab='f(x)'):
+
+    names = tracker.get_runs()
+
+    if curve_label is None:
+        labels = names
+    else:
+        labels = [_x + ' ' + curve_label for _x in names]
+
+    plt.figure(figsize=(12, 9))
+
+    for label, name in zip(labels, names):
+        trial = tracker.get(name)
+        x, f = trial.get_series(curve_name)
+
+        if scale_by_batch:
+            bs = parms['batch_size']
+            x = [_x * bs for _x in x]
+
+        plt.plot(x, f, label=label, linewidth=2)
+
+    if axis is not None:
+        plt.axis(axis)
+
+    plt.legend(loc=legend, fontsize=legend_font)
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
+
+    plt.savefig('../plots/' + tracker.name + '_' + curve_name + '.png')
+    plt.close('all')
+
+
+
+def image_plot(tracker, parms, ):
+
+    h = parms['height']
+    w = parms['width']
+    n_ch = parms['n_channels']
+
+    image_dim = [h, w, n_ch]
 
 
 

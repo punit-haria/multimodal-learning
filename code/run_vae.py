@@ -4,7 +4,8 @@ from data import MNIST
 from training import train, Results
 
 
-tracker = Results('trial_vae')
+experiment_name = 'vae_fc'
+
 
 models = {
     #'VAE': vae.VAE,
@@ -44,8 +45,10 @@ parms = {
 }
 
 
-# data
-mnist = MNIST()
+mnist = MNIST()    # data
+
+tracker = Results(experiment_name)  # performance tracker
+
 
 for cond in [False, True]:
     parms['conditional'] = cond
