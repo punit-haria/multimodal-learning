@@ -4,14 +4,11 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'vae_fc'
+experiment_name = 'vae_fc_ar'
 
 
 models = [
-    #vae.VAE,
     vae.VAE_AR
-    #vae.VAE_CNN,
-    #vae.VAE_CNN_AR
 ]
 models = {x.__name__: x for x in models}
 
@@ -54,12 +51,16 @@ if __name__ == "__main__":
 
 
     # train models
-    for cond in [False, True]:
-        parms['conditional'] = cond
+    for cond in [(False, False), (True, False), (True, True)]:
+        parms['conditional'] = cond[0]
+        parms['concat'] = cond[1]
 
         for name, model in models.items():
 
-            name = name + '_conditioned_' + str(cond)
+            if cond[0]:
+                name = name + '_conditioned_' + str(cond[0]) + '_concat_' + str(cond[1])
+            else:
+                name = name + '_conditioned_' + str(cond[0])
 
             train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
