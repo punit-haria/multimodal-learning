@@ -29,13 +29,12 @@ parms = {
     # train/test parameters
     'learning_rate': 0.002,
     'batch_size': 16,
-    'test_sample_size': 1000,
     'n_conditional_pixels': 300,
+    'test_sample_size': 1000,
     'train_steps': 20000,
     'test_steps': 50,
     'save_steps': 5000
 }
-
 
 
 # data

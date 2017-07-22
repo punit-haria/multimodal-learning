@@ -31,14 +31,14 @@ parms = {
     # autoregressive model parameters
     'n_pixelcnn_layers': 6,
     'conditional': True,
-    'concat': True,
+    'concat': False,
 
     # loss function parameters
     'anneal': -0.25,  # -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 64,
+    'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
     'train_steps': 10000,
