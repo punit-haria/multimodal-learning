@@ -203,30 +203,30 @@ class VAE(base.Model):
         return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
-    def encode(self, x):
+    def encode(self, x, mean=False):
         """
-        Encode x1.
+        Encode x.
         """
         feed = {self.x: x, self.is_training: False}
-        return self.sess.run(self.z_mu, feed_dict=feed)
+        if mean:
+            return self.sess.run(self.z_mu, feed_dict=feed)
+        else:
+            return self.sess.run(self.z, feed_dict=feed)
 
 
     def decode(self, z):
         """
-        Decodes x1 and x2.
+        Decodes z.
         """
         feed = {self.z: z, self.is_training: False}
         return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
-    def sample(self, n_samples):
+    def sample_prior(self, n_samples):
         """
-        Generate samples from model.
+        Samples z from prior distribution.
         """
-        z = np.random.normal(size=[n_samples, self.n_z])
-        return self.decode(z)
-
-
+        return np.random.normal(size=[n_samples, self.n_z])
 
 
 
@@ -275,6 +275,38 @@ class VAE_AR(VAE):
         """
         n_pixels = self.args['n_conditional_pixels']
 
+        z = self.encode(x, mean=False)
+        x = self._autoregressive_sampling(z, x, n_pixels)
+
+        return x
+
+
+    def decode(self, z):
+        """
+        Decodes z.
+        """
+        x = np.random.rand(z.shape[0], self.n_x)
+        x = self._autoregressive_sampling(z, x, n_pixels=0)
+
+        return x
+
+
+    def decode_mode(self, x, z=None):
+
+        if z is None:
+            feed = {self.x: x, self.is_training: False}
+            z = self.sess.run(self.z, feed_dict=feed)
+
+        feed = {self.z: z, self.x: x, self.is_training: False}
+        probs = self.sess.run(self.rx_probs, feed_dict=feed)
+
+        return np.rint(probs)
+
+
+    def _autoregressive_sampling(self, z, x, n_pixels):
+        """
+        Synthesize images autoregressively.
+        """
         def _locate_2d(idx, w):
             pos = idx + 1
             r = np.ceil(pos / w)
@@ -287,13 +319,9 @@ class VAE_AR(VAE):
         ch = self.n_ch
         n_x = h * w * ch
 
-        x = x.copy()
-
         remain = h*w - n_pixels
 
-        feed = {self.x: x, self.is_training: False}
-        z = self.sess.run(self.z, feed_dict=feed)
-
+        x = x.copy()
         for i in range(remain):
             feed = {self.z: z, self.x: x, self.is_training: False}
             probs = self.sess.run(self.rx_probs, feed_dict=feed)

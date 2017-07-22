@@ -349,7 +349,7 @@ class ColouredMNIST(MNIST):
 
         # reshape and scale
         X = np.reshape(X, newshape=[-1, 28, 28, 3]) / 255
-        Y = np.reshape(Y, newshape=[-1, 28, 28, 3])
+        Y = np.reshape(Y, newshape=[-1, 28, 28, 3])  # normalized in _edge_map
 
         # compute edge map
         print("Computing edge map...", flush=True)
