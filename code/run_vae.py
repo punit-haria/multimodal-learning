@@ -57,7 +57,7 @@ if __name__ == "__main__":
     for cond in [False, True]:
         parms['conditional'] = cond
 
-        for name, model in zip(names, models):
+        for name, model in models.items():
 
             name = name + '_conditioned_' + str(cond)
 

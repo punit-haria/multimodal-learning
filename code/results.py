@@ -5,8 +5,7 @@ import matplotlib.cm as cm
 
 import seaborn as sns
 import pandas as pd
-import numpy as np 
-import queue
+import numpy as np
 
 cm_choice = cm.Greys  # Greys_r
 plt.style.use('ggplot')
@@ -48,9 +47,13 @@ def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by
 
 
 def image_plot(tracker, models, parms, data, suffix, n_rows, n_cols,
-               spacing=0, synthesis_type='default'):
+               spacing=0, synthesis_type='reconstruct'):
 
     names = tracker.get_runs()
+
+    n_images = n_rows * n_cols
+    assert n_images % 2 == 0
+    n = n_images // 2
 
     for name in names:
         trial = tracker.get(name)
@@ -59,77 +62,129 @@ def image_plot(tracker, models, parms, data, suffix, n_rows, n_cols,
         model = _model(arguments=parms, name=name, tracker=None)
         model.load_state(suffix=suffix)
 
-        x = data.sample(n_images, dtype='test')
-        if type(x) in [list, tuple]:
-            x = x[0]
+        path = '../plots/' + tracker.name + '_' + name + '_' + synthesis_type
 
-        if synthesis_type == 'default':
-            rx = model.reconstruct(x)
-        elif synthesis_type == 'autoregressive':
-            rx = model.reconstruct(x)
+        if synthesis_type == 'reconstruct':
+            images = reconstruction(model, data, n_rows, n_cols)
+            _image_plot(images, parms, spacing, path)
+
+        elif synthesis_type == 'fix_latents':
+            images = fix_latents(model, data, n_rows, n_cols)
+            _image_plot(images, parms, spacing, path)
+
         elif synthesis_type == 'sample':
-            rx = model.sample(n_images)
-        elif synthesis_type == 'translation':
-            raise NotImplementedError
+            x, rx = separate_samples(model, data, n_rows, n_cols)
+            _image_plot(x, parms, spacing, path+'__test')
+            _image_plot(rx, parms, spacing, path+'__model')
+
         else:
             raise NotImplementedError
 
-
-        # do plotting...
-
-        # reset tensorflow session
         model.close()
 
 
 
+def reconstruction(model, data, n_rows, n_cols):
+
+    n_images = n_rows * n_cols
+
+    assert n_cols % 2 == 0
+
+    n = n_images // 2
+
+    x = data.sample(n, dtype='test')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    n_x = x.shape[1]
+
+    rx = model.reconstruct(x)
+
+    images = np.empty((n_images, n_x))
+    images[0::2] = x
+    images[1::2] = rx
+
+    images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+    images = np.transpose(images, axes=[1,0,2])
+
+    return images
 
 
-def _image_plot(images, parms, n_rows, n_cols, spacing, path):
+
+def separate_samples(model, data, n_rows, n_cols):
+
+    n = n_rows * n_cols
+
+    x = data.sample(n, dtype='test')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    n_x = x.shape[1]
+
+    z = model.sample_prior(n)
+    rx = model.decode(z)
+
+    x = np.reshape(x, newshape=[n_rows, n_cols, n_x])
+    rx = np.reshape(rx, newshape=[n_rows, n_cols, n_x])
+
+    return x, rx
+
+
+
+def fix_latents(model, data, n_rows, n_cols):
+
+    n_vary = n_cols - 1
+
+    x = data.sample(n_rows, dtype='test')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    n_x = x.shape[1]
+
+    z = model.encode(x, mean=False)
+
+    rxs = []
+    for i in range(n_vary):
+        rx = model.decode(z)
+        rxs.append(rx)
+
+    images = np.empty((n_rows, n_cols, n_x))
+
+    for i in range(n_rows):
+        for j in range(n_vary):
+            if i == 0:
+                images[i,j,:] = x[i]
+            else:
+                images[i,j,:] = rxs[j][i]
+
+    return images
+
+
+
+
+def _image_plot(images, parms, spacing, path):
 
     h = parms['height']
     w = parms['width']
     n_ch = parms['n_channels']
     image_dim = [h, w, n_ch]
 
-    if images.ndim < 3:
-        np.reshape(images, newshape=[-1]+image_dim)
+    n_rows = images.shape[0]
+    n_cols = images.shape[1]
 
+    np.reshape(images, newshape=[n_rows, n_cols]+image_dim)
 
-
-
-
-
-def _plot_images(images, n_rows, n_cols, path):
-    """
-    Plot images in a grid.
-
-    images: matrix of images
-    n_rows: number of rows in image grid
-    n_cols: number of columns in image grid
-    path: save figure to this path
-    """
-    n = len(images)
-    assert n <= n_rows*n_cols
-
-    # image queue
-    q = queue.Queue()
-    for i in range(n):
-        q.put(i)
-
-    # figure
     fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
 
-    for i in range(n_cols):
-        for j in range(n_rows):
-            # plot next image in queue
-            if q.qsize() > 0:
-                idx = q.get() 
-                plots[j,i].imshow(images[idx], cmap=cm_choice, interpolation='none')
-            plots[j,i].axis('off') 
+    for i in range(n_rows):
+        for j in range(n_cols):
+            plots[i,j].imshow(images[i,j], cmap=cm_choice, interpolation='none')
+            plots[i,j].axis('off')
 
-    # save figure
+    fig.subplots_adjust(wspace=spacing, hspace=spacing)
+
     plt.savefig(path)
-    plt.close()
+    plt.close('all')
 
 
 

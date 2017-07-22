@@ -11,20 +11,12 @@ suffix = str(parms['train_steps'])
 
 
 tracker = Results.load(experiment_name)  # performance tracker
-names = tracker.get_runs()
-
 mnist = MNIST()  # data
-
 
 
 for name, model in models.items():
 
-    image_plot()
-
-    train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
-
-
-
-
+    image_plot(tracker, models, parms, data=mnist, suffix=suffix, n_rows=8, n_cols=8,
+               spacing=0, synthesis_type='reconstruct')
 
 
