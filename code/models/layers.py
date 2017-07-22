@@ -20,7 +20,6 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, scope, reuse):
         nonlinearity = tf.nn.elu
 
         c = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
-        #c = nonlinearity(c)
 
         for i in range(n_layers):
             name  = 'residual_block_' + str(i+2)
@@ -139,7 +138,7 @@ def residual_block(c, k, nonlinearity, scope, reuse):
         n_ch = c.get_shape()[3].value
         half_ch = n_ch // 2
         c1 = nonlinearity(c)
-        c1 = conv2d_masked(c, k=1, out_ch=half_ch, mask_type='B', bias=False, scope='1x1_a', reuse=reuse)
+        c1 = conv2d_masked(c1, k=1, out_ch=half_ch, mask_type='B', bias=False, scope='1x1_a', reuse=reuse)
         c1 = nonlinearity(c1)
         c1 = conv2d_masked(c1, k=k, out_ch=half_ch, mask_type='B', bias=False, scope='conv', reuse=reuse)
         c1 = nonlinearity(c1)
