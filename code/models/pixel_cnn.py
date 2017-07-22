@@ -20,6 +20,7 @@ class PixelCNN(base.Model):
 
         # object to track model performance (can be None)
         self.tracker = tracker
+        self.tracker.create_run(run_name=name, model_name=self.__class__.__name__, parameters=arguments)
 
         # training steps counter
         self.n_steps = 0
@@ -95,8 +96,7 @@ class PixelCNN(base.Model):
         if self.tracker is not None:
 
             for name, term in terms.items():
-                self.tracker.add(i=self.n_steps, value=term, series_name=prefix + name,
-                                 run_name=self.name, model_name=self.__class__.__name__)
+                self.tracker.add(i=self.n_steps, value=term, series_name=prefix + name, run_name=self.name)
 
 
     def train(self, x):

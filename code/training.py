@@ -30,6 +30,7 @@ def train(name, model, parameters, data, tracker):
         if i % parameters['save_steps'] == 0:
             if i != 0:
                 model.save_state(suffix=str(i))
+                Results.save(tracker)
 
     # reset tensorflow session
     model.close()
@@ -67,12 +68,13 @@ class Trial(object):
     Class to store a single run's results, including training and test performance,
     as well as image reconstructions and translations. 
     """
-    def __init__(self, trial_name, model_name):
+    def __init__(self, trial_name, model_name, parameters):
         """
         experiment_name: name of experiment
         """
         self.name = trial_name
         self.model_name = model_name
+        self.parameters = parameters
         self.series = {}
         
 
@@ -116,12 +118,12 @@ class Results(object):
         self.i = 0  # track maximum time step across all trials
 
 
-    def _create_run(self, run_name, model_name):
+    def create_run(self, run_name, model_name, parameters):
         """
         name: name of the new run
         """
         if not self.contains(run_name):
-            self.runs[run_name] = Trial(run_name, model_name)
+            self.runs[run_name] = Trial(run_name, model_name, parameters)
 
 
     def contains(self, run_name):
@@ -145,7 +147,7 @@ class Results(object):
         return list(self.runs.keys())
     
     
-    def add(self, i, value, series_name, run_name, model_name):
+    def add(self, i, value, series_name, run_name):
         """
         Adds timestep and value to a given series in a given trial. If trial name is None, then 
         add to last added trial.
@@ -155,7 +157,6 @@ class Results(object):
         series_name: name of time series 
         run_name: name of experimental run (i.e. trial)
         """
-        self._create_run(run_name, model_name)
         self.runs[run_name].add_to_series(series_name, i, value)
 
         self.i = max(i, self.i)

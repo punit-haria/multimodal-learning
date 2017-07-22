@@ -3,6 +3,18 @@ import numpy as np
 
 
 
+def freebits_penalty(mu, sigma, alpha):
+    """
+    Freebits penalty function as specified in the Inverse Autoregressive Flow paper (Kingma et al).
+    """
+    l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
+    l2 = tf.reduce_mean(l2, axis=0)
+    l2 = tf.minimum(l2, alpha)
+
+    return tf.reduce_sum(l2)
+
+
+
 def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, scope, reuse):
     """
     PixelCNN network based on architectures specified in:
@@ -23,7 +35,7 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, scope, reuse):
 
         for i in range(n_layers):
             name  = 'residual_block_' + str(i+2)
-            c = residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
+            c = masked_residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
 
         c = nonlinearity(c)
         c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
@@ -56,7 +68,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat
 
         for i in range(n_layers):
             name = 'residual_block_' + str(i + 2)
-            c = residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
+            c = masked_residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
 
         c = nonlinearity(c)
         c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
@@ -66,67 +78,7 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat
         return c
 
 
-def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
-    """
-    Convolution network for use with MNIST dataset.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
-
-        x = conv_pool(x, k=7, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
-        x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
-        x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
-
-        x = tf.contrib.layers.flatten(x)
-
-        x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
-        x = tf.nn.elu(x)
-
-        mu = linear(x, n_z, "mu_layer", reuse=reuse)
-        sigma = linear(x, n_z, "sigma_layer", reuse=reuse)
-        sigma = tf.nn.softplus(sigma)
-
-        return mu, sigma
-
-
-def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
-    """
-    Deconvolution network for use with MNIST dataset.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        h = 3
-        w = 3
-        dim = n_feature_maps * h * w
-
-        z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
-        z = tf.nn.elu(z)
-
-        z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
-        z = tf.nn.elu(z)
-
-        z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
-
-        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
-        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
-        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
-        z = deconv_layer(z, k=7, out_ch=n_ch, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
-
-        return z
-
-
-def freebits_penalty(mu, sigma, alpha):
-    """
-    Freebits penalty function as specified in the Inverse Autoregressive Flow paper (Kingma et al).
-    """
-    l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
-    l2 = tf.reduce_mean(l2, axis=0)
-    l2 = tf.minimum(l2, alpha)
-
-    return tf.reduce_sum(l2)
-
-
-def residual_block(c, k, nonlinearity, scope, reuse):
+def masked_residual_block(c, k, nonlinearity, scope, reuse):
     """
     Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
     c: input tensor
@@ -143,6 +95,120 @@ def residual_block(c, k, nonlinearity, scope, reuse):
         c1 = conv2d_masked(c1, k=k, out_ch=half_ch, mask_type='B', bias=False, scope='conv', reuse=reuse)
         c1 = nonlinearity(c1)
         c1 = conv2d_masked(c1, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='1x1_b', reuse=reuse)
+        c = c1 + c
+
+        return c
+
+
+def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
+    """
+    Convolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
+        nonlinearity = tf.nn.elu
+
+        #x = conv_pool(x, k=7, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+        #x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+        #x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+
+        x = conv2d(x, k=7, out_ch=n_feature_maps, bias=False, scope='conv_0', reuse=reuse)
+
+        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_1', reuse=reuse)
+        x = pool(x, scope='pool_1', reuse=reuse)
+        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_2', reuse=reuse)
+        x = pool(x, scope='pool_2', reuse=reuse)
+        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_3', reuse=reuse)
+        x = pool(x, scope='pool_3', reuse=reuse)
+
+        x = conv2d(x, k=1, out_ch=n_feature_maps, bias=False, scope='final_1x1_a', reuse=reuse)
+        x = nonlinearity(x)
+        x = conv2d(x, k=1, out_ch=n_ch, bias=False, scope='final_1x1_b', reuse=reuse)
+
+        x = tf.contrib.layers.flatten(x)
+
+        x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
+        x = nonlinearity(x)
+
+        mu = linear(x, n_z, "mu_layer", reuse=reuse)
+        sigma = linear(x, n_z, "sigma_layer", reuse=reuse)
+        sigma = tf.nn.softplus(sigma)
+
+        return mu, sigma
+
+
+def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
+    """
+    Deconvolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        h = 3
+        w = 3
+        nonlinearity = tf.nn.elu
+
+        z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
+        z = nonlinearity(z)
+
+        dim = n_ch * h * w
+        z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
+        z = nonlinearity(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_ch])
+
+        z = deconv(z, k=1, in_ch=n_ch, out_ch=n_feature_maps, stride=False, bias=False, scope='final_1x1_b', reuse=reuse)
+        z = nonlinearity(z)
+        z = deconv(z, k=1, in_ch=n_feature_maps, out_ch=n_feature_maps, stride=False, bias=False, scope='final_1x1_a', reuse=reuse)
+
+        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
+        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
+        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_3', reuse=reuse)
+
+        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
+        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_2', reuse=reuse)
+
+        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
+        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_1', reuse=reuse)
+
+        z = deconv(z, k=7, in_ch=n_feature_maps, out_ch=n_ch, stride=False, bias=False, scope='deconv_0', reuse=reuse)
+
+
+        return z
+
+
+def deconv_residual_block(d, k, nonlinearity, scope, reuse):
+    """
+    Deconvolution residual block.
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        n_ch = d.get_shape()[3].value
+        half_ch = n_ch // 2
+
+        d1 = deconv(d, k=1, in_ch=n_ch, out_ch=half_ch, stride=False, bias=False, scope='1x1_b', reuse=reuse)
+        d1 = nonlinearity(d1)
+        d1 = deconv(d1, k=k, in_ch=half_ch, out_ch=half_ch, stride=False, bias=False, scope='deconv', reuse=reuse)
+        d1 = nonlinearity(d1)
+        d1 = deconv(d1, k=1, in_ch=half_ch, out_ch=n_ch, stride=False, bias=False, scope='1x1_a', reuse=reuse)
+        d = d1 + d
+
+        return d
+
+
+def conv_residual_block(c, k, nonlinearity, scope, reuse):
+    """
+    Residual Block
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+
+        n_ch = c.get_shape()[3].value
+        half_ch = n_ch // 2
+
+        c1 = conv2d(c, k=1, out_ch=half_ch, bias=False, scope='1x1_a', reuse=reuse)
+        c1 = nonlinearity(c1)
+        c1 = conv2d(c1, k=k, out_ch=half_ch, bias=False, scope='conv', reuse=reuse)
+        c1 = nonlinearity(c1)
+        c1 = conv2d(c1, k=1, out_ch=n_ch, bias=False, scope='1x1_b', reuse=reuse)
         c = c1 + c
 
         return c

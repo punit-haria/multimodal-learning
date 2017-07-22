@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from copy import deepcopy
 
 from models import base
 from models import layers as nw
@@ -11,10 +12,12 @@ class VAE(base.Model):
     """
     def __init__(self, arguments, name, tracker, session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
-        self.args = arguments
+        self.args = deepcopy(arguments)
 
         # object to track model performance (can be None)
         self.tracker = tracker
+        if self.tracker is not None:
+            self.tracker.create_run(run_name=name, model_name=self.__class__.__name__, parameters=self.args)
 
         # training steps counter
         self.n_steps = 0
@@ -85,7 +88,7 @@ class VAE(base.Model):
             z = nw.linear(z, n_units, "layer_1", reuse=reuse)
             z = tf.nn.elu(z)
 
-            z = nw.linear(z, self.n_x, "layer_2", reuse=reuse)
+            z = nw.linear(z, n_units, "layer_2", reuse=reuse)
             z = tf.nn.elu(z)
 
             logits = nw.linear(z, self.n_x, "logits_layer", reuse=reuse)
@@ -159,8 +162,7 @@ class VAE(base.Model):
         if self.tracker is not None:
 
             for name, term in terms.items():
-                self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name,
-                                 run_name=self.name, model_name=self.__class__.__name__)
+                self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name, run_name=self.name)
 
 
     def train(self, x):
@@ -191,7 +193,7 @@ class VAE(base.Model):
 
         # track performance
         terms = {'lower_bound': bound, 'loss': loss, 'reconstruction': reconstruction, 'penalty': penalty}
-        self._track(terms, prefix='_test')
+        self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
 
 
@@ -244,6 +246,7 @@ class VAE_AR(VAE):
             n_units = self.args['n_units']
             n_layers = self.args['n_pixelcnn_layers']
             n_fmaps = self.args['n_feature_maps']
+            concat = self.args['concat']
 
             z = nw.linear(z, n_units, "layer_1", reuse=reuse)
             z = tf.nn.elu(z)
@@ -254,13 +257,8 @@ class VAE_AR(VAE):
             z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
             x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
-            if self.args['conditional']:
-                concat = self.args['concat']
-                rx = nw.conditional_pixel_cnn(x, z, n_layers, ka=7, kb=3, out_ch=self.n_ch, n_feature_maps=n_fmaps,
+            rx = nw.conditional_pixel_cnn(x, z, n_layers, ka=7, kb=3, out_ch=self.n_ch, n_feature_maps=n_fmaps,
                                               concat=concat, scope='pixel_cnn', reuse=reuse)
-            else:
-                rx = nw.pixel_cnn(z, n_layers, ka=7, kb=3, out_ch=self.n_ch, n_feature_maps=n_fmaps,
-                                  scope='pixel_cnn', reuse=reuse)
 
             logits = tf.reshape(rx, shape=[-1, self.n_x])
 
@@ -364,11 +362,18 @@ class VAE_CNN(VAE):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
 
-            z = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                       scope='deconv_network', reuse=reuse)
+            z = nw.linear(z, n_units, "layer_1", reuse=reuse)
+            z = tf.nn.elu(z)
 
-            n_c = self.h * self.w * self.n_ch
-            logits = tf.reshape(z, shape=[-1, n_c])
+            z = nw.linear(z, n_units, "layer_2", reuse=reuse)
+            z = tf.nn.elu(z)
+
+            logits = nw.linear(z, self.n_x, "logits_layer", reuse=reuse)
+
+            #z = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units, scope='deconv_network', reuse=reuse)
+            #n_c = self.h * self.w * self.n_ch
+            #logits = tf.reshape(z, shape=[-1, n_c])
+
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs

@@ -46,18 +46,21 @@ def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by
 
 
 
-def image_plot(tracker, models, parms, data, suffix, n_rows, n_cols,
-               spacing=0, synthesis_type='reconstruct'):
-
-    names = tracker.get_runs()
+def image_plot(tracker, models, data, suffix, n_rows, n_cols,
+               n_pixels=300, spacing=0, synthesis_type='reconstruct'):
 
     n_images = n_rows * n_cols
     assert n_images % 2 == 0
     n = n_images // 2
 
-    for name in names:
+    for name in tracker.get_runs():
+
+        print("Plotting ", name, flush=True)
+
         trial = tracker.get(name)
         _model = models[trial.model_name]
+        parms = trial.parameters
+        parms['n_conditional_pixels'] = n_pixels
 
         model = _model(arguments=parms, name=name, tracker=None)
         model.load_state(suffix=suffix)
@@ -172,7 +175,8 @@ def _image_plot(images, parms, spacing, path):
     n_rows = images.shape[0]
     n_cols = images.shape[1]
 
-    np.reshape(images, newshape=[n_rows, n_cols]+image_dim)
+    images = np.reshape(images, newshape=[n_rows, n_cols]+image_dim)
+    images = np.squeeze(images)
 
     fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
 
