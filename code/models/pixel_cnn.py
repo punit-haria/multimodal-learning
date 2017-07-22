@@ -95,7 +95,8 @@ class PixelCNN(base.Model):
         if self.tracker is not None:
 
             for name, term in terms.items():
-                self.tracker.add(i=self.n_steps, value=term, series_name=prefix + name, run_name=self.name)
+                self.tracker.add(i=self.n_steps, value=term, series_name=prefix + name,
+                                 run_name=self.name, model_name=self.__class__.__name__)
 
 
     def train(self, x):
