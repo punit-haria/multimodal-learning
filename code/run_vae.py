@@ -8,7 +8,7 @@ experiment_name = 'vae_cnn_vs_fc'
 
 
 models = [
-    vae.VAE,
+    #vae.VAE,
     vae.VAE_CNN
 ]
 models = {x.__name__: x for x in models}

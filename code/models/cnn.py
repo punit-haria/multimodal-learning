@@ -46,7 +46,7 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
 
         z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_layer', reuse=reuse)
 
-        z = tf.reshape(z, shape=[-1, 28, 28, n_ch])
+        z = tf.contrib.layers.flatten(z)
 
         return z
 
@@ -169,7 +169,7 @@ def linear(x, n_out, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         n_x = x.get_shape()[-1].value
-        w = weight(n_x, n_out)
+        w = weight([n_x, n_out])
         b = bias(n_out)
 
         return tf.matmul(x, w) + b
