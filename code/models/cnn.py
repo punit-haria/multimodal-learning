@@ -11,12 +11,16 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
         x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
         nonlinearity = tf.nn.elu
 
-        x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_layer', reuse=reuse)
+        x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_1', reuse=reuse)
+        x = nonlinearity(x)
+
+        x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_2', reuse=reuse)
+        x = nonlinearity(x)
 
         x = tf.contrib.layers.flatten(x)
 
-        x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
-        x = nonlinearity(x)
+        #x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
+        #x = nonlinearity(x)
 
         mu = linear(x, n_z, "mu_layer", reuse=reuse)
 
@@ -34,17 +38,20 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
 
         nonlinearity = tf.nn.elu
 
-        z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
+        h = w = 7
+        dim = h * w * n_feature_maps
+        z = linear(z, n_out=dim, scope='mu_sigma_layer', reuse=reuse)
         z = nonlinearity(z)
 
-        h = w = 14
-        dim = n_feature_maps * h * w
-        z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
-        z = nonlinearity(z)
+        #z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
+        #z = nonlinearity(z)
 
         z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
 
-        z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_layer', reuse=reuse)
+        z = deconv(z, k=3, out_ch=n_feature_maps, stride=True, scope='deconv_1', reuse=reuse)
+        z = nonlinearity(z)
+
+        z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_2', reuse=reuse)
 
         z = tf.contrib.layers.flatten(z)
 

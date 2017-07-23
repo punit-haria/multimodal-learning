@@ -8,7 +8,6 @@ experiment_name = 'vae_cnn_vs_fc'
 
 
 models = [
-    #vae.VAE,
     vae.VAE_CNN
 ]
 models = {x.__name__: x for x in models}
@@ -31,7 +30,7 @@ parms = {
     'concat': False,
 
     # loss function parameters
-    'anneal': -0.25,  # -0.0625, -0.125, -0.25
+    'anneal': -0.125,  # -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.002,
@@ -51,21 +50,13 @@ if __name__ == "__main__":
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
 
+    for alpha in [0, -0.125]:
 
-    for name, model in models.items():
+        for name, model in models.items():
 
-        if name == "VAE_CNN":
+            name = experiment_name + "_" + name + '_anneal_' + str(alpha)
 
-            for alpha in [0, -0.125, -0.25]:
-
-                name = name + '_anneal_' + str(alpha)
-
-                parms['anneal'] = alpha
-                train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
-
-        else:
+            parms['anneal'] = alpha
 
             train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
-
-
 
