@@ -154,6 +154,10 @@ class VAE(base.Model):
             tf.summary.scalar('reconstruction', self.l1)
             tf.summary.scalar('penalty', self.l2)
 
+            z = tf.abs(self.z_mu)
+            z = tf.reduce_max(z, axis=0)
+            tf.summary.histogram('latent_activation', z)
+
             return tf.summary.merge_all()
 
 

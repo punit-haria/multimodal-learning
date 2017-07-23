@@ -16,10 +16,22 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
                                 stride=True, scope='res_1', reuse=reuse)
         x = nonlinearity(x)
 
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, scope='unstrided_1', reuse=reuse)
+        x = nonlinearity(x)
+
         #x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_2', reuse=reuse)
         x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
                                 stride=True, scope='res_2', reuse=reuse)
         x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, scope='res_3', reuse=reuse)
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, scope='unstrided_2', reuse=reuse)
+        x = nonlinearity(x)  #
 
         x = tf.contrib.layers.flatten(x)
 
@@ -45,21 +57,34 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
         z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
         z = nonlinearity(z)
 
-        h = w = 7
+        h = w = 3
         dim = h * w * n_feature_maps
         z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
         z = nonlinearity(z)
 
         z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
 
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, scope='unstrided_2', reuse=reuse)
+        z = nonlinearity(z)
+
         #z = deconv(z, k=3, out_ch=n_feature_maps, stride=True, scope='deconv_1', reuse=reuse)
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
                                   nonlinearity=nonlinearity, stride=True, scope='res_1', reuse=reuse)
+        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
         z = nonlinearity(z)
 
         #z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_2', reuse=reuse)
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=True, scope='res_2', reuse=reuse)
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, scope='unstrided_1', reuse=reuse)
+        z = nonlinearity(z)
+
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
-                                  stride=True, scope='res_1', reuse=reuse)
+                                  stride=True, scope='res_3', reuse=reuse)
         z = tf.contrib.layers.flatten(z)
 
         return z
@@ -73,9 +98,9 @@ def conv_residual_block(c, k, n_feature_maps, nonlinearity, stride, scope, reuse
 
         id = c
 
-        c = conv(c, k=k, out_ch=n_feature_maps, stride=False, scope='layer_1', reuse=reuse)
+        c = conv_with_bias(c, k=k, out_ch=n_feature_maps, stride=False, scope='layer_1', reuse=reuse)
         c = nonlinearity(c)
-        c = conv(c, k=k, out_ch=n_feature_maps, stride=stride, scope='layer_2', reuse=reuse)
+        c = conv_with_bias(c, k=k, out_ch=n_feature_maps, stride=stride, scope='layer_2', reuse=reuse)
 
         if stride:
             id = conv(id, k=k, out_ch=n_feature_maps, stride=True, scope='identity_downsampled', reuse=reuse)
@@ -93,9 +118,9 @@ def deconv_residual_block(d, k, n_feature_maps, out_ch, nonlinearity, stride, sc
 
         id = d
 
-        d = deconv(d, k=k, out_ch=n_feature_maps, stride=stride, scope='layer_1', reuse=reuse)
+        d = deconv_with_bias(d, k=k, out_ch=n_feature_maps, stride=stride, scope='layer_1', reuse=reuse)
         d = nonlinearity(d)
-        d = deconv(d, k=k, out_ch=out_ch, stride=False, scope='layer_2', reuse=reuse)
+        d = deconv_with_bias(d, k=k, out_ch=out_ch, stride=False, scope='layer_2', reuse=reuse)
 
         if stride:
             id = deconv(id, k=k, out_ch=out_ch, stride=True, scope='identity_upsampled', reuse=reuse)
@@ -147,11 +172,11 @@ def deconv(x, k, out_ch, stride, scope, reuse):
         return dcv
 
 
-def conv_with_bias(x, k, out_ch, scope, reuse):
+def conv_with_bias(x, k, out_ch, stride, scope, reuse):
     """
     Convolution layer with bias.
     """
-    c = conv(x, k, out_ch, scope, reuse)
+    c = conv(x, k, out_ch, stride, scope, reuse)
 
     with tf.variable_scope(scope, reuse=reuse):
         b = bias(out_ch)

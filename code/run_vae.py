@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = '2_layer_cnn_with_fc'
+experiment_name = '5_resblocks_with_bias'
 
 
 models = [
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
 
-    for alpha in [0, -0.125]:
+    for alpha in [0, -0.0625]:
 
         for name, model in models.items():
 
