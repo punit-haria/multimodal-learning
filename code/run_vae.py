@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'vae_cnn_vs_fc'
+experiment_name = '2_layer_cnn_with_fc'
 
 
 models = [
