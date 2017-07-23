@@ -23,8 +23,8 @@ parms = {
     'n_channels': 1,
 
     # network parameters
-    'n_units': 500,
-    'n_feature_maps': 32,
+    'n_units': 450,
+    'n_feature_maps': 16,
 
     # autoregressive model parameters
     'n_pixelcnn_layers': 6,
@@ -38,10 +38,10 @@ parms = {
     'batch_size': 256,
 
     'n_conditional_pixels': 300,
-    'test_sample_size': 500,
-    'train_steps': 20000,
+    'test_sample_size': 1000,
+    'train_steps': 5000,
     'test_steps': 50,
-    'save_steps': 40000
+    'save_steps': 5000
 }
 
 
@@ -54,9 +54,18 @@ if __name__ == "__main__":
 
     for name, model in models.items():
 
-        train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+        if name == "VAE_CNN":
 
+            for alpha in [0, -0.125, -0.25]:
 
+                name = name + '_anneal_' + str(alpha)
+
+                parms['anneal'] = alpha
+                train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+
+        else:
+
+            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
 
 

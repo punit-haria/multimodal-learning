@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from copy import deepcopy
 
-from models import base
+from models import base, cnn
 from models import layers as nw
 
 
@@ -350,8 +350,8 @@ class VAE_CNN(VAE):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
 
-            mu, sigma = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units, n_z=self.n_z,
-                                 scope='conv_network', reuse=reuse)
+            mu, sigma = cnn.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                             n_z=self.n_z, scope='conv_network', reuse=reuse)
 
             return mu, sigma
 
@@ -362,17 +362,8 @@ class VAE_CNN(VAE):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
 
-            z = nw.linear(z, n_units, "layer_1", reuse=reuse)
-            z = tf.nn.elu(z)
-
-            z = nw.linear(z, n_units, "layer_2", reuse=reuse)
-            z = tf.nn.elu(z)
-
-            logits = nw.linear(z, self.n_x, "logits_layer", reuse=reuse)
-
-            #z = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units, scope='deconv_network', reuse=reuse)
-            #n_c = self.h * self.w * self.n_ch
-            #logits = tf.reshape(z, shape=[-1, n_c])
+            logits = cnn.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                       scope='deconv_network', reuse=reuse)
 
             probs = tf.nn.sigmoid(logits)
 
