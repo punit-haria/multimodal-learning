@@ -1,14 +1,14 @@
-from models import vae
+from models import vae_2 as vae
 from data import MNIST
 
 from training import train, Results
 
 
-experiment_name = '5_resblocks_with_bias'
+experiment_name = 'vae_weight_normalization'
 
 
 models = [
-    vae.VAE_CNN
+    vae.VAE
 ]
 models = {x.__name__: x for x in models}
 
@@ -34,7 +34,7 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 256,
+    'batch_size': 64, #256,
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
@@ -54,9 +54,11 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name = experiment_name + "_" + name + '_anneal_' + str(alpha)
+            name = experiment_name + "_" + name #+ '_anneal_' + str(alpha)
 
             parms['anneal'] = alpha
 
             train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+
+        break
 

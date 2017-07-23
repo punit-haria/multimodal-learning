@@ -1,6 +1,4 @@
-import tensorflow as tf
 import pickle
-
 
 
 def train(name, model, parameters, data, tracker):
@@ -8,6 +6,7 @@ def train(name, model, parameters, data, tracker):
     # load model
     print("Training Model: ", name, flush=True)
     model = model(arguments=parameters, name=name, tracker=tracker)
+    initialize(model, parameters, data)
 
     # train model
     for i in range(parameters['train_steps'] + 1):
@@ -38,6 +37,14 @@ def train(name, model, parameters, data, tracker):
     # save model performance results
     Results.save(tracker)
 
+
+def initialize(model, parameters, data):
+
+    x = data.sample(parameters['batch_size'], dtype='train')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    model.initialize_weights(x)
 
 
 class Series(object):
