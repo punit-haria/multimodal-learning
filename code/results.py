@@ -12,7 +12,7 @@ plt.style.use('ggplot')
 
 
 
-def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by_batch=True,
+def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=True,
                legend='lower right', legend_font=18, xlab='x', ylab='f(x)'):
 
     names = tracker.get_runs()
@@ -27,6 +27,7 @@ def curve_plot(tracker, parms, curve_name, curve_label=None, axis=None, scale_by
     for label, name in zip(labels, names):
         trial = tracker.get(name)
         x, f = trial.get_series(curve_name)
+        parms = trial.parameters
 
         if scale_by_batch:
             bs = parms['batch_size']
@@ -62,7 +63,7 @@ def image_plot(tracker, models, data, suffix, n_rows, n_cols,
         parms = trial.parameters
         parms['n_conditional_pixels'] = n_pixels
 
-        model = _model(arguments=parms, name=name, tracker=None)
+        model = initialize(name, _model, parms, data, tracker)
         model.load_state(suffix=suffix)
 
         path = '../plots/' + tracker.name + '_' + name + '_' + synthesis_type
@@ -190,6 +191,18 @@ def _image_plot(images, parms, spacing, path):
     plt.savefig(path)
     plt.close('all')
 
+
+def initialize(name, model, parameters, data, tracker):
+
+    # sample minibatch for weight initialization
+    x = data.sample(parameters['batch_size'], dtype='train')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    # constructor
+    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatch=x)
+
+    return mod
 
 
 def plot_latent_space(Z, Y, path):

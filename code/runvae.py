@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'vae_cnn_weight_normalization'
+experiment_name = '5_resblocks_weight_normalized'
 
 
 models = [
@@ -30,7 +30,7 @@ parms = {
     'concat': False,
 
     # loss function parameters
-    'anneal': -0.125,  # -0.0625, -0.125, -0.25
+    'anneal': 0,  # -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.002,
@@ -38,9 +38,9 @@ parms = {
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 5000,
+    'train_steps': 200000,
     'test_steps': 50,
-    'save_steps': 5000
+    'save_steps': 100000
 }
 
 
@@ -50,16 +50,10 @@ if __name__ == "__main__":
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
 
-    for alpha in [0, -0.0625]:
 
-        for lr in [0.005, 0.002]:
+    for name, model in models.items():
 
-            for name, model in models.items():
+        name = experiment_name + "_" + name
 
-                name = experiment_name + "_" + name + '_anneal_' + str(alpha) + '_lrate_' + str(lr)
-
-                parms['anneal'] = alpha
-                parms['learning_rate'] = lr
-
-                train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+        train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
