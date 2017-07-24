@@ -174,9 +174,9 @@ class VAE(base.Model):
             tf.summary.scalar('reconstruction', self.l1)
             tf.summary.scalar('penalty', self.l2)
 
-            z = tf.abs(self.z_mu)
-            z = tf.reduce_max(z, axis=0)
-            tf.summary.histogram('latent_activation', z)
+            #z = tf.abs(self.z_mu)
+            #z = tf.reduce_max(z, axis=0)
+            #tf.summary.histogram('latent_activation', z)
 
             return tf.summary.merge_all()
 
@@ -253,6 +253,51 @@ class VAE(base.Model):
         Samples z from prior distribution.
         """
         return np.random.normal(size=[n_samples, self.n_z])
+
+
+
+class VAE_CNN(VAE):
+
+    def __init__(self, arguments, name, tracker, init_minibatch, session=None, log_dir=None, model_dir=None):
+
+        super(VAE_CNN, self).__init__(arguments=arguments, name=name, tracker=tracker, init_minibatch=init_minibatch,
+                                      session=session, log_dir=log_dir, model_dir=model_dir)
+
+
+    def _encoder(self, x, init, scope):
+
+        with tf.variable_scope(scope):
+            n_units = self.args['n_units']
+            n_fmaps = self.args['n_feature_maps']
+
+            mu, sigma = cnn.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                             n_z=self.n_z, init=init, scope='conv_network')
+
+            return mu, sigma
+
+
+    def _decoder(self, z, x, init, scope):
+
+        with tf.variable_scope(scope):
+            n_units = self.args['n_units']
+            n_fmaps = self.args['n_feature_maps']
+
+            logits = cnn.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                       init=init, scope='deconv_network')
+
+            probs = tf.nn.sigmoid(logits)
+
+            return logits, probs
+
+
+    def _loss(self, scope):
+
+        with tf.variable_scope(scope):
+            alpha = self.args['anneal']
+            l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
+
+            return -(self.l1 + l2)
+
 
 
 
@@ -356,51 +401,6 @@ class VAE_AR(VAE):
             x = np.reshape(x, newshape=[-1, n_x])
 
         return x
-
-
-
-
-class VAE_CNN(VAE):
-
-    def __init__(self, arguments, name, tracker, session=None, log_dir=None, model_dir=None):
-
-        super(VAE_CNN, self).__init__(arguments=arguments, name=name, tracker=tracker, session=session,
-                                              log_dir=log_dir, model_dir=model_dir)
-
-
-    def _encoder(self, x, init, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_units']
-            n_fmaps = self.args['n_feature_maps']
-
-            mu, sigma = cnn.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                             n_z=self.n_z, init=init, scope='conv_network', reuse=reuse)
-
-            return mu, sigma
-
-
-    def _decoder(self, z, x, init, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_units']
-            n_fmaps = self.args['n_feature_maps']
-
-            logits = cnn.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                       init=init, scope='deconv_network', reuse=reuse)
-
-            probs = tf.nn.sigmoid(logits)
-
-            return logits, probs
-
-
-    def _loss(self, scope, reuse=False):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            alpha = self.args['anneal']
-            l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
-
-            return -(self.l1 + l2)
 
 
 

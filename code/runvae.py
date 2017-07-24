@@ -4,11 +4,11 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'vae_weight_normalization'
+experiment_name = 'vae_cnn_weight_normalization'
 
 
 models = [
-    vae.VAE
+    vae.VAE_CNN
 ]
 models = {x.__name__: x for x in models}
 
@@ -34,7 +34,7 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 64, #256,
+    'batch_size': 256,
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
@@ -52,13 +52,14 @@ if __name__ == "__main__":
 
     for alpha in [0, -0.0625]:
 
-        for name, model in models.items():
+        for lr in [0.005, 0.002]:
 
-            name = experiment_name + "_" + name #+ '_anneal_' + str(alpha)
+            for name, model in models.items():
 
-            parms['anneal'] = alpha
+                name = experiment_name + "_" + name + '_anneal_' + str(alpha) + '_lrate_' + str(lr)
 
-            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+                parms['anneal'] = alpha
+                parms['learning_rate'] = lr
 
-        break
+                train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
