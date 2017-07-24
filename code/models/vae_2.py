@@ -11,9 +11,12 @@ class VAE(base.Model):
     """
     Variational Auto-Encoder with fully connected encoder and decoder.
     """
-    def __init__(self, arguments, name, tracker, session=None, log_dir=None, model_dir=None):
+    def __init__(self, arguments, name, tracker, init_minibatch, session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
         self.args = deepcopy(arguments)
+
+        # sample minibatch for weight initialization
+        self.init_minibatch = init_minibatch
 
         # object to track model performance (can be None)
         self.tracker = tracker
@@ -27,119 +30,134 @@ class VAE(base.Model):
         super(VAE, self).__init__(name=name, session=session, log_dir=log_dir, model_dir=model_dir)
 
 
-    def _initialize(self, init=True):
-        # input/latent dimensions
+    def _initialize(self):
+
+        # input and latent dimensions
         self.n_z = self.args['n_z']
         self.n_ch = self.args['n_channels']
         self.h = self.args['height']
         self.w = self.args['width']
         self.n_x = self.h * self.w * self.n_ch
 
-        # input placeholders
+        # placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
 
-        # encoder
-        self.z_mu, self.z_sigma = self._encoder(self.x, init=init, scope='x_enc', reuse=False)
+        # data-dependent weight initialization (Salisman, Kingma - 2016)
+        x_init = tf.constant(self.init_minibatch, tf.float32)
+        self._model(x_init, init=True)
 
-        # samples
-        self.z = self._sample(self.z_mu, self.z_sigma, scope='sampler', reuse=False)
+        # variational autoencoder
+        self.z_mu, self.z_sigma, self.z, self.rx, self.rx_probs = self._model(self.x, init=False)
 
-        # decoders
-        self.rx, self.rx_probs = self._decoder(self.z, self.x, init=init, scope='x_dec', reuse=False)
+        # reconstruction and penalty terms
+        self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
+        self.l2 = self._penalty(mean=self.z_mu, std=self.z_sigma, scope='penalty')
 
-        if not init:
-            # reconstruction and penalty terms
-            self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
-            self.l2 = self._penalty(mean=self.z_mu, std=self.z_sigma, scope='penalty')
+        # training and test bounds
+        self.bound = self._variational_bound(scope='lower_bound')
 
-            # training and test bounds
-            self.bound = self._variational_bound(scope='lower_bound')
+        # loss function
+        self.loss = self._loss(scope='loss')
 
-            # loss function
-            self.loss = self._loss(scope='loss')
+        # optimizer
+        self.step = self._optimizer(self.loss)
 
-            # optimizer
-            self.step = self._optimizer(self.loss)
+        # summary variables
+        self.summary = self._summaries()
 
 
-    def _encoder(self, x, init, scope, reuse):
+    def _model(self, x, init):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope('autoencoder') as scope:
+
+            if not init:
+                scope.reuse_variables()
+
+            z_mu, z_sigma = self._encoder(x, init=init, scope='x_enc')
+            z = self._sample(z_mu, z_sigma, scope='sampler')
+            rx, rx_probs = self._decoder(z, x, init=init, scope='x_dec')
+
+            return z_mu, z_sigma, z, rx, rx_probs
+
+
+    def _encoder(self, x, init, scope):
+
+        with tf.variable_scope(scope):
             n_units = self.args['n_units']
 
-            h1 = cnn.linear(x, n_units, init=init, scope="layer_1", reuse=reuse)
+            h1 = cnn.linear(x, n_units, init=init, scope="layer_1")
             h1 = tf.nn.elu(h1)
 
-            h2 = cnn.linear(h1, n_units, init=init, scope="layer_2", reuse=reuse)
+            h2 = cnn.linear(h1, n_units, init=init, scope="layer_2")
             h2 = tf.nn.elu(h2)
 
-            mean = cnn.linear(h2, self.n_z, init=init, scope="mean_layer", reuse=reuse)
+            mean = cnn.linear(h2, self.n_z, init=init, scope="mean_layer")
 
-            a3 = cnn.linear(h2, self.n_z, init=init, scope="var_layer", reuse=reuse)
+            a3 = cnn.linear(h2, self.n_z, init=init, scope="var_layer")
             sigma = tf.nn.softplus(a3)
 
             return mean, sigma
 
 
-    def _decoder(self, z, x, init, scope, reuse):
+    def _decoder(self, z, x, init, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
             n_units = self.args['n_units']
 
-            z = cnn.linear(z, n_units, init=init, scope="layer_1", reuse=reuse)
+            z = cnn.linear(z, n_units, init=init, scope="layer_1")
             z = tf.nn.elu(z)
 
-            z = cnn.linear(z, n_units, init=init, scope="layer_2", reuse=reuse)
+            z = cnn.linear(z, n_units, init=init, scope="layer_2")
             z = tf.nn.elu(z)
 
-            logits = cnn.linear(z, self.n_x, init=init, scope="logits_layer", reuse=reuse)
+            logits = cnn.linear(z, self.n_x, init=init, scope="logits_layer")
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
 
 
-    def _reconstruction(self, logits, labels, scope, reuse=False):
+    def _reconstruction(self, logits, labels, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
 
             l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
             return tf.reduce_mean(l1, axis=0)
 
 
-    def _penalty(self, mean, std, scope, reuse=False):
+    def _penalty(self, mean, std, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
 
             l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(std) - tf.square(mean) - tf.square(std), axis=1)
 
             return tf.reduce_mean(l2, axis=0)
 
 
-    def _variational_bound(self, scope, reuse=False):
+    def _variational_bound(self, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
             return self.l1 + self.l2
 
 
-    def _loss(self, scope, reuse=False):
+    def _loss(self, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
             return -(self.l1 + self.l2)
 
 
-    def _optimizer(self, loss, scope='optimizer', reuse=False):
+    def _optimizer(self, loss, scope='optimizer'):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
             lr = self.args['learning_rate']
             step = tf.train.RMSPropOptimizer(lr).minimize(loss)
 
             return step
 
 
-    def _sample(self, z_mu, z_sigma, scope='sampling', reuse=False):
+    def _sample(self, z_mu, z_sigma, scope='sampling'):
 
-        with tf.variable_scope(scope, reuse=reuse):
+        with tf.variable_scope(scope):
             n_samples = tf.shape(z_mu)[0]
 
             eps = tf.random_normal((n_samples, self.n_z))
@@ -150,7 +168,7 @@ class VAE(base.Model):
 
     def _summaries(self,):
 
-        with tf.variable_scope("summaries", reuse=False):
+        with tf.variable_scope("summaries"):
             tf.summary.scalar('lower_bound', self.bound)
             tf.summary.scalar('loss', self.loss)
             tf.summary.scalar('reconstruction', self.l1)
@@ -169,19 +187,6 @@ class VAE(base.Model):
 
             for name, term in terms.items():
                 self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name, run_name=self.name)
-
-
-    def initialize_weights(self, x):
-        """
-        Data-dependent weight initialization following https://arxiv.org/abs/1602.07868
-        Requires single minibatch input.
-        """
-        feed = {self.x: x, self.is_training: False}
-        outputs = [self.rx, self.rx_probs]
-
-        _, _ = self.sess.run(outputs, feed_dict=feed)
-
-        self._initialize(init=False)
 
 
     def train(self, x):

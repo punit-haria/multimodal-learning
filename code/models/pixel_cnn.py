@@ -60,6 +60,9 @@ class PixelCNN(base.Model):
         # optimizer
         self.step = self._optimizer(self.loss)
 
+        # summary variables
+        self.summary = self._summaries()
+
 
     def _probs(self, logits):
         return tf.nn.sigmoid(logits)

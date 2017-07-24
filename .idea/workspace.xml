@@ -2,8 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/run_pixelcnn.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/code/run_vae.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/run_vae.py" afterPath="$PROJECT_DIR$/code/run_vae.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/base.py" afterPath="$PROJECT_DIR$/code/models/base.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/cnn_2.py" afterPath="$PROJECT_DIR$/code/models/cnn_2.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/pixel_cnn.py" afterPath="$PROJECT_DIR$/code/models/pixel_cnn.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/vae.py" afterPath="$PROJECT_DIR$/code/models/vae.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/vae_2.py" afterPath="$PROJECT_DIR$/code/models/vae_2.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/training.py" afterPath="$PROJECT_DIR$/code/training.py" />
     </list>
     <ignored path="thesis.iws" />
@@ -24,25 +30,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="run_vae.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/code/run_vae.py">
+      <file leaf-file-name="vae_2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/models/vae_2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="488">
-              <caret line="56" column="49" lean-forward="false" selection-start-line="56" selection-start-column="49" selection-end-line="56" selection-end-column="49" />
+            <state relative-caret-position="1005">
+              <caret line="67" column="0" lean-forward="true" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
               <folding>
-                <element signature="e#0#31#0" expanded="true" />
+                <element signature="e#0#23#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="vae_2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/models/vae_2.py">
+      <file leaf-file-name="runvae.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/runvae.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="335">
-              <caret line="172" column="0" lean-forward="true" selection-start-line="172" selection-start-column="0" selection-end-line="172" selection-end-column="0" />
+            <state relative-caret-position="645">
+              <caret line="43" column="1" lean-forward="true" selection-start-line="43" selection-start-column="1" selection-end-line="43" selection-end-column="1" />
               <folding>
-                <element signature="e#0#23#0" expanded="true" />
+                <element signature="e#0#31#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -51,28 +57,18 @@
       <file leaf-file-name="training.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/training.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="354">
-              <caret line="26" column="25" lean-forward="true" selection-start-line="26" selection-start-column="25" selection-end-line="26" selection-end-column="25" />
+            <state relative-caret-position="150">
+              <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="base.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/models/base.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="207">
-              <caret line="34" column="24" lean-forward="false" selection-start-line="34" selection-start-column="13" selection-end-line="34" selection-end-column="24" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="cnn_2.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="cnn_2.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/models/cnn_2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2759">
-              <caret line="17" column="0" lean-forward="true" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+            <state relative-caret-position="-274">
+              <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -134,20 +130,21 @@
         <option value="$PROJECT_DIR$/code/trial_vae.py" />
         <option value="$PROJECT_DIR$/code/plot_vae.py" />
         <option value="$PROJECT_DIR$/code/eval_vae.py" />
-        <option value="$PROJECT_DIR$/code/models/base.py" />
         <option value="$PROJECT_DIR$/code/data.py" />
         <option value="$PROJECT_DIR$/code/run_pixelcnn.py" />
         <option value="$PROJECT_DIR$/code/curve_vae.py" />
-        <option value="$PROJECT_DIR$/code/models/pixel_cnn.py" />
         <option value="$PROJECT_DIR$/code/results.py" />
         <option value="$PROJECT_DIR$/code/synthesize_vae.py" />
         <option value="$PROJECT_DIR$/code/models/layers.py" />
-        <option value="$PROJECT_DIR$/code/models/vae.py" />
         <option value="$PROJECT_DIR$/code/models/cnn.py" />
-        <option value="$PROJECT_DIR$/code/models/cnn_2.py" />
-        <option value="$PROJECT_DIR$/code/models/vae_2.py" />
-        <option value="$PROJECT_DIR$/code/training.py" />
         <option value="$PROJECT_DIR$/code/run_vae.py" />
+        <option value="$PROJECT_DIR$/code/models/vae.py" />
+        <option value="$PROJECT_DIR$/code/models/pixel_cnn.py" />
+        <option value="$PROJECT_DIR$/code/models/base.py" />
+        <option value="$PROJECT_DIR$/code/models/vae_2.py" />
+        <option value="$PROJECT_DIR$/code/runvae.py" />
+        <option value="$PROJECT_DIR$/code/training.py" />
+        <option value="$PROJECT_DIR$/code/models/cnn_2.py" />
       </list>
     </option>
   </component>
@@ -326,13 +323,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00018" summary="update">
-      <created>1500236929230</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
-      <option name="project" value="LOCAL" />
-      <updated>1500236929230</updated>
     </task>
     <task id="LOCAL-00019" summary="update">
       <created>1500237312252</created>
@@ -670,7 +660,14 @@
       <option name="project" value="LOCAL" />
       <updated>1500837328983</updated>
     </task>
-    <option name="localTasksCounter" value="67" />
+    <task id="LOCAL-00067" summary="update">
+      <created>1500847178892</created>
+      <option name="number" value="00067" />
+      <option name="presentableId" value="LOCAL-00067" />
+      <option name="project" value="LOCAL" />
+      <updated>1500847178892</updated>
+    </task>
+    <option name="localTasksCounter" value="68" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -737,13 +734,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/code/old_code/old_experiment_coloured_mnist.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-226">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/present_coloured.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
@@ -969,9 +959,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="249">
           <caret line="28" column="27" lean-forward="true" selection-start-line="28" selection-start-column="27" selection-end-line="28" selection-end-column="27" />
-          <folding>
-            <element signature="e#0#37#0" expanded="false" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1033,14 +1021,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/pixel_cnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="19" column="0" lean-forward="true" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/results.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-408">
@@ -1072,7 +1052,7 @@
         <state relative-caret-position="201">
           <caret line="153" column="67" lean-forward="true" selection-start-line="153" selection-start-column="67" selection-end-line="153" selection-end-column="67" />
           <folding>
-            <element signature="e#0#23#0" expanded="true" />
+            <element signature="e#0#23#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1085,57 +1065,73 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/pixel_cnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="366">
+          <caret line="63" column="40" lean-forward="true" selection-start-line="63" selection-start-column="40" selection-end-line="63" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/vae.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="159" column="0" lean-forward="true" selection-start-line="159" selection-start-column="0" selection-end-line="159" selection-end-column="0" />
+        <state relative-caret-position="436">
+          <caret line="63" column="40" lean-forward="false" selection-start-line="63" selection-start-column="40" selection-end-line="63" selection-end-column="40" />
           <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/cnn_2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2759">
-          <caret line="17" column="0" lean-forward="true" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="207">
-          <caret line="34" column="24" lean-forward="false" selection-start-line="34" selection-start-column="13" selection-end-line="34" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/training.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="354">
-          <caret line="26" column="25" lean-forward="true" selection-start-line="26" selection-start-column="25" selection-end-line="26" selection-end-column="25" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/vae_2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="335">
-          <caret line="172" column="0" lean-forward="true" selection-start-line="172" selection-start-column="0" selection-end-line="172" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
+            <element signature="e#0#23#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/code/run_vae.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="488">
-          <caret line="56" column="49" lean-forward="false" selection-start-line="56" selection-start-column="49" selection-end-line="56" selection-end-column="49" />
+        <state relative-caret-position="-106">
+          <caret line="21" column="5" lean-forward="false" selection-start-line="21" selection-start-column="5" selection-end-line="21" selection-end-column="5" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="357">
+          <caret line="40" column="28" lean-forward="true" selection-start-line="40" selection-start-column="28" selection-end-line="40" selection-end-column="28" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/training.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="0" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/vae_2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1005">
+          <caret line="67" column="0" lean-forward="true" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/runvae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="645">
+          <caret line="43" column="1" lean-forward="true" selection-start-line="43" selection-start-column="1" selection-end-line="43" selection-end-column="1" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/cnn_2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-274">
+          <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>

@@ -3,12 +3,10 @@ import pickle
 
 def train(name, model, parameters, data, tracker):
 
-    # load model
-    print("Training Model: ", name, flush=True)
-    model = model(arguments=parameters, name=name, tracker=tracker)
-    initialize(model, parameters, data)
+    print("Initializing Model: ", name, flush=True)
+    model = initialize(name, model, parameters, data, tracker)
 
-    # train model
+    print("Training model...", flush=True)
     for i in range(parameters['train_steps'] + 1):
 
         x = data.sample(parameters['batch_size'], dtype='train')
@@ -38,13 +36,18 @@ def train(name, model, parameters, data, tracker):
     Results.save(tracker)
 
 
-def initialize(model, parameters, data):
 
+def initialize(name, model, parameters, data, tracker):
+
+    # sample minibatch for weight initialization
     x = data.sample(parameters['batch_size'], dtype='train')
     if type(x) in [list, tuple]:
         x = x[0]
 
-    model.initialize_weights(x)
+    # constructor
+    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatch=x)
+
+    return mod
 
 
 class Series(object):

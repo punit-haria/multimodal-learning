@@ -60,6 +60,9 @@ class VAE(base.Model):
         # optimizer
         self.step = self._optimizer(self.loss)
 
+        # summary variables
+        self.summary = self._summaries()
+
 
     def _encoder(self, x, scope, reuse):
 

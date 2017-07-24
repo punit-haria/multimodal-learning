@@ -34,9 +34,6 @@ class Model(object):
         # model initialization
         self._initialize()
 
-        # summary variables 
-        self.summary = self._summaries()
-
         # summary writers
         self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
         self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
