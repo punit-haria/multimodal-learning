@@ -81,10 +81,39 @@ def image_plot(tracker, models, data, suffix, n_rows, n_cols,
             _image_plot(x, parms, spacing, path+'__test')
             _image_plot(rx, parms, spacing, path+'__model')
 
+        elif synthesis_type == 'latent_activations':
+            latent_activation_plot(model, data, 1000, path)
+
         else:
             raise NotImplementedError
 
         model.close()
+
+
+def latent_activation_plot(model, data, n_samples, path):
+
+    x = data.sample(n_samples, dtype='test')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    z = model.encode(x, mean=True)
+
+    z_std = np.std(z, axis=0)
+
+    n_z = len(z_std)
+
+    df = []
+    for i in range(n_z):
+        row = [z_std[i], "latent_"+str(i)]
+        df.append(row)
+
+    df = pd.DataFrame(df, columns=['standard deviation', 'latent variable'])
+
+    sns.set_style("whitegrid")
+    ax = sns.barplot(x="latent variable", y="standard deviation", data=df)
+
+    fig = ax.get_figure()
+    fig.savefig(path)
 
 
 

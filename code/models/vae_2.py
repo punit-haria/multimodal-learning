@@ -100,6 +100,17 @@ class VAE(base.Model):
             return mean, sigma
 
 
+    def _sample(self, z_mu, z_sigma, scope='sampling'):
+
+        with tf.variable_scope(scope):
+            n_samples = tf.shape(z_mu)[0]
+
+            eps = tf.random_normal((n_samples, self.n_z))
+            z = z_mu + tf.multiply(z_sigma, eps)
+
+            return z
+
+
     def _decoder(self, z, x, init, scope):
 
         with tf.variable_scope(scope):
@@ -155,17 +166,6 @@ class VAE(base.Model):
             return step
 
 
-    def _sample(self, z_mu, z_sigma, scope='sampling'):
-
-        with tf.variable_scope(scope):
-            n_samples = tf.shape(z_mu)[0]
-
-            eps = tf.random_normal((n_samples, self.n_z))
-            z = z_mu + tf.multiply(z_sigma, eps)
-
-            return z
-
-
     def _summaries(self,):
 
         with tf.variable_scope("summaries"):
@@ -173,10 +173,6 @@ class VAE(base.Model):
             tf.summary.scalar('loss', self.loss)
             tf.summary.scalar('reconstruction', self.l1)
             tf.summary.scalar('penalty', self.l2)
-
-            #z = tf.abs(self.z_mu)
-            #z = tf.reduce_max(z, axis=0)
-            #tf.summary.histogram('latent_activation', z)
 
             return tf.summary.merge_all()
 
