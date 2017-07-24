@@ -8,3 +8,4 @@ azure_logs/*
 azure_plots/*
 google_logs/*
 .idea/*
+final_*/*
