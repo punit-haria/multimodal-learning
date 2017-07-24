@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from models.vae_2 import  VAE
+from models.vae import  VAE
 from models import layers as nw
 
 

@@ -1,6 +1,271 @@
 import tensorflow as tf
-import numpy as np
 
+
+
+def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
+    """
+    Convolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope):
+
+        x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
+        nonlinearity = tf.nn.elu
+
+        #x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_1', reuse=reuse)
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_1')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_1')
+        x = nonlinearity(x)
+
+        #x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_2', reuse=reuse)
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_2')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_3')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_2')
+        x = nonlinearity(x)  #
+
+        x = tf.contrib.layers.flatten(x)
+
+        x = linear(x, n_out=n_units, init=init, scope='linear_layer')
+        x = nonlinearity(x)
+
+        mu = linear(x, n_z, init=init, scope="mu_layer")
+
+        sigma = linear(x, n_z, init=init, scope="sigma_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        return mu, sigma
+
+
+def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
+    """
+    Deconvolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+
+        z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')
+        z = nonlinearity(z)
+
+        h = w = 3
+        dim = h * w * n_feature_maps
+        z = linear(z, n_out=dim, init=init, scope='linear_layer')
+        z = nonlinearity(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_2')
+        z = nonlinearity(z)
+
+        #z = deconv(z, k=3, out_ch=n_feature_maps, stride=True, scope='deconv_1', reuse=reuse)
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_1')
+        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
+        z = nonlinearity(z)
+
+        #z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_2', reuse=reuse)
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_2')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_1')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
+                                  stride=True, init=init, scope='res_3')
+        z = tf.contrib.layers.flatten(z)
+
+        return z
+
+
+def conv_residual_block(c, k, n_feature_maps, nonlinearity, stride, init, scope):
+    """
+    Residual Block.
+    """
+    with tf.variable_scope(scope):
+
+        id = c
+
+        c = conv(c, k=k, out_ch=n_feature_maps, stride=False, init=init, scope='layer_1')
+        c = nonlinearity(c)
+        c = conv(c, k=k, out_ch=n_feature_maps, stride=stride, init=init, scope='layer_2')
+
+        if stride:
+            id = conv(id, k=k, out_ch=n_feature_maps, stride=True, init=init, scope='identity_downsampled')
+
+        c = c + id
+
+        return c
+
+
+def deconv_residual_block(d, k, n_feature_maps, out_ch, nonlinearity, stride, init, scope):
+    """
+    Deconvolution residual block.
+    """
+    with tf.variable_scope(scope):
+
+        id = d
+
+        d = deconv(d, k=k, out_ch=n_feature_maps, stride=stride, init=init, scope='layer_1')
+        d = nonlinearity(d)
+        d = deconv(d, k=k, out_ch=out_ch, stride=False, init=init, scope='layer_2')
+
+        if stride:
+            id = deconv(id, k=k, out_ch=out_ch, stride=True, init=init, scope='identity_upsampled')
+
+        d = d + id
+
+        return d
+
+
+def conv(x, k, out_ch, stride, init, scope):
+    """
+    Convolution layer
+    """
+    with tf.variable_scope(scope):
+
+        in_ch = x.get_shape()[3].value
+
+        strides = [1, 2, 2, 1] if stride else [1, 1, 1, 1]
+        w_shape = [k, k, in_ch, out_ch]
+
+        if init:
+            v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
+            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=[0,1,2])
+
+            t = tf.nn.conv2d(x, v_norm, strides=strides, padding='SAME')
+            mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, 1, 1, out_ch])
+            mu_t = tf.reshape(mu_t, shape=[1, 1, 1, out_ch])
+
+            return tf.multiply(t - mu_t, inv)
+
+        else:
+            v = tf.get_variable("v", shape=w_shape)
+            g = tf.get_variable("g", shape=[out_ch])
+            b = tf.get_variable("b", shape=[out_ch])
+
+            w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,2])
+            b = tf.reshape(b, shape=[1,1,1,out_ch])
+
+            return tf.nn.conv2d(x, w, strides=strides, padding='SAME') + b
+
+
+def deconv(x, k, out_ch, stride, init, scope):
+    """
+    Deconvolution layer (transpose of convolution)
+    """
+    with tf.variable_scope(scope):
+
+        batch_size = tf.shape(x)[0]
+        height = x.get_shape()[1].value
+        width = x.get_shape()[2].value
+        in_ch = x.get_shape()[3].value
+
+        if stride:
+            out_shape = [batch_size, height*2, width*2, out_ch]
+            strides = [1, 2, 2, 1]
+        else:
+            out_shape = [batch_size, height, width, out_ch]
+            strides = [1, 1, 1, 1]
+
+        w_shape = [k, k, out_ch, in_ch]
+
+        if init:
+            v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
+            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=[0,1,3])
+
+            t = tf.nn.conv2d_transpose(x, v_norm, output_shape=out_shape, strides=strides, padding='SAME')
+            out_shape[0] = None
+            t.set_shape(out_shape)
+
+            mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, 1, 1, out_ch])
+            mu_t = tf.reshape(mu_t, shape=[1, 1, 1, out_ch])
+
+            return tf.multiply(t - mu_t, inv)
+
+        else:
+            v = tf.get_variable("v", shape=w_shape)
+            g = tf.get_variable("g", shape=[out_ch])
+            b = tf.get_variable("b", shape=[out_ch])
+
+            w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,3])
+            b = tf.reshape(b, shape=[1,1,1,out_ch])
+
+            d = tf.nn.conv2d_transpose(x, w, output_shape=out_shape, strides=strides, padding='SAME')
+            out_shape[0] = None
+            d.set_shape(out_shape)
+
+            return d + b
+
+
+def pool(x, scope, reuse):
+    """
+    Max pooling layer (reduces size by 2)
+    """
+    with tf.variable_scope(scope, reuse=reuse):
+        return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
+
+def linear(x, n_out, init, scope):
+    """
+    Linear tranform
+    """
+    with tf.variable_scope(scope):
+
+        n_x = x.get_shape()[-1].value
+
+        if init:
+            v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.05))
+            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+
+            t = tf.matmul(x, v_norm)
+            mu_t, var_t = tf.nn.moments(t, axes=0)
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, n_out])
+            mu_t = tf.reshape(mu_t, shape=[1, n_out])
+
+            return tf.multiply(t - mu_t, inv)
+
+        else:
+            v = tf.get_variable("v", shape=[n_x, n_out])
+            g = tf.get_variable("g", shape=[n_out])
+            b = tf.get_variable("b", shape=[n_out])
+
+            x = tf.matmul(x, v)
+            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+
+            scaling = tf.reshape(scaling, shape=[1, n_out])
+            b = tf.reshape(b, shape=[1, n_out])
+
+            return tf.multiply(scaling, x) + b
 
 
 def freebits_penalty(mu, sigma, alpha):
@@ -14,366 +279,7 @@ def freebits_penalty(mu, sigma, alpha):
     return tf.reduce_sum(l2)
 
 
-
-def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, scope, reuse):
-    """
-    PixelCNN network based on architectures specified in:
-        https://arxiv.org/abs/1601.06759
-        https://arxiv.org/abs/1701.05517
-
-    x: input tensor
-    n_layers: number of layers in the network
-    ka/kb: widths of mask A and B convolution filters
-    out_ch: number of output channels
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        n_ch = n_feature_maps
-        nonlinearity = tf.nn.elu
-
-        c = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
-
-        for i in range(n_layers):
-            name  = 'residual_block_' + str(i+2)
-            c = masked_residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
-
-        c = nonlinearity(c)
-        c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
-        c = nonlinearity(c)
-        c = conv2d_masked(c, k=1, out_ch=out_ch, mask_type='B', bias=False, scope='final_1x1_b', reuse=reuse)
-
-        return c
-
-
-def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat, scope, reuse):
-    """
-    Conditional PixelCNN
-
-    x: input tensor
-    z: latent tensor
-    concat: choice of concatenating tensors or adding them
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        n_ch = n_feature_maps
-        nonlinearity = tf.nn.elu
-
-        if concat:
-            c = tf.concat([x, z], axis=3)
-            c = conv2d_masked(c, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1', reuse=reuse)
-        else:
-            cx = conv2d_masked(x, k=ka, out_ch=n_ch, mask_type='A', bias=False, scope='layer_1x', reuse=reuse)
-            cz = conv2d(z, k=ka, out_ch=n_ch, bias=True, scope='layer_1z', reuse=reuse)
-            c = cx + cz
-
-        for i in range(n_layers):
-            name = 'residual_block_' + str(i + 2)
-            c = masked_residual_block(c, kb, nonlinearity, scope=name, reuse=reuse)
-
-        c = nonlinearity(c)
-        c = conv2d_masked(c, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='final_1x1_a', reuse=reuse)
-        c = nonlinearity(c)
-        c = conv2d_masked(c, k=1, out_ch=out_ch, mask_type='B', bias=False, scope='final_1x1_b', reuse=reuse)
-
-        return c
-
-
-def masked_residual_block(c, k, nonlinearity, scope, reuse):
-    """
-    Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
-    c: input tensor
-    k: filter size
-    nonlinearity: activation function
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        n_ch = c.get_shape()[3].value
-        half_ch = n_ch // 2
-        c1 = nonlinearity(c)
-        c1 = conv2d_masked(c1, k=1, out_ch=half_ch, mask_type='B', bias=False, scope='1x1_a', reuse=reuse)
-        c1 = nonlinearity(c1)
-        c1 = conv2d_masked(c1, k=k, out_ch=half_ch, mask_type='B', bias=False, scope='conv', reuse=reuse)
-        c1 = nonlinearity(c1)
-        c1 = conv2d_masked(c1, k=1, out_ch=n_ch, mask_type='B', bias=False, scope='1x1_b', reuse=reuse)
-        c = c1 + c
-
-        return c
-
-
-def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, scope, reuse):
-    """
-    Convolution network for use with MNIST dataset.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
-        nonlinearity = tf.nn.elu
-
-        #x = conv_pool(x, k=7, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
-        #x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
-        #x = conv_pool(x, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
-
-        x = conv2d(x, k=7, out_ch=n_feature_maps, bias=False, scope='conv_0', reuse=reuse)
-
-        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_1', reuse=reuse)
-        x = pool(x, scope='pool_1', reuse=reuse)
-        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_2', reuse=reuse)
-        x = pool(x, scope='pool_2', reuse=reuse)
-        x = conv_residual_block(x, k=3, nonlinearity=nonlinearity, scope='block_3', reuse=reuse)
-        x = pool(x, scope='pool_3', reuse=reuse)
-
-        x = conv2d(x, k=1, out_ch=n_feature_maps, bias=False, scope='final_1x1_a', reuse=reuse)
-        x = nonlinearity(x)
-        x = conv2d(x, k=1, out_ch=n_ch, bias=False, scope='final_1x1_b', reuse=reuse)
-
-        x = tf.contrib.layers.flatten(x)
-
-        x = linear(x, n_out=n_units, scope='linear_layer', reuse=reuse)
-        x = nonlinearity(x)
-
-        mu = linear(x, n_z, "mu_layer", reuse=reuse)
-        sigma = linear(x, n_z, "sigma_layer", reuse=reuse)
-        sigma = tf.nn.softplus(sigma)
-
-        return mu, sigma
-
-
-def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, scope, reuse):
-    """
-    Deconvolution network for use with MNIST dataset.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        h = 3
-        w = 3
-        nonlinearity = tf.nn.elu
-
-        z = linear(z, n_out=n_units, scope='mu_sigma_layer', reuse=reuse)
-        z = nonlinearity(z)
-
-        dim = n_ch * h * w
-        z = linear(z, n_out=dim, scope='linear_layer', reuse=reuse)
-        z = nonlinearity(z)
-
-        z = tf.reshape(z, shape=[-1, h, w, n_ch])
-
-        z = deconv(z, k=1, in_ch=n_ch, out_ch=n_feature_maps, stride=False, bias=False, scope='final_1x1_b', reuse=reuse)
-        z = nonlinearity(z)
-        z = deconv(z, k=1, in_ch=n_feature_maps, out_ch=n_feature_maps, stride=False, bias=False, scope='final_1x1_a', reuse=reuse)
-
-        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_3', reuse=reuse)
-        z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
-        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_3', reuse=reuse)
-
-        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_2', reuse=reuse)
-        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_2', reuse=reuse)
-
-        z = deconv_layer(z, k=3, out_ch=n_feature_maps, n_convs=1, nonlinearity=tf.nn.elu, scope='layer_1', reuse=reuse)
-        z = deconv_residual_block(z, k=3, nonlinearity=nonlinearity, scope='block_1', reuse=reuse)
-
-        z = deconv(z, k=7, in_ch=n_feature_maps, out_ch=n_ch, stride=False, bias=False, scope='deconv_0', reuse=reuse)
-
-
-        return z
-
-
-def deconv_residual_block(d, k, nonlinearity, scope, reuse):
-    """
-    Deconvolution residual block.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        n_ch = d.get_shape()[3].value
-        half_ch = n_ch // 2
-
-        d1 = deconv(d, k=1, in_ch=n_ch, out_ch=half_ch, stride=False, bias=False, scope='1x1_b', reuse=reuse)
-        d1 = nonlinearity(d1)
-        d1 = deconv(d1, k=k, in_ch=half_ch, out_ch=half_ch, stride=False, bias=False, scope='deconv', reuse=reuse)
-        d1 = nonlinearity(d1)
-        d1 = deconv(d1, k=1, in_ch=half_ch, out_ch=n_ch, stride=False, bias=False, scope='1x1_a', reuse=reuse)
-        d = d1 + d
-
-        return d
-
-
-def conv_residual_block(c, k, nonlinearity, scope, reuse):
-    """
-    Residual Block
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        n_ch = c.get_shape()[3].value
-        half_ch = n_ch // 2
-
-        c1 = conv2d(c, k=1, out_ch=half_ch, bias=False, scope='1x1_a', reuse=reuse)
-        c1 = nonlinearity(c1)
-        c1 = conv2d(c1, k=k, out_ch=half_ch, bias=False, scope='conv', reuse=reuse)
-        c1 = nonlinearity(c1)
-        c1 = conv2d(c1, k=1, out_ch=n_ch, bias=False, scope='1x1_b', reuse=reuse)
-        c = c1 + c
-
-        return c
-
-
-def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
-    """
-    Masked 2D convolution
-
-    x: input tensor
-    k: convolution window
-    out_ch: number of output channels
-    mask_type: mask type 'A' or 'B' (see https://arxiv.org/abs/1601.06759)
-    bias: incorporate bias? (True/False)
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        assert k % 2 == 1  # check that k is odd
-        in_ch = x.get_shape()[3].value  # number of input channels
-
-        w = tf.get_variable("W", shape=[k, k, in_ch, out_ch],
-                            initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-
-        # create mask
-        if k == 1:
-            assert mask_type == 'B'
-            mask = np.ones(shape=[k, k, in_ch, out_ch], dtype=np.float32)
-
-        else:
-            mask = np.zeros(shape=[k, k, in_ch, out_ch], dtype=np.float32)
-            half_k = (k // 2) + 1
-            for i in range(half_k):
-                for j in range(k):
-                    if i < half_k - 1 or j < half_k - 1:
-                        mask[i,j,:,:] = 1
-
-            # mask type
-            if mask_type == 'A':
-                mask[half_k-1,half_k-1,:,:] = 0
-            elif mask_type == 'B':
-                mask[half_k - 1, half_k - 1, :, :] = 1
-            else:
-                raise Exception("Masking type not implemented..")
-
-        # incorporate bias term
-        if bias:
-            b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
-        else:
-            b = 0
-
-        # mask filter and apply convolution
-        w_masked = tf.multiply(w, tf.constant(mask))
-        c = tf.nn.conv2d(x, w_masked, strides=[1,1,1,1], padding='SAME') + b
-
-        return c
-
-
-def conv_pool(x, k, out_ch, n_convs, nonlinearity, scope, reuse):
-    """
-    Combined convolution and pooling layer.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        c = conv2d(x, k, out_ch, bias=True, scope="conv_1", reuse=reuse)
-        c = nonlinearity(c)
-
-        for i in range(n_convs-1):
-            name = "conv_"+str(i+2)
-            c = conv2d(c, k, out_ch, bias=False, scope=name, reuse=reuse)
-            c = nonlinearity(c)
-
-        return pool(c, scope="pool", reuse=reuse)
-
-
-def conv2d(x, k, out_ch, bias, scope, reuse):
-    """
-    Convolution layer
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-
-        in_ch = x.get_shape()[3].value
-        w_shape = [k, k, in_ch, out_ch]
-        w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-
-        if bias:
-            b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
-        else:
-            b = 0
-
-        return tf.nn.conv2d(x, w, strides=[1,1,1,1], padding='SAME') + b
-
-
-def pool(x, scope, reuse):
-    """
-    Max pooling layer
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
-
-
-def deconv_layer(x, k, out_ch, n_convs, nonlinearity, scope, reuse):
-    """
-    Multiple deconvolution layers.
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        in_ch = x.get_shape()[3].value
-
-        c = deconv(x, k, in_ch, out_ch, stride=True, bias=True, scope="conv_1", reuse=reuse)
-        c = nonlinearity(c)
-
-        for i in range(n_convs-1):
-
-            name = "conv_"+str(i+2)
-            c = deconv(c, k, out_ch, out_ch, stride=False, bias=False, scope=name, reuse=reuse)
-            c = nonlinearity(c)
-
-        return c
-
-
-def deconv(x, k, in_ch, out_ch, stride, bias, scope, reuse):
-    """
-    Deconvolution layer (transpose of convolution)
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        batch_size = tf.shape(x)[0]
-        height = x.get_shape()[1].value
-        width = x.get_shape()[2].value
-
-        w_shape = [k, k, out_ch, in_ch]
-        w = tf.get_variable("w", shape=w_shape, initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-
-        if bias:
-            b = tf.get_variable("b", shape=[out_ch], initializer=tf.constant_initializer(0.1))
-        else:
-            b = 0
-
-        if stride:
-            out_shape = [batch_size, height*2, width*2, out_ch]
-            stride = [1, 2, 2, 1]
-        else:
-            out_shape = [batch_size, height, width, out_ch]
-            stride = [1, 1, 1, 1]
-
-        dcv = tf.nn.conv2d_transpose(x, w, output_shape=out_shape, strides=stride, padding='SAME')
-        out_shape[0] = None
-        dcv.set_shape(out_shape)
-
-        return dcv + b
-
-
-def linear(x, n_out, scope, reuse):
-    """
-    Linear tranform
-    """
-    with tf.variable_scope(scope, reuse=reuse):
-        n_x = x.get_shape()[-1].value
-
-        w = tf.get_variable("W", shape=[n_x, n_out],
-                            initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-        b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
-
-        return tf.matmul(x, w) + b
-
-
-
-def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm', reuse=False):
+def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm'):
     """
     Batch normalization layer
 
@@ -382,7 +288,7 @@ def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='ba
       https://arxiv.org/pdf/1603.09025.pdf
       http://r2rt.com/implementing-batch-normalization-in-tensorflow.html
     """
-    with tf.variable_scope(scope, reuse=reuse):
+    with tf.variable_scope(scope):
 
         is_conv = False
         if len(x.get_shape()) == 4:  # convolution layer

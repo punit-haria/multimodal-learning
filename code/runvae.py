@@ -1,4 +1,4 @@
-from models import vae_2 as vae
+from models import vae
 from data import MNIST
 
 from training import train, Results

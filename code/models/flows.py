@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 
-def nf_transform(z):
+def transform(z, init, scope):
     """
     Normalizing flow, single transformation.
     """
