@@ -16,7 +16,7 @@ models = {x.__name__: x for x in models}
 # parameters
 parms = {
     # options
-    "type": "fc",              # fc, cnn
+    "type": "cnn",              # fc, cnn
     "data": "mnist",            # mnist
     "autoregressive": False,
     "flow": False,
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     tracker = Results(experiment_name)  # performance tracker
 
 
-    for flow in [True]:
+    for flow in [False, True]:
 
         for name, model in models.items():
 

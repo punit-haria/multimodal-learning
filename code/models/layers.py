@@ -130,7 +130,7 @@ def deconv_residual_block(d, k, n_feature_maps, out_ch, nonlinearity, stride, in
         return d
 
 
-def conv(x, k, out_ch, stride, init, scope):
+def conv(x, k, out_ch, stride, init, scope, mask_type=None):
     """
     Convolution layer
     """
@@ -143,7 +143,13 @@ def conv(x, k, out_ch, stride, init, scope):
 
         if init:
             v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
-            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=[0,1,2])
+            v = v.initialized_value()
+
+            if mask_type is not None:
+                mask = conv_mask(w_shape, mask_type)
+                v = tf.multiply(v, tf.constant(mask))
+
+            v_norm = tf.nn.l2_normalize(v, dim = [0, 1, 2])
 
             t = tf.nn.conv2d(x, v_norm, strides=strides, padding='SAME')
             mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
@@ -161,6 +167,10 @@ def conv(x, k, out_ch, stride, init, scope):
             v = tf.get_variable("v", shape=w_shape)
             g = tf.get_variable("g", shape=[out_ch])
             b = tf.get_variable("b", shape=[out_ch])
+
+            if mask_type is not None:
+                mask = conv_mask(w_shape, mask_type)
+                v = tf.multiply(v, tf.constant(mask))
 
             w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,2])
             b = tf.reshape(b, shape=[1,1,1,out_ch])
@@ -222,12 +232,42 @@ def deconv(x, k, out_ch, stride, init, scope):
             return d + b
 
 
+def conv_mask(m_shape, mask_type):
+
+    k = m_shape[0]  # filter size
+    assert k == m_shape[1]
+    assert k % 2 == 1  # check that k is odd
+
+    if k == 1:
+        assert mask_type == 'B'
+        return np.ones(shape=m_shape, dtype=np.float32)
+
+    else:
+        mask = np.zeros(shape=m_shape, dtype=np.float32)
+        half_k = (k // 2) + 1
+        for i in range(half_k):
+            for j in range(k):
+                if i < half_k - 1 or j < half_k - 1:
+                    mask[i, j, :, :] = 1
+
+        # mask type
+        if mask_type == 'A':
+            mask[half_k - 1, half_k - 1, :, :] = 0
+        elif mask_type == 'B':
+            mask[half_k - 1, half_k - 1, :, :] = 1
+        else:
+            raise Exception("Masking type not implemented..")
+
+        return mask
+
+
 def pool(x, scope, reuse):
     """
     Max pooling layer (reduces size by 2)
     """
     with tf.variable_scope(scope, reuse=reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
 
 
 def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
@@ -273,9 +313,9 @@ def made_network(z, h, n_units, init, scope):
         z = nonlinearity(z + h)
 
         mu, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_m')
-        gate, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_s')
+        s, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_s')
 
-        return mu, gate
+        return mu, s
 
 
 def ar_linear(x, n_out, m_prev, init, scope):
@@ -288,13 +328,13 @@ def ar_linear(x, n_out, m_prev, init, scope):
         Kout = n_out
 
         if init:
-            w = tf.get_variable("w_init", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05),
-                                trainable=False)
-            b = tf.get_variable("b_init", shape=[Kout], initializer=tf.constant_initializer(0.1),
-                                trainable=False)
-        else:
             w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05))
+            w = w.initialized_value()
             b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
+            b = b.initialized_value()
+        else:
+            w = tf.get_variable("w", shape=[Kin, Kout])
+            b = tf.get_variable("b", shape=[Kout])
 
         if m_prev is None:
             m_prev = np.arange(Kin) + 1
@@ -323,13 +363,10 @@ def ar_mult(x, n_out, init, scope):
         n_in = x.get_shape()[1].value
 
         if init:
-            w = tf.get_variable("w_init", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05),
-                                trainable=False)
-            b = tf.get_variable("b_init", shape=[n_out], initializer=tf.constant_initializer(0.1),
-                                trainable=False)
-        else:
             w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05))
-            b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
+            w = w.initialized_value()
+        else:
+            w = tf.get_variable("w", shape=[n_in, n_out])
 
         mask = np.ones(shape=[n_in, n_out], dtype=np.float32)
         mask = np.tril(mask)  # strictly lower triangular

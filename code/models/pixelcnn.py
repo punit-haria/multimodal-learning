@@ -91,13 +91,7 @@ def masked_residual_block(c, k, nonlinearity, scope, reuse):
 
 def conv2d_masked(x, k, out_ch, mask_type, bias, scope, reuse):
     """
-    Masked 2D convolution
-
-    x: input tensor
-    k: convolution window
-    out_ch: number of output channels
-    mask_type: mask type 'A' or 'B' (see https://arxiv.org/abs/1601.06759)
-    bias: incorporate bias? (True/False)
+    Masked convolution layer
     """
     with tf.variable_scope(scope, reuse=reuse):
 
