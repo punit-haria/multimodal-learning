@@ -85,7 +85,6 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
                                   stride=True, init=init, scope='res_3')
-        #z = tf.contrib.layers.flatten(z)
 
         return z
 
@@ -482,9 +481,11 @@ def fc_decode(z, n_units, n_x, init, scope):
         z = nonlinearity(z)
 
         z = linear(z, n_units, init=init, scope="layer_2")
-        return nonlinearity(z)
+        z = nonlinearity(z)
 
-        #logits = linear(z, n_x, init=init, scope="logits_layer")
+        z = linear(z, n_x, init=init, scope="logits_layer")
+
+        return z
 
 
 def linear(x, n_out, init, scope):
