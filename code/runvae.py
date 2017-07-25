@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'resetting_experiments'
+experiment_name = 'testing_new_code'
 
 
 models = [
@@ -37,7 +37,6 @@ parms = {
 
     # autoregressive model parameters
     'n_pixelcnn_layers': 6,
-    'concat': False,
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
@@ -56,19 +55,25 @@ parms = {
 
 if __name__ == "__main__":
 
+    type = ["fc", "cnn"]
+    flows = [False, True]
+    areg = [False, True]
+
 
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
 
+    for t in type:
+        for flow in flows:
+            for ar in areg:
 
-    for flow in [False, True]:
+                for name, model in models.items():
 
-        for name, model in models.items():
+                    parms['type'] = t
+                    parms['autoregressive'] = ar
+                    parms['flow'] = flow
 
+                    name = experiment_name + "_" + name +'_' + t + '_flow_' + str(flow) + '_ar_' + str(ar)
 
-            parms['flow'] = flow
-
-            name = experiment_name + "_" + name + '_flow_' + str(flow)
-
-            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+                    train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
