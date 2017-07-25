@@ -272,8 +272,8 @@ def made_network(z, h, n_units, init, scope):
         h = ar_mult(h, n_out=n_units, init=init, scope='layer_2_h')
         z = nonlinearity(z + h)
 
-        mu, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_2_z')
-        gate, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_2_z')
+        mu, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_m')
+        gate, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_s')
 
         return mu, gate
 
@@ -287,8 +287,14 @@ def ar_linear(x, n_out, m_prev, init, scope):
         Kin = x.get_shape()[1].value
         Kout = n_out
 
-        w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05))
-        b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
+        if init:
+            w = tf.get_variable("w_init", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05),
+                                trainable=False)
+            b = tf.get_variable("b_init", shape=[Kout], initializer=tf.constant_initializer(0.1),
+                                trainable=False)
+        else:
+            w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05))
+            b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
 
         if m_prev is None:
             m_prev = np.arange(Kin) + 1
@@ -316,8 +322,14 @@ def ar_mult(x, n_out, init, scope):
     with tf.variable_scope(scope):
         n_in = x.get_shape()[1].value
 
-        w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05))
-        b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
+        if init:
+            w = tf.get_variable("w_init", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05),
+                                trainable=False)
+            b = tf.get_variable("b_init", shape=[n_out], initializer=tf.constant_initializer(0.1),
+                                trainable=False)
+        else:
+            w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+            b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
 
         mask = np.ones(shape=[n_in, n_out], dtype=np.float32)
         mask = np.tril(mask)  # strictly lower triangular

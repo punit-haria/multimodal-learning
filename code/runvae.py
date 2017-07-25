@@ -61,7 +61,7 @@ if __name__ == "__main__":
     tracker = Results(experiment_name)  # performance tracker
 
 
-    for flow in [False, True]:
+    for flow in [True]:
 
         for name, model in models.items():
 
