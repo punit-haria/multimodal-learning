@@ -3,13 +3,13 @@ import numpy as np
 from copy import deepcopy
 
 from models import base
-from models import layers as cnn
+from models import layers as nw
 from models import flows as nf
 
 
 class VAE(base.Model):
     """
-    Variational Auto-Encoder with fully connected encoder and decoder.
+    Variational Auto-Encoder
     """
     def __init__(self, arguments, name, tracker, init_minibatch, session=None, log_dir=None, model_dir=None):
         # dictionary of model/inference arguments
@@ -31,6 +31,12 @@ class VAE(base.Model):
 
 
     def _initialize(self):
+
+        # options
+        self.nw_type = self.args["type"]
+        self.dataset = self.args["data"]
+        self.is_autoregressive = self.args["autoregressive"]
+        self.is_flow = self.args["flow"]
 
         # input and latent dimensions
         self.n_z = self.args['n_z']
@@ -85,19 +91,18 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope):
             n_units = self.args['n_units']
+            n_fmaps = self.args['n_feature_maps']
 
-            h1 = cnn.linear(x, n_units, init=init, scope="layer_1")
-            h1 = tf.nn.elu(h1)
+            mu = sigma = None
+            if self.nw_type == "fc":
+                mu, sigma = nw.fc_encode(x, n_units=n_units, n_z=self.n_z, init=init, scope='fc_network')
 
-            h2 = cnn.linear(h1, n_units, init=init, scope="layer_2")
-            h2 = tf.nn.elu(h2)
+            elif self.nw_type == "cnn":
+                if self.dataset == "mnist":
+                    mu, sigma = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                 n_z=self.n_z, init=init, scope='conv_network')
 
-            mean = cnn.linear(h2, self.n_z, init=init, scope="mean_layer")
-
-            a3 = cnn.linear(h2, self.n_z, init=init, scope="var_layer")
-            sigma = tf.nn.softplus(a3)
-
-            return mean, sigma
+            return mu, sigma
 
 
     def _sample(self, z_mu, z_sigma, scope='sampling'):
@@ -115,14 +120,17 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope):
             n_units = self.args['n_units']
+            n_fmaps = self.args['n_feature_maps']
 
-            z = cnn.linear(z, n_units, init=init, scope="layer_1")
-            z = tf.nn.elu(z)
+            logits = None
+            if self.nw_type == "fc":
+                logits = nw.fc_decode(z, n_units=n_units, n_x=self.n_x, init=init, scope='fc_network')
 
-            z = cnn.linear(z, n_units, init=init, scope="layer_2")
-            z = tf.nn.elu(z)
+            elif self.nw_type == "cnn":
+                if self.dataset == "mnist":
+                    logits = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                init=init, scope='deconv_network')
 
-            logits = cnn.linear(z, self.n_x, init=init, scope="logits_layer")
             probs = tf.nn.sigmoid(logits)
 
             return logits, probs
@@ -154,7 +162,14 @@ class VAE(base.Model):
     def _loss(self, scope):
 
         with tf.variable_scope(scope):
-            return -(self.l1 + self.l2)
+            alpha = self.args['anneal']
+
+            if alpha > 0:
+                l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
+            else:
+                l2 = self.l2
+
+            return -(self.l1 + l2)
 
 
     def _optimizer(self, loss, scope='optimizer'):
@@ -252,57 +267,6 @@ class VAE(base.Model):
 
 
 
-class VAE_CNN(VAE):
-
-    def __init__(self, arguments, name, tracker, init_minibatch, session=None, log_dir=None, model_dir=None):
-
-        super(VAE_CNN, self).__init__(arguments=arguments, name=name, tracker=tracker, init_minibatch=init_minibatch,
-                                      session=session, log_dir=log_dir, model_dir=model_dir)
-
-
-    def _encoder(self, x, init, scope):
-
-        with tf.variable_scope(scope):
-            n_units = self.args['n_units']
-            n_fmaps = self.args['n_feature_maps']
-
-            mu, sigma = cnn.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                             n_z=self.n_z, init=init, scope='conv_network')
-
-            return mu, sigma
-
-
-    def _decoder(self, z, x, init, scope):
-
-        with tf.variable_scope(scope):
-            n_units = self.args['n_units']
-            n_fmaps = self.args['n_feature_maps']
-
-            logits = cnn.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                       init=init, scope='deconv_network')
-
-            probs = tf.nn.sigmoid(logits)
-
-            return logits, probs
-
-
-    def _loss(self, scope):
-
-        with tf.variable_scope(scope):
-            alpha = self.args['anneal']
-            l2 = cnn.freebits_penalty(self.z_mu, self.z_sigma, alpha)
-
-            return -(self.l1 + l2)
-
-
-
-
-class VAE_NF(VAE):
-
-    def __init__(self, arguments, name, tracker, init_minibatch, session=None, log_dir=None, model_dir=None):
-
-        super(VAE_NF, self).__init__(arguments=arguments, name=name, tracker=tracker, init_minibatch=init_minibatch,
-                                      session=session, log_dir=log_dir, model_dir=model_dir)
 
 
 

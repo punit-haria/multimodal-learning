@@ -2,6 +2,7 @@ import tensorflow as tf
 
 
 
+
 def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
     """
     Convolution network for use with MNIST dataset.
@@ -228,6 +229,45 @@ def pool(x, scope, reuse):
     """
     with tf.variable_scope(scope, reuse=reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
+
+
+def fc_encode(x, n_units, n_z, init, scope):
+    """
+    2 layer fully-connected encoder, as in AEVB paper.
+    """
+    with tf.variable_scope(scope):
+        nonlinearity = tf.nn.elu
+
+        x = linear(x, n_units, init=init, scope="layer_1")
+        x = nonlinearity(x)
+
+        x = linear(x, n_units, init=init, scope="layer_2")
+        x = nonlinearity(x)
+
+        mean = linear(x, n_z, init=init, scope="mean_layer")
+
+        sigma = linear(x, n_z, init=init, scope="var_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        return mean, sigma
+
+
+def fc_decode(z, n_units, n_x, init, scope):
+    """
+    2 layer fully-connected decoder, as in AEVB paper.
+    """
+    with tf.variable_scope(scope):
+        nonlinearity = tf.nn.elu
+
+        z = linear(z, n_units, init=init, scope="layer_1")
+        z = nonlinearity(z)
+
+        z = linear(z, n_units, init=init, scope="layer_2")
+        z = nonlinearity(z)
+
+        logits = linear(z, n_x, init=init, scope="logits_layer")
+
+        return logits
 
 
 def linear(x, n_out, init, scope):

@@ -4,17 +4,23 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = '5_resblocks_weight_normalized'
+experiment_name = 'resetting_experiments'
 
 
 models = [
-    vae.VAE_CNN
+    vae.VAE
 ]
 models = {x.__name__: x for x in models}
 
 
 # parameters
 parms = {
+    # options
+    "type": "cnn",              # fc, cnn
+    "data": "mnist",            # mnist
+    "autoregressive": False,
+    "flow": False,
+
     # basic parameters
     'n_z': 200,
     'height': 28,
@@ -42,6 +48,8 @@ parms = {
     'test_steps': 50,
     'save_steps': 100000
 }
+
+# options: conv/fc, mnist/color_mnist/cifar, ar_decode, nf
 
 
 if __name__ == "__main__":
