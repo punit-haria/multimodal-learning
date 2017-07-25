@@ -234,12 +234,13 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
     Normalizing flow.
     """
     with tf.variable_scope(scope):
+        # NOTE: Transforms should be stacked in reverse ordering between every other transformation!!!!!!!!!!!!!!!!!!!!
 
         z = mu0 + tf.multiply(sigma0, epsilon)
         log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
 
         for i in range(K):
-            m, s = flow_transform(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
+            m, s = made_network(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
             sigma = tf.nn.sigmoid(s)
 
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
@@ -248,26 +249,80 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
         return z, log_q
 
 
-def flow_transform(z, h, n_units, init, scope):
+def made_network(z, h, n_units, init, scope):
     """
-    Single normalizing flow transform.
+    Masked Network (MADE) based on https://arxiv.org/abs/1502.03509
+    used as single normalizing flow transform.
     """
     with tf.variable_scope(scope):
+
+        # NOTE: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
+
         nonlinearity = tf.nn.elu
-
         n_z = z.get_shape()[1].value
-        n_h = h.get_shape()[1].value
+        m = None
 
-        x = tf.concat([z, h], axis=1)
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, init=init, scope='layer_1')
+        z = nonlinearity(z)
 
-        x = linear(x, n_units, init=init, scope='layer_1')
-        x = nonlinearity(x)
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, init=init, scope='layer_2_z')
+        h = ar_mult(h, n_out=n_units, init=init, scope='layer_2_h')
+        z = nonlinearity(z + h)
 
-        m = linear(x, n_units, init=init, scope='m_layer')
-        s = linear(x, n_units, init=init, scope='s_layer')
+        mu, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_2_z')
+        gate, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_2_z')
 
-        return m, s
+        return mu, gate
 
+
+def ar_linear(x, n_out, m_prev, init, scope):
+    """
+    Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
+    Results in autoregressive relationship between input and output.
+    """
+    with tf.variable_scope(scope):
+        Kin = x.get_shape()[1].value
+        Kout = n_out
+
+        w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05))
+        b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
+
+        if m_prev is None:
+            m_prev = np.arange(Kin) + 1
+            m = np.random.randint(low=1, high=Kin, size=Kout)
+        else:
+            m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
+
+        mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
+        for kin in range(Kin):
+            for kout in range(Kout):
+                if m[kout] >= m_prev[kin]:
+                    mask[kin, kout] = 1
+
+        w = tf.multiply(w, tf.constant(mask))
+        x = tf.matmul(x, w) + b
+
+        return x, m
+
+
+def ar_mult(x, n_out, init, scope):
+    """
+    Matrix multiplication with simple lower triangular mask.
+    Results in autoregressive relationship between input and output.
+    """
+    with tf.variable_scope(scope):
+        n_in = x.get_shape()[1].value
+
+        w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+        b = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(0.1))
+
+        mask = np.ones(shape=[n_in, n_out], dtype=np.float32)
+        mask = np.tril(mask)  # strictly lower triangular
+
+        w = tf.multiply(w, tf.constant(mask))
+        x = tf.matmul(x, w)
+
+        return x
 
 
 def fc_encode(x, n_units, n_z, extra, init, scope):
