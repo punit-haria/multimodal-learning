@@ -208,6 +208,39 @@ class VAE(base.Model):
             return step
 
 
+    def _autoregressive_sampling(self, z, x, n_pixels):
+        """
+        Synthesize images autoregressively.
+        """
+        def _locate_2d(idx, w):
+            pos = idx + 1
+            r = np.ceil(pos / w)
+            c = pos - (r-1)*w
+
+            return int(r-1), int(c-1)
+
+        h = self.h
+        w = self.w
+        ch = self.n_ch
+        n_x = h * w * ch
+
+        remain = h*w - n_pixels
+
+        x = x.copy()
+        for i in range(remain):
+            feed = {self.z: z, self.x: x, self.is_training: False}
+            probs = self.sess.run(self.rx_probs, feed_dict=feed)
+            probs = np.reshape(probs, newshape=[-1, h, w, ch])
+
+            hp, wp = _locate_2d(n_pixels + i, w)
+
+            x = np.reshape(x, newshape=[-1, h, w, ch])
+            x[:, hp, wp, :] = np.random.binomial(n=1, p=probs[:, hp, wp, :])
+            x = np.reshape(x, newshape=[-1, n_x])
+
+        return x
+
+
     def _summaries(self,):
 
         with tf.variable_scope("summaries"):
@@ -263,8 +296,14 @@ class VAE(base.Model):
         """
         Reconstruct x.
         """
-        feed = {self.x: x, self.is_training: False}
-        return self.sess.run(self.rx_probs, feed_dict=feed)
+        if self.is_autoregressive:
+            n_pixels = self.args['n_conditional_pixels']
+            z = self.encode(x, mean=False)
+            return self._autoregressive_sampling(z, x, n_pixels)
+
+        else:
+            feed = {self.x: x, self.is_training: False}
+            return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
     def encode(self, x, mean=False):
@@ -273,6 +312,7 @@ class VAE(base.Model):
         """
         feed = {self.x: x, self.is_training: False}
         if mean:
+            assert self.is_flow == False
             return self.sess.run(self.z_mu, feed_dict=feed)
         else:
             return self.sess.run(self.z, feed_dict=feed)
@@ -282,8 +322,13 @@ class VAE(base.Model):
         """
         Decodes z.
         """
-        feed = {self.z: z, self.is_training: False}
-        return self.sess.run(self.rx_probs, feed_dict=feed)
+        if self.is_autoregressive:
+            x = np.random.rand(z.shape[0], self.n_x)
+            return self._autoregressive_sampling(z, x, n_pixels=0)
+
+        else:
+            feed = {self.z: z, self.is_training: False}
+            return self.sess.run(self.rx_probs, feed_dict=feed)
 
 
     def sample_prior(self, n_samples):

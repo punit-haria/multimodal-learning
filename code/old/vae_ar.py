@@ -62,18 +62,6 @@ class VAE_AR(VAE):
         return x
 
 
-    def decode_mode(self, x, z=None):
-
-        if z is None:
-            feed = {self.x: x, self.is_training: False}
-            z = self.sess.run(self.z, feed_dict=feed)
-
-        feed = {self.z: z, self.x: x, self.is_training: False}
-        probs = self.sess.run(self.rx_probs, feed_dict=feed)
-
-        return np.rint(probs)
-
-
     def _autoregressive_sampling(self, z, x, n_pixels):
         """
         Synthesize images autoregressively.
