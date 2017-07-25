@@ -269,6 +269,83 @@ def pool(x, scope, reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
 
+def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
+    """
+    PixelCNN network based on architectures specified in:
+        https://arxiv.org/abs/1601.06759
+        https://arxiv.org/abs/1701.05517
+
+    ka/kb: widths of mask A and B convolution filters
+    """
+    with tf.variable_scope(scope):
+
+        n_ch = n_feature_maps
+        nonlinearity = tf.nn.elu
+
+        c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1')
+
+        for i in range(n_layers):
+            name  = 'residual_block_' + str(i+2)
+            c = masked_residual_block(c, kb, nonlinearity, init=init, scope=name)
+
+        c = nonlinearity(c)
+        c = conv(c, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='final_1x1_a')
+        c = nonlinearity(c)
+        c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
+
+        return c
+
+
+def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat, init, scope):
+    """
+    Conditional PixelCNN
+    x/z: input/latent tensor
+    concat: choice of concatenating tensors or adding them
+    """
+    with tf.variable_scope(scope):
+
+        n_ch = n_feature_maps
+        nonlinearity = tf.nn.elu
+
+        if concat:
+            c = tf.concat([x, z], axis=3)
+            c = conv(c, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1')
+        else:
+            cx = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+            cz = conv(z, k=ka, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='layer_1z')
+            c = cx + cz
+
+        for i in range(n_layers):
+            name = 'residual_block_' + str(i + 2)
+            c = masked_residual_block(c, kb, nonlinearity, init=init, scope=name)
+
+        c = nonlinearity(c)
+
+        c = conv(c, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='final_1x1_a')
+        c = nonlinearity(c)
+        c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
+
+        return c
+
+
+def masked_residual_block(c, k, nonlinearity, init, scope):
+    """
+    Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
+    """
+    with tf.variable_scope(scope):
+
+        n_ch = c.get_shape()[3].value
+        half_ch = n_ch // 2
+        c1 = nonlinearity(c)
+        c1 = conv(c1, k=1, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='1x1_a')
+        c1 = nonlinearity(c1)
+        c1 = conv(c1, k=k, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='conv')
+        c1 = nonlinearity(c1)
+        c1 = conv(c1, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='1x1_b')
+        c = c1 + c
+
+        return c
+
 
 def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
     """
