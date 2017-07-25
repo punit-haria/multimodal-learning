@@ -85,7 +85,7 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
                                   stride=True, init=init, scope='res_3')
-        z = tf.contrib.layers.flatten(z)
+        #z = tf.contrib.layers.flatten(z)
 
         return z
 
@@ -274,7 +274,6 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
     PixelCNN network based on architectures specified in:
         https://arxiv.org/abs/1601.06759
         https://arxiv.org/abs/1701.05517
-
     ka/kb: widths of mask A and B convolution filters
     """
     with tf.variable_scope(scope):
@@ -296,24 +295,18 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
         return c
 
 
-def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, concat, init, scope):
+def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
     """
     Conditional PixelCNN
-    x/z: input/latent tensor
-    concat: choice of concatenating tensors or adding them
     """
     with tf.variable_scope(scope):
 
         n_ch = n_feature_maps
         nonlinearity = tf.nn.elu
 
-        if concat:
-            c = tf.concat([x, z], axis=3)
-            c = conv(c, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1')
-        else:
-            cx = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
-            cz = conv(z, k=ka, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='layer_1z')
-            c = cx + cz
+        cx = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+        cz = conv(z, k=ka, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='layer_1z')
+        c = cx + cz
 
         for i in range(n_layers):
             name = 'residual_block_' + str(i + 2)
@@ -489,11 +482,9 @@ def fc_decode(z, n_units, n_x, init, scope):
         z = nonlinearity(z)
 
         z = linear(z, n_units, init=init, scope="layer_2")
-        z = nonlinearity(z)
+        return nonlinearity(z)
 
-        logits = linear(z, n_x, init=init, scope="logits_layer")
-
-        return logits
+        #logits = linear(z, n_x, init=init, scope="logits_layer")
 
 
 def linear(x, n_out, init, scope):

@@ -130,15 +130,36 @@ class VAE(base.Model):
         with tf.variable_scope(scope):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
+            n_layers = self.args['n_pixelcnn_layers']
 
             logits = None
             if self.nw_type == "fc":
-                logits = nw.fc_decode(z, n_units=n_units, n_x=self.n_x, init=init, scope='fc_network')
+                z = nw.fc_decode(z, n_units=n_units, n_x=self.n_x, init=init, scope='fc_network')
+
+                if self.is_autoregressive:
+                    z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
+                    x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
+
+                    rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, ka=7, kb=3, out_ch=self.n_ch,
+                                                  n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
+                    logits = tf.reshape(rx, shape=[-1, self.n_x])
+
+                else:
+                    logits = nw.linear(z, self.n_x, init=init, scope="logits_layer")
 
             elif self.nw_type == "cnn":
                 if self.dataset == "mnist":
-                    logits = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                    z = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                 init=init, scope='deconv_network')
+
+                    if self.is_autoregressive:
+                        x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
+                        rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, ka=7, kb=3, out_ch=self.n_ch,
+                                                      n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
+                        logits = tf.reshape(rx, shape=[-1, self.n_x])
+
+                    else:
+                        logits = tf.contrib.layers.flatten(z)
 
             probs = tf.nn.sigmoid(logits)
 
