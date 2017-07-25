@@ -31,12 +31,16 @@ parms = {
     'n_units': 450,
     'n_feature_maps': 16,
 
+    # normalizing flow parameters
+    'flow_units': 200,
+    'flow_layers': 3,
+
     # autoregressive model parameters
     'n_pixelcnn_layers': 6,
     'concat': False,
 
     # loss function parameters
-    'anneal': 0,  # -0.0625, -0.125, -0.25
+    'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.002,

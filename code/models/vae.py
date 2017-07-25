@@ -4,7 +4,6 @@ from copy import deepcopy
 
 from models import base
 from models import layers as nw
-from models import flows as nf
 
 
 class VAE(base.Model):
@@ -54,11 +53,12 @@ class VAE(base.Model):
         self._model(x_init, init=True)
 
         # variational autoencoder
-        self.z_mu, self.z_sigma, self.z, self.rx, self.rx_probs = self._model(self.x, init=False)
+        self.z_mu, self.z_sigma, self.z, self.log_q, self.rx, self.rx_probs = self._model(self.x, init=False)
 
         # reconstruction and penalty terms
         self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
-        self.l2 = self._penalty(mean=self.z_mu, std=self.z_sigma, scope='penalty')
+        self.l2 = self._penalty(mu=self.z_mu, sigma=self.z_sigma,
+                                log_q=self.log_q, z_K=self.z, scope='penalty')
 
         # training and test bounds
         self.bound = self._variational_bound(scope='lower_bound')
@@ -80,11 +80,11 @@ class VAE(base.Model):
             if not init:
                 scope.reuse_variables()
 
-            z_mu, z_sigma = self._encoder(x, init=init, scope='x_enc')
-            z = self._sample(z_mu, z_sigma, scope='sampler')
+            z_mu, z_sigma, h = self._encoder(x, init=init, scope='x_enc')
+            z, log_q = self._sample(z_mu, z_sigma, h, init=init, scope='sampler')
             rx, rx_probs = self._decoder(z, x, init=init, scope='x_dec')
 
-            return z_mu, z_sigma, z, rx, rx_probs
+            return z_mu, z_sigma, z, log_q, rx, rx_probs
 
 
     def _encoder(self, x, init, scope):
@@ -92,28 +92,37 @@ class VAE(base.Model):
         with tf.variable_scope(scope):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
+            extra = self.args['flow']  # extra output if using normalizing flow
 
-            mu = sigma = None
+            mu = sigma = h = None
             if self.nw_type == "fc":
-                mu, sigma = nw.fc_encode(x, n_units=n_units, n_z=self.n_z, init=init, scope='fc_network')
+                mu, sigma, h = nw.fc_encode(x, n_units=n_units, n_z=self.n_z, extra=extra,
+                                            init=init, scope='fc_network')
 
             elif self.nw_type == "cnn":
                 if self.dataset == "mnist":
-                    mu, sigma = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                                 n_z=self.n_z, init=init, scope='conv_network')
+                    mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                 n_z=self.n_z, extra=extra, init=init, scope='conv_network')
 
-            return mu, sigma
+            return mu, sigma, h
 
 
-    def _sample(self, z_mu, z_sigma, scope='sampling'):
+    def _sample(self, mu0, sigma0, h, init, scope):
 
         with tf.variable_scope(scope):
-            n_samples = tf.shape(z_mu)[0]
+            n_samples = tf.shape(mu0)[0]
+            epsilon = tf.random_normal((n_samples, self.n_z))
 
-            eps = tf.random_normal((n_samples, self.n_z))
-            z = z_mu + tf.multiply(z_sigma, eps)
+            if self.is_flow:
+                n_layers = self.args['flow_layers']
+                n_units = self.args['flow_units']
+                z, log_q = nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers, n_units=n_units,
+                                               init=init, scope='normalizing_flow')
+            else:
+                z = mu0 + tf.multiply(sigma0, epsilon)
+                log_q = None
 
-            return z
+            return z, log_q
 
 
     def _decoder(self, z, x, init, scope):
@@ -144,13 +153,19 @@ class VAE(base.Model):
             return tf.reduce_mean(l1, axis=0)
 
 
-    def _penalty(self, mean, std, scope):
+    def _penalty(self, mu, sigma, log_q, z_K, scope):
 
         with tf.variable_scope(scope):
 
-            l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(std) - tf.square(mean) - tf.square(std), axis=1)
+            if self.is_flow:
+                D = z_K.get_shape()[1].value
+                log_p = -(D / 2) * np.log(2*np.pi)  - tf.reduce_sum(tf.square(z_K), axis=1)
 
-            return tf.reduce_mean(l2, axis=0)
+                return tf.reduce_mean(-log_q + log_p, axis=0)
+
+            else:
+                l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+                return tf.reduce_mean(l2, axis=0)
 
 
     def _variational_bound(self, scope):

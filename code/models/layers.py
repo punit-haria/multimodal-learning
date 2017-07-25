@@ -1,9 +1,9 @@
 import tensorflow as tf
+import numpy as np
 
 
 
-
-def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
+def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope):
     """
     Convolution network for use with MNIST dataset.
     """
@@ -12,7 +12,6 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
         x = tf.reshape(x, shape=[-1, 28, 28, n_ch])
         nonlinearity = tf.nn.elu
 
-        #x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_1', reuse=reuse)
         x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
                                 stride=True, init=init, scope='res_1')
         x = nonlinearity(x)
@@ -21,7 +20,6 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
                                 stride=False, init=init, scope='unstrided_1')
         x = nonlinearity(x)
 
-        #x = conv(x, k=3, out_ch=n_feature_maps, stride=True, scope='conv_2', reuse=reuse)
         x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
                                 stride=True, init=init, scope='res_2')
         x = nonlinearity(x)
@@ -44,7 +42,9 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, init, scope):
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mu, sigma
+        h = linear(x, n_z, init=init, scope="h_layer") if extra else None
+
+        return mu, sigma, h
 
 
 def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
@@ -69,13 +69,11 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
                                   nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_2')
         z = nonlinearity(z)
 
-        #z = deconv(z, k=3, out_ch=n_feature_maps, stride=True, scope='deconv_1', reuse=reuse)
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
                                   nonlinearity=nonlinearity, stride=True, init=init, scope='res_1')
         z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
         z = nonlinearity(z)
 
-        #z = deconv(z, k=3, out_ch=n_ch, stride=True, scope='deconv_2', reuse=reuse)
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
                                   nonlinearity=nonlinearity, stride=True, init=init, scope='res_2')
         z = nonlinearity(z)
@@ -231,7 +229,48 @@ def pool(x, scope, reuse):
         return tf.nn.max_pool(x, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME')
 
 
-def fc_encode(x, n_units, n_z, init, scope):
+def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
+    """
+    Normalizing flow.
+    """
+    with tf.variable_scope(scope):
+
+        z = mu0 + tf.multiply(sigma0, epsilon)
+        log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
+
+        for i in range(K):
+            m, s = flow_transform(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
+            sigma = tf.nn.sigmoid(s)
+
+            z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
+            log_q = log_q - tf.reduce_sum(tf.log(sigma), axis=1)
+
+        return z, log_q
+
+
+def flow_transform(z, h, n_units, init, scope):
+    """
+    Single normalizing flow transform.
+    """
+    with tf.variable_scope(scope):
+        nonlinearity = tf.nn.elu
+
+        n_z = z.get_shape()[1].value
+        n_h = h.get_shape()[1].value
+
+        x = tf.concat([z, h], axis=1)
+
+        x = linear(x, n_units, init=init, scope='layer_1')
+        x = nonlinearity(x)
+
+        m = linear(x, n_units, init=init, scope='m_layer')
+        s = linear(x, n_units, init=init, scope='s_layer')
+
+        return m, s
+
+
+
+def fc_encode(x, n_units, n_z, extra, init, scope):
     """
     2 layer fully-connected encoder, as in AEVB paper.
     """
@@ -249,7 +288,9 @@ def fc_encode(x, n_units, n_z, init, scope):
         sigma = linear(x, n_z, init=init, scope="var_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mean, sigma
+        h = linear(x, n_z, init=init, scope="h_layer") if extra else None
+
+        return mean, sigma, h
 
 
 def fc_decode(z, n_units, n_x, init, scope):
@@ -276,7 +317,7 @@ def linear(x, n_out, init, scope):
     """
     with tf.variable_scope(scope):
 
-        n_x = x.get_shape()[-1].value
+        n_x = x.get_shape()[1].value
 
         if init:
             v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.05))
