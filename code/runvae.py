@@ -22,7 +22,7 @@ parms = {
     "flow": False,
 
     # basic parameters
-    'n_z': 200,
+    'n_z': 32, #200,
     'height': 28,
     'width': 28,
     'n_channels': 1,
@@ -32,8 +32,8 @@ parms = {
     'n_feature_maps': 16,
 
     # normalizing flow parameters
-    'flow_units': 200,
-    'flow_layers': 3,
+    'flow_units': 32, #200,
+    'flow_layers': 2,
 
     # autoregressive model parameters
     'n_pixelcnn_layers': 6,
@@ -52,8 +52,6 @@ parms = {
     'test_steps': 50,
     'save_steps': 100000
 }
-
-# options: conv/fc, mnist/color_mnist/cifar, ar_decode, nf
 
 
 if __name__ == "__main__":

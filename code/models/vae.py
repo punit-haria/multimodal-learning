@@ -104,7 +104,7 @@ class VAE(base.Model):
                     mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                  n_z=self.n_z, extra=extra, init=init, scope='conv_network')
 
-            return mu, sigma, h   # h must be same dimensions as z
+            return mu, sigma, h
 
 
     def _sample(self, mu0, sigma0, h, init, scope):

@@ -42,6 +42,7 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
+        # note: h must be same dimensionality as z
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
         return mu, sigma, h
@@ -234,12 +235,14 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
     Normalizing flow.
     """
     with tf.variable_scope(scope):
-        # NOTE: Transforms should be stacked in reverse ordering between every other transformation!!!!!!!!!!!!!!!!!!!!
 
         z = mu0 + tf.multiply(sigma0, epsilon)
         log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
 
         for i in range(K):
+            if i > 0:
+                z = tf.reverse(z, axis=[1])
+
             m, s = made_network(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
             sigma = tf.nn.sigmoid(s)
 
@@ -343,6 +346,7 @@ def fc_encode(x, n_units, n_z, extra, init, scope):
         sigma = linear(x, n_z, init=init, scope="var_layer")
         sigma = tf.nn.softplus(sigma)
 
+        # note: h must be same dimensionality as z
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
         return mean, sigma, h
