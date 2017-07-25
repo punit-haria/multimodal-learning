@@ -16,7 +16,7 @@ models = {x.__name__: x for x in models}
 # parameters
 parms = {
     # options
-    "type": "cnn",              # fc, cnn
+    "type": "fc",              # fc, cnn
     "data": "mnist",            # mnist
     "autoregressive": False,
     "flow": False,
@@ -32,7 +32,7 @@ parms = {
     'n_feature_maps': 16,
 
     # normalizing flow parameters
-    'flow_units': 32, #200,
+    'flow_units': 32,
     'flow_layers': 2,
 
     # autoregressive model parameters
@@ -44,13 +44,13 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 256,
+    'batch_size': 64, # 256
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 200000,
+    'train_steps': 1000,
     'test_steps': 50,
-    'save_steps': 100000
+    'save_steps': 1000
 }
 
 
@@ -61,9 +61,14 @@ if __name__ == "__main__":
     tracker = Results(experiment_name)  # performance tracker
 
 
-    for name, model in models.items():
+    for flow in [False, True]:
 
-        name = experiment_name + "_" + name
+        for name, model in models.items():
 
-        train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+
+            parms['flow'] = flow
+
+            name = experiment_name + "_" + name + '_flow_' + str(flow)
+
+            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
