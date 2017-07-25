@@ -36,7 +36,7 @@ parms = {
     'flow_layers': 2,
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 6,
+    'n_pixelcnn_layers': 2,
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25

@@ -33,10 +33,10 @@ parms = {
 
     # normalizing flow parameters
     'flow_units': 32,
-    'flow_layers': 2,
+    'flow_layers': 4,
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 6,
+    'n_pixelcnn_layers': 2,
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
@@ -47,18 +47,17 @@ parms = {
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 1000,
+    'train_steps': 5000,
     'test_steps': 50,
-    'save_steps': 1000
+    'save_steps': 5000
 }
 
 
 if __name__ == "__main__":
 
-    type = ["fc", "cnn"]
-    flows = [False, True]
-    areg = [False, True]
-
+    type = ["fc"]
+    flows = [True]
+    areg = [False]
 
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
