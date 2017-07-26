@@ -92,6 +92,10 @@ def image_plot(tracker, models, data, suffix, n_rows, n_cols,
 
 def latent_activation_plot(model, data, n_samples, path):
 
+    if model.is_flow:
+        print("WARNING: CAN'T PLOT LATENT ACTIVATIONS FOR NORMALIZING FLOW!")
+        return
+
     x = data.sample(n_samples, dtype='test')
     if type(x) in [list, tuple]:
         x = x[0]

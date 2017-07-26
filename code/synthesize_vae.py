@@ -13,6 +13,10 @@ tracker = Results.load(experiment_name)  # performance tracker
 mnist = MNIST()  # data
 
 
+
+image_plot(tracker, models, data=mnist, suffix=suffix, n_rows=8, n_cols=8, n_pixels=300,
+           spacing=0, synthesis_type='fix_latents')
+
 image_plot(tracker, models, data=mnist, suffix=suffix, n_rows=8, n_cols=8, n_pixels=300,
            spacing=0, synthesis_type='reconstruct')
 

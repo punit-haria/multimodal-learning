@@ -47,16 +47,16 @@ parms = {
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 100000,
+    'train_steps': 70000,
     'test_steps': 50,
-    'save_steps': 50000
+    'save_steps': 35000
 }
 
 
 if __name__ == "__main__":
 
     type = ["cnn"]
-    flows = [False]
+    flows = [False, True]
     areg = [True, False]
 
     mnist = MNIST()    # data
@@ -65,6 +65,9 @@ if __name__ == "__main__":
     for t in type:
         for flow in flows:
             for ar in areg:
+
+                if ar and flow:
+                    continue
 
                 for name, model in models.items():
 

@@ -255,11 +255,12 @@ class VAE(base.Model):
 
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
-            tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
-            tf.summary.scalar('penalty_log_q_part_1', tf.reduce_mean(self.log_q_part_1, axis=0))
-            tf.summary.scalar('penalty_log_q_part_2', tf.reduce_mean(self.log_q_part_2, axis=0))
-            tf.summary.scalar('penalty_log_q_part_3', tf.reduce_mean(self.log_q_part_3, axis=0))
-            tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
+            if self.is_flow:
+                tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
+                tf.summary.scalar('penalty_log_q_part_1', tf.reduce_mean(self.log_q_part_1, axis=0))
+                tf.summary.scalar('penalty_log_q_part_2', tf.reduce_mean(self.log_q_part_2, axis=0))
+                tf.summary.scalar('penalty_log_q_part_3', tf.reduce_mean(self.log_q_part_3, axis=0))
+                tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
 
             return tf.summary.merge_all()
 
