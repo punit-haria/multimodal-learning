@@ -346,6 +346,11 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
     with tf.variable_scope(scope):
 
         z = mu0 + tf.multiply(sigma0, epsilon)
+
+        log_q_part_1 = -tf.reduce_sum(tf.log(sigma0), axis=1)
+        log_q_part_2 = -tf.reduce_sum(0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
+        log_q_part_3 = 0
+
         log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
 
         for i in range(K):
@@ -358,7 +363,10 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
             log_q = log_q - tf.reduce_sum(tf.log(sigma), axis=1)
 
-        return z, log_q
+            log_q_part_3 -= tf.reduce_sum(tf.log(sigma), axis=1)
+
+        return z, log_q, log_q_part_1, log_q_part_2, log_q_part_3
+
 
 
 def made_network(z, h, n_units, init, scope):
@@ -387,40 +395,91 @@ def made_network(z, h, n_units, init, scope):
         return mu, s
 
 
+def made_network_variant(z, h, n_units, init, scope):
+    """
+    Masked Network (MADE) based on https://arxiv.org/abs/1502.03509
+    used as single normalizing flow transform.
+    """
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+        n_z = z.get_shape()[1].value
+        m = None
+
+        h = linear(h, n_out=n_z, init=init, scope='h_layer')
+        h = nonlinearity(h)
+
+        z = h + z
+
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, init=init, scope='layer_1')
+        z = nonlinearity(z)
+
+        mu, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_m')
+        s, _ = ar_linear(z, n_out=n_z, m_prev=m, init=init, scope='layer_s')
+
+        return mu, s
+
+
 def ar_linear(x, n_out, m_prev, init, scope):
     """
     Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
     Results in autoregressive relationship between input and output.
     """
     with tf.variable_scope(scope):
+
         Kin = x.get_shape()[1].value
         Kout = n_out
 
         if init:
-            w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0, 0.05))
-            w = w.initialized_value()
-            b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
-            b = b.initialized_value()
+
+            if m_prev is None:
+                m_prev = np.arange(Kin) + 1
+                m = np.random.randint(low=1, high=Kin, size=Kout)
+            else:
+                m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
+
+            mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
+            for kin in range(Kin):
+                for kout in range(Kout):
+                    if m[kout] >= m_prev[kin]:
+                        mask[kin, kout] = 1
+
+            v = tf.get_variable("v", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0,0.05))
+            v = v.initialized_value()
+
+            mask = tf.get_variable("mask", initializer=tf.constant(mask), trainable=False)
+            mask = mask.initialized_value()
+            v = tf.multiply(v, mask)
+
+            v_norm = tf.nn.l2_normalize(v, dim=0)
+
+            t = tf.matmul(x, v_norm)
+            mu_t, var_t = tf.nn.moments(t, axes=0)
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, n_out])
+            mu_t = tf.reshape(mu_t, shape=[1, n_out])
+
+            return tf.multiply(t - mu_t, inv), m
+
         else:
-            w = tf.get_variable("w", shape=[Kin, Kout])
+            v = tf.get_variable("v", shape=[Kin, Kout])
+            g = tf.get_variable("g", shape=[Kout])
             b = tf.get_variable("b", shape=[Kout])
 
-        if m_prev is None:
-            m_prev = np.arange(Kin) + 1
-            m = np.random.randint(low=1, high=Kin, size=Kout)
-        else:
-            m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
+            mask = tf.get_variable("mask", shape=[Kin, Kout])
+            v = tf.multiply(v, mask)
 
-        mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
-        for kin in range(Kin):
-            for kout in range(Kout):
-                if m[kout] >= m_prev[kin]:
-                    mask[kin, kout] = 1
+            x = tf.matmul(x, v)
+            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
 
-        w = tf.multiply(w, tf.constant(mask))
-        x = tf.matmul(x, w) + b
+            scaling = tf.reshape(scaling, shape=[1, n_out])
+            b = tf.reshape(b, shape=[1, n_out])
 
-        return x, m
+            return tf.multiply(scaling, x) + b, None
 
 
 def ar_mult(x, n_out, init, scope):

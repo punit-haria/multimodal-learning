@@ -116,7 +116,7 @@ class VAE(base.Model):
             if self.is_flow:
                 n_layers = self.args['flow_layers']
                 n_units = self.args['flow_units']
-                z, log_q = nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers, n_units=n_units,
+                z, log_q, self.log_q_part_1, self.log_q_part_2, self.log_q_part_3 = nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers, n_units=n_units,
                                                init=init, scope='normalizing_flow')
             else:
                 z = mu0 + tf.multiply(sigma0, epsilon)
@@ -173,6 +173,8 @@ class VAE(base.Model):
                 D = z_K.get_shape()[1].value
                 log_p = -(D / 2) * np.log(2*np.pi)  - tf.reduce_sum(tf.square(z_K), axis=1)
 
+                self.log_p = log_p
+
                 return tf.reduce_mean(-log_q + log_p, axis=0)
 
             else:
@@ -192,6 +194,8 @@ class VAE(base.Model):
             alpha = self.args['anneal']
 
             if alpha > 0:
+                if self.is_flow:
+                    print("WARNING: DON'T USE CURRENT FREEBITS IMPLEMENTATION WITH NORMALIZING FLOWS!")
                 l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
             else:
                 l2 = self.l2
@@ -248,6 +252,14 @@ class VAE(base.Model):
             tf.summary.scalar('loss', self.loss)
             tf.summary.scalar('reconstruction', self.l1)
             tf.summary.scalar('penalty', self.l2)
+
+            tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
+
+            tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
+            tf.summary.scalar('penalty_log_q_part_1', tf.reduce_mean(self.log_q_part_1, axis=0))
+            tf.summary.scalar('penalty_log_q_part_2', tf.reduce_mean(self.log_q_part_2, axis=0))
+            tf.summary.scalar('penalty_log_q_part_3', tf.reduce_mean(self.log_q_part_3, axis=0))
+            tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
 
             return tf.summary.merge_all()
 
