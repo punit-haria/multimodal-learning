@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'cnn_pixelcnn_test'
+experiment_name = 'nf_experiments'
 
 
 models = [
@@ -22,7 +22,7 @@ parms = {
     "flow": False,
 
     # basic parameters
-    'n_z': 50,  # 32, 200
+    'n_z': 6,  # 32, 200
     'height': 28,
     'width': 28,
     'n_channels': 1,
@@ -32,7 +32,7 @@ parms = {
     'n_feature_maps': 16,
 
     # normalizing flow parameters
-    'flow_units': 320,
+    'flow_units': 10, #320,
     'flow_layers': 1,
 
     # autoregressive model parameters
@@ -42,22 +42,22 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.002,
+    'learning_rate': 0.0001, #0.002,
     'batch_size': 256,
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 70000,
+    'train_steps': 1500,
     'test_steps': 50,
-    'save_steps': 35000
+    'save_steps': 1500
 }
 
 
 if __name__ == "__main__":
 
-    type = ["cnn"]
-    flows = [False, True]
-    areg = [True, False]
+    type = ["fc"]
+    flows = [True]
+    areg = [False]
 
     mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
