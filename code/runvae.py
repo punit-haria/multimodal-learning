@@ -22,7 +22,7 @@ parms = {
     "flow": False,
 
     # basic parameters
-    'n_z': 6,  # 32, 200
+    'n_z': 32,  # 32, 200
     'height': 28,
     'width': 28,
     'n_channels': 1,
@@ -32,7 +32,7 @@ parms = {
     'n_feature_maps': 16,
 
     # normalizing flow parameters
-    'flow_units': 10, #320,
+    'flow_units': 512, #320,
     'flow_layers': 1,
 
     # autoregressive model parameters
@@ -42,8 +42,8 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.0001, #0.002,
-    'batch_size': 256,
+    'learning_rate': 0.002,
+    'batch_size': 128,
 
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
@@ -54,6 +54,9 @@ parms = {
 
 
 if __name__ == "__main__":
+
+    # type, flow, autoregressive, flow_layers, flow_units,
+    s1 = ["fc", True, False]
 
     type = ["fc"]
     flows = [True]

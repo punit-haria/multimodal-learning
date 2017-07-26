@@ -369,154 +369,28 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
         return z, log_q, log_q_part_1, log_q_part_2, log_q_part_3
 
 
+
 def made_network(z, h, n_units, init, scope):
     """
     Masked Network (MADE) based on https://arxiv.org/abs/1502.03509
     used as single normalizing flow transform.
     """
     with tf.variable_scope(scope):
-
-        # NOTE: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
+        ### TODO: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
 
         nonlinearity = tf.nn.elu
         n_z = z.get_shape()[1].value
         m = None
 
-        z, m, mask1 = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
         z = nonlinearity(z)
 
-        z, m, mask2 = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
         h = ar_mult(h, n_out=n_units, init=init, scope='layer_2_h')
         z = nonlinearity(z + h)
 
-        mu, _, mask3 = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
-        s, _, mask4 = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
-
-        if init:
-            temp = np.matmul(mask1, mask2)
-            print(np.matmul(temp, mask3))
-            print(np.matmul(temp, mask4))
-
-        return mu, s
-
-
-def ar_linear(x, n_out, m_prev, is_final, init, scope):
-    """
-    Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
-    Results in autoregressive relationship between input and output.
-    """
-    with tf.variable_scope(scope):
-
-        Kin = x.get_shape()[1].value
-        Kout = n_out
-
-        if init:
-            if m_prev is None:
-                assert is_final == False
-                m_prev = np.arange(Kin) + 1
-                m = np.random.randint(low=1, high=Kin, size=Kout)
-            elif is_final:
-                m = np.arange(Kout)
-            else:
-                m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
-
-            mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
-            for kin in range(Kin):
-                for kout in range(Kout):
-                    if m[kout] >= m_prev[kin]:
-                        mask[kin, kout] = 1
-
-            temp = mask.copy()
-
-            v = tf.get_variable("v", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0,0.05))
-            v = v.initialized_value()
-
-            mask = tf.get_variable("mask", initializer=tf.constant(mask), trainable=False)
-            mask = mask.initialized_value()
-            v = tf.multiply(v, mask)
-
-            v_norm = tf.nn.l2_normalize(v, dim=0)
-
-            t = tf.matmul(x, v_norm)
-            mu_t, var_t = tf.nn.moments(t, axes=0)
-
-            inv = 1 / tf.sqrt(var_t + 1e-10)
-            _ = tf.get_variable("g", initializer=inv)
-            _ = tf.get_variable("b", initializer=-mu_t * inv)
-
-            inv = tf.reshape(inv, shape=[1, n_out])
-            mu_t = tf.reshape(mu_t, shape=[1, n_out])
-
-            return tf.multiply(t - mu_t, inv), m, temp
-
-        else:
-            v = tf.get_variable("v", shape=[Kin, Kout])
-            g = tf.get_variable("g", shape=[Kout])
-            b = tf.get_variable("b", shape=[Kout])
-
-            mask = tf.get_variable("mask", shape=[Kin, Kout])
-
-            v = tf.multiply(v, mask)
-
-            x = tf.matmul(x, v)
-            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
-
-            scaling = tf.reshape(scaling, shape=[1, n_out])
-            b = tf.reshape(b, shape=[1, n_out])
-
-            return tf.multiply(scaling, x) + b, None, None
-
-
-
-def ar_mult(x, n_out, init, scope):
-    """
-    Matrix multiplication with simple lower triangular mask.
-    Results in autoregressive relationship between input and output.
-    """
-    with tf.variable_scope(scope):
-        n_in = x.get_shape()[1].value
-
-        if init:
-            w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.random_normal_initializer(0, 0.05))
-            w = w.initialized_value()
-        else:
-            w = tf.get_variable("w", shape=[n_in, n_out])
-
-        mask = np.ones(shape=[n_in, n_out], dtype=np.float32)
-        mask = np.triu(mask)  # strictly upper triangular
-
-        w = tf.multiply(w, tf.constant(mask))
-        x = tf.matmul(x, w)
-
-        return x
-
-
-
-def made_network_variant(z, h, n_units, init, scope):
-    """
-    Masked Network (MADE) based on https://arxiv.org/abs/1502.03509
-    used as single normalizing flow transform.
-    """
-    with tf.variable_scope(scope):
-
-        nonlinearity = tf.nn.elu
-        n_z = z.get_shape()[1].value
-
-        h = linear(h, n_out=n_z, init=init, scope='h_layer')
-        h = nonlinearity(h)
-
-        z = h + z
-
-        m = None
-        z, m, mask1 = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
-        z = nonlinearity(z)
-
-        mu, _, mask2 = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
-        s, _, mask3 = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
-
-        if init:
-            print(np.matmul(mask1, mask2))
-            print(np.matmul(mask1, mask3))
+        mu, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
+        s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
 
         return mu, s
 
@@ -549,6 +423,138 @@ def pixelcnn_network_test(z, h, init, scope):
         s = tf.contrib.layers.flatten(s)
 
         return m, s
+
+
+def ar_linear_init(x, n_out, m_prev, is_final, init, scope):
+    """
+    Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
+    Results in autoregressive relationship between input and output.
+    """
+    with tf.variable_scope(scope):
+
+        Kin = x.get_shape()[1].value
+        Kout = n_out
+
+        if init:
+
+            v = tf.get_variable("v", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0,0.05))
+            v = v.initialized_value()
+
+            v_norm = tf.nn.l2_normalize(v, dim=0)
+
+            t = tf.matmul(x, v_norm)
+            mu_t, var_t = tf.nn.moments(t, axes=0)
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, n_out])
+            mu_t = tf.reshape(mu_t, shape=[1, n_out])
+
+            return tf.multiply(t - mu_t, inv), None
+
+        else:
+            if m_prev is None:
+                assert is_final == False
+                m_prev = np.arange(Kin) + 1
+                m = np.random.randint(low=1, high=Kin, size=Kout)
+            elif is_final:
+                m = np.arange(Kout)
+            else:
+                m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
+
+            mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
+            for kin in range(Kin):
+                for kout in range(Kout):
+                    if m[kout] >= m_prev[kin]:
+                        mask[kin, kout] = 1
+
+            v = tf.get_variable("v", shape=[Kin, Kout])
+            g = tf.get_variable("g", shape=[Kout])
+            b = tf.get_variable("b", shape=[Kout])
+
+            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+
+            v = tf.multiply(v, tf.constant(mask))
+            x = tf.matmul(x, v)
+
+            scaling = tf.reshape(scaling, shape=[1, n_out])
+            b = tf.reshape(b, shape=[1, n_out])
+
+            return tf.multiply(scaling, x) + b, m
+
+
+def ar_linear(x, n_out, m_prev, is_final, init, scope):
+    """
+    Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
+    Results in autoregressive relationship between input and output.
+    """
+    with tf.variable_scope(scope):
+
+        Kin = x.get_shape()[1].value
+        Kout = n_out
+
+        if init:
+            if m_prev is None:
+                assert is_final == False
+                m_prev = np.arange(Kin) + 1
+                m = np.random.randint(low=1, high=Kin, size=Kout)
+            elif is_final:
+                m = np.arange(Kout)
+            else:
+                m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)
+
+            mask = np.zeros(shape=[Kin, Kout], dtype=np.float32)
+            for kin in range(Kin):
+                for kout in range(Kout):
+                    if m[kout] >= m_prev[kin]:
+                        mask[kin, kout] = 1
+
+            mask = tf.get_variable("mask", initializer=tf.constant(mask), trainable=False)
+            mask = mask.initialized_value()
+
+            w = tf.get_variable("w", shape=[Kin, Kout], initializer=tf.contrib.layers.xavier_initializer())
+            w = w.initialized_value()
+            b = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(0.1))
+            b = b.initialized_value()
+
+            w = tf.multiply(w, mask)
+            return tf.matmul(x, w) + b, m
+
+        else:
+            w = tf.get_variable("w", shape=[Kin, Kout])
+            b = tf.get_variable("b", shape=[Kout])
+
+            mask = tf.get_variable("mask", shape=[Kin, Kout], trainable=False)
+
+            w = tf.multiply(w, mask)
+            return tf.matmul(x, w) + b, None
+
+
+def ar_mult(x, n_out, init, scope):
+    """
+    Matrix multiplication with simple lower triangular mask.
+    Results in autoregressive relationship between input and output.
+    """
+    with tf.variable_scope(scope):
+        n_in = x.get_shape()[1].value
+
+        if init:
+            w = tf.get_variable("w", shape=[n_in, n_out], initializer=tf.contrib.layers.xavier_initializer())
+            w = w.initialized_value()
+        else:
+            w = tf.get_variable("w", shape=[n_in, n_out])
+
+        # strictly upper triangular mask
+        mask = np.ones(shape=[n_in, n_out], dtype=np.float32)
+        mask = np.triu(mask)
+
+        w = tf.multiply(w, tf.constant(mask))
+        x = tf.matmul(x, w)
+
+        return x
 
 
 def fc_encode(x, n_units, n_z, extra, init, scope):
