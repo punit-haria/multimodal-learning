@@ -116,8 +116,10 @@ class VAE(base.Model):
             if self.is_flow:
                 n_layers = self.args['flow_layers']
                 n_units = self.args['flow_units']
-                z, log_q, self.log_q_part_1, self.log_q_part_2, self.log_q_part_3 = nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers, n_units=n_units,
-                                               init=init, scope='normalizing_flow')
+                flow_type = self.args['flow_type']
+                z, log_q, self.log_q_part_1, self.log_q_part_2, self.log_q_part_3 = \
+                    nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers,
+                                        n_units=n_units, flow_type=flow_type, init=init, scope='normalizing_flow')
             else:
                 z = mu0 + tf.multiply(sigma0, epsilon)
                 log_q = None
@@ -145,7 +147,7 @@ class VAE(base.Model):
                 x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
                 z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch]) if len(z.get_shape()) == 2 else z
 
-                rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, ka=7, kb=3, out_ch=self.n_ch,
+                rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, ka=3, kb=3, out_ch=self.n_ch,
                                               n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
                 logits = tf.reshape(rx, shape=[-1, self.n_x])
 

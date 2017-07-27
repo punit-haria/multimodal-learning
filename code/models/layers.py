@@ -339,11 +339,12 @@ def masked_residual_block(c, k, nonlinearity, init, scope):
         return c
 
 
-def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
+def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope):
     """
     Normalizing flow.
     """
     with tf.variable_scope(scope):
+        ### TODO: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
 
         z = mu0 + tf.multiply(sigma0, epsilon)
 
@@ -357,8 +358,11 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, init, scope):
             if i > 0:
                 z = tf.reverse(z, axis=[1])
 
-            #m, s = pixelcnn_network_test(z, h=h, init=init, scope='flow_'+str(i+1))
-            m, s = made_network(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
+            if flow_type == "cnn":
+                m, s = pixelcnn_flow(z, h=h, init=init, scope='flow_'+str(i+1))
+            else:
+                m, s = made_network(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
+
             sigma = tf.nn.sigmoid(s)
 
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
@@ -376,18 +380,21 @@ def made_network(z, h, n_units, init, scope):
     used as single normalizing flow transform.
     """
     with tf.variable_scope(scope):
-        ### TODO: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
 
         nonlinearity = tf.nn.elu
         n_z = z.get_shape()[1].value
         m = None
 
+        h = linear(h, n_out=n_z, init=init, scope='h_layer')
+        h = nonlinearity(h)
+
+        z = z + h
+
         z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
         z = nonlinearity(z)
 
         z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
-        h = ar_mult(h, n_out=n_units, init=init, scope='layer_2_h')
-        z = nonlinearity(z + h)
+        z = nonlinearity(z)
 
         mu, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
         s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
@@ -395,7 +402,7 @@ def made_network(z, h, n_units, init, scope):
         return mu, s
 
 
-def pixelcnn_network_test(z, h, init, scope):
+def pixelcnn_flow(z, h, init, scope):
 
     with tf.variable_scope(scope):
 
@@ -425,7 +432,7 @@ def pixelcnn_network_test(z, h, init, scope):
         return m, s
 
 
-def ar_linear_init(x, n_out, m_prev, is_final, init, scope):
+def ar_linear_unused(x, n_out, m_prev, is_final, init, scope):
     """
     Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
     Results in autoregressive relationship between input and output.
@@ -537,6 +544,7 @@ def ar_mult(x, n_out, init, scope):
     """
     Matrix multiplication with simple lower triangular mask.
     Results in autoregressive relationship between input and output.
+    (Component in Masked Autoencoder)
     """
     with tf.variable_scope(scope):
         n_in = x.get_shape()[1].value
