@@ -56,25 +56,30 @@ parms = {
 if __name__ == "__main__":
 
     # type, flow, autoregressive, flow_layers, flow_units, flow_type
+
     configs = [
-        ["cnn", False, False, 1, 512, "fc"],
-        ["cnn", False, True, 1, 512, "fc"],
-
-        ["fc", True, False, 2, 512, "fc"],
-        ["fc", True, False, 4, 512, "fc"],
-        ["fc", True, False, 4, 1536, "fc"],
-        ["fc", True, False, 8, 512, "fc"],
-
-        ["cnn", True, False, 2, 512, "fc"],
-        ["cnn", True, False, 4, 1536, "fc"],
-
-        ["cnn", True, True, 2, 512, "fc"],
-        ["cnn", True, True, 4, 1536, "fc"],
-
-        ["cnn", True, False, 2, 512, "cnn"],
-        ["cnn", True, False, 4, 512, "cnn"],
-        ["cnn", True, True, 2, 512, "cnn"],
+        ["fc", False, False, 1, 512, "fc"],
+        ["fc", True, False, 2, 320, "fc"]
     ]
+    '''
+    ["cnn", False, False, 1, 512, "fc"],
+    ["cnn", False, True, 1, 512, "fc"],
+
+    ["fc", True, False, 2, 512, "fc"],
+    ["fc", True, False, 4, 512, "fc"],
+    ["fc", True, False, 4, 1536, "fc"],
+    ["fc", True, False, 8, 512, "fc"],
+
+    ["cnn", True, False, 2, 512, "fc"],
+    ["cnn", True, False, 4, 1536, "fc"],
+
+    ["cnn", True, True, 2, 512, "fc"],
+    ["cnn", True, True, 4, 1536, "fc"],
+
+    ["cnn", True, False, 2, 512, "cnn"],
+    ["cnn", True, False, 4, 512, "cnn"],
+    ["cnn", True, True, 2, 512, "cnn"],
+    '''
 
 
     mnist = MNIST()    # data

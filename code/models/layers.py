@@ -432,7 +432,7 @@ def pixelcnn_flow(z, h, init, scope):
         return m, s
 
 
-def ar_linear_unused(x, n_out, m_prev, is_final, init, scope):
+def ar_linear(x, n_out, m_prev, is_final, init, scope):
     """
     Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
     Results in autoregressive relationship between input and output.
@@ -493,7 +493,7 @@ def ar_linear_unused(x, n_out, m_prev, is_final, init, scope):
             return tf.multiply(scaling, x) + b, m
 
 
-def ar_linear(x, n_out, m_prev, is_final, init, scope):
+def ar_linear_no_init(x, n_out, m_prev, is_final, init, scope):
     """
     Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
     Results in autoregressive relationship between input and output.
