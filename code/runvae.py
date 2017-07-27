@@ -47,7 +47,7 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 1500,
+    'train_steps': 100,
     'test_steps': 50,
     'save_steps': 1500
 }
@@ -91,7 +91,13 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name = experiment_name + "_" + name +'_' + t + '_flow_' + str(flow) + '_ar_' + str(ar)
+            #name = experiment_name + "_" + name
+
+            name = experiment_name + "_" + c[0]
+            if c[2]:
+                name += "_autoregressive"
+            if c[1]:
+                name += "_flow_" + str(c[3]) + "_" + str(c[4]) + "_" + c[5]
 
             train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 

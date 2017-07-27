@@ -344,7 +344,7 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
     Normalizing flow.
     """
     with tf.variable_scope(scope):
-        ### TODO: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
+        ### to do: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
 
         z = mu0 + tf.multiply(sigma0, epsilon)
 
