@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'trial'
+experiment_name = '13_trials'
 
 
 models = [
@@ -47,9 +47,9 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 100,
+    'train_steps': 30000,
     'test_steps': 50,
-    'save_steps': 1500
+    'save_steps': 30000
 }
 
 
