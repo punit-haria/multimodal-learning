@@ -221,7 +221,7 @@ def deconv(x, k, out_ch, stride, init, scope):
             g = tf.get_variable("g", shape=[out_ch])
             b = tf.get_variable("b", shape=[out_ch])
 
-            w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,3])
+            w = tf.reshape(g, shape=[1,1,out_ch,1]) * tf.nn.l2_normalize(v, dim=[0,1,3])
             b = tf.reshape(b, shape=[1,1,1,out_ch])
 
             d = tf.nn.conv2d_transpose(x, w, output_shape=out_shape, strides=strides, padding='SAME')

@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'nf'
+experiment_name = 'color'
 
 
 models = [
@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "cnn",              # fc, cnn
-    'data': "mnist",            # mnist, color
+    'data': "color",            # mnist, color
     'autoregressive': False,
     'flow': False,
 
@@ -44,10 +44,10 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'batch_size': 128,
+    'batch_size': 64,
     'n_conditional_pixels': 300,
     'test_sample_size': 500,
-    'train_steps': 50,
+    'train_steps': 10000,
     'test_steps': 50,
     'save_steps': 10000
 }
@@ -58,11 +58,10 @@ if __name__ == "__main__":
     # type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers
 
     configs = [
-        ["cnn", False, 2, 320, "made", False, 3],
-        ["cnn", True, 2, 320, "made", False, 3],
-        ["cnn", True, 2, 1024, "made", False, 3],
-        ["cnn", True, 4, 1024, "made", False, 3],
-        ["cnn", True, 8, 1024, "made", False, 3]
+        ["cnn", False, 2, 320, "made", False, 10]
+        #["cnn", True, 2, 1024, "made", False, 3],
+        #["cnn", True, 4, 1024, "made", False, 3],
+        #["cnn", True, 8, 1024, "made", False, 3]
     ]
 
 

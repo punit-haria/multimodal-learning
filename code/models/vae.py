@@ -100,9 +100,8 @@ class VAE(base.Model):
                                             init=init, scope='fc_network')
 
             elif self.nw_type == "cnn":
-                if self.dataset == "mnist":
-                    mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                                 n_z=self.n_z, extra=extra, init=init, scope='conv_network')
+                mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                    n_z=self.n_z, extra=extra, init=init, scope='conv_network')
 
             return mu, sigma, h
 
