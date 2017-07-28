@@ -378,18 +378,15 @@ def made_network(z, h, n_units, init, scope):
         n_z = z.get_shape()[1].value
         m = None
 
-        #h = linear(h, n_out=n_z, init=init, scope='layer_h')
-        #h = nonlinearity(h)
-        #z = z + h
+        h = linear(h, n_out=n_z, init=init, scope='layer_h')
+        h = nonlinearity(h)
+        z = z + h
 
-        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
-        #z = nonlinearity(z)
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
+        z = nonlinearity(z)
 
-        #h = ar_mult(h, n_out=n_units, init=init, scope='layer_h')
-        #z = nonlinearity(z + h)
-
-        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2')
-        #z = nonlinearity(z)
+        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2')
+        z = nonlinearity(z)
 
         mu, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
         s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, is_sigma=True, init=init, scope='layer_s')
@@ -438,7 +435,6 @@ def ar_linear(x, n_out, m_prev, is_final, init, scope, is_sigma=False):
         Kout = n_out
 
         if init:
-
             v = tf.get_variable("v", shape=[Kin, Kout], initializer=tf.random_normal_initializer(0,0.05))
             v = v.initialized_value()
 

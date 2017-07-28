@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'vanilla_separated'
+experiment_name = 'flows'
 
 
 models = [
@@ -22,7 +22,7 @@ parms = {
     'flow': False,
 
     # basic parameters
-    'n_z': 49,  # 32, 200
+    'n_z': 49,  # 32, 49, 200
     'height': 28,
     'width': 28,
     'n_channels': 1,
@@ -47,9 +47,9 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 2000,
+    'train_steps': 20000,
     'test_steps': 50,
-    'save_steps': 30000
+    'save_steps': 20000
 }
 
 
@@ -58,10 +58,11 @@ if __name__ == "__main__":
     # type, flow, autoregressive, flow_layers, flow_units, flow_type
 
     configs = [
-        #["fc", True, False, 2, 320, "fc"],
-        #["fc", True, False, 2, 512, "fc"],
-        #["fc", True, False, 2, 128, "fc"],
-        ["fc", False, False, 1, 320, "made"]
+        ["fc", False, False, 2, 320, "made"],
+        ["fc", True, False, 2, 320, "made"],
+        ["fc", True, False, 2, 1920, "made"],
+        ["fc", True, False, 4, 1920, "made"],
+        ["fc", True, False, 8, 1920, "made"]
     ]
     '''
     ["cnn", False, False, 1, 512, "made"],

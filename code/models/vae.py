@@ -174,24 +174,24 @@ class VAE(base.Model):
 
             if self.is_flow:
                 D = z_K.get_shape()[1].value
-                log_p = -(D / 2) * np.log(2*np.pi)  - tf.reduce_sum(tf.square(z_K), axis=1)
+
+                log_p = -(D / 2) * np.log(2*np.pi)  -  0.5 * tf.reduce_sum(tf.square(z_K), axis=1)
 
                 self.log_p = log_p
-                self.loq_q = log_q
+                self.log_q = log_q
 
                 return tf.reduce_mean(-log_q + log_p, axis=0)
 
             else:
-                D = self.n_z
-                log_p = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma), axis=1)
-                log_q = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma), axis=1)
 
-                self.log_p = log_p
-                self.loq_q = log_q
+                #D = self.n_z
+                #log_p = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma), axis=1)
+                #log_q = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma), axis=1)
+                #self.log_p = log_p
+                #self.log_q = log_q
+                #l2 = log_p - log_q
 
-                l2 = log_p - log_q
-
-                #l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+                l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
 
                 return tf.reduce_mean(l2, axis=0)
 
@@ -269,8 +269,9 @@ class VAE(base.Model):
 
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
-            tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
-            tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
+            if self.is_flow:
+                tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
+                tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
 
             return tf.summary.merge_all()
 
