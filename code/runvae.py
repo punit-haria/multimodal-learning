@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = '13_trials'
+experiment_name = 'flow_experiments'
 
 
 models = [
@@ -47,7 +47,7 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 30000,
+    'train_steps': 5000,
     'test_steps': 50,
     'save_steps': 30000
 }
@@ -58,8 +58,10 @@ if __name__ == "__main__":
     # type, flow, autoregressive, flow_layers, flow_units, flow_type
 
     configs = [
-        ["fc", False, False, 1, 512, "fc"],
-        ["fc", True, False, 2, 320, "fc"]
+        #["fc", True, False, 2, 320, "fc"],
+        #["fc", True, False, 2, 512, "fc"],
+        #["fc", True, False, 2, 128, "fc"],
+        ["fc", True, False, 1, 320, "fc"]
     ]
     '''
     ["cnn", False, False, 1, 512, "fc"],

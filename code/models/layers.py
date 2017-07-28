@@ -359,9 +359,9 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
                 z = tf.reverse(z, axis=[1])
 
             if flow_type == "cnn":
-                m, s = pixelcnn_flow(z, h=h, init=init, scope='flow_'+str(i+1))
+                m, s = pixelcnn_flow(z, h=h, init=init, scope='cnn_flow_'+str(i+1))
             else:
-                m, s = made_network(z, h=h, n_units=n_units, init=init, scope='flow_'+str(i+1))
+                m, s = made_network(z, h=h, n_units=n_units, init=init, scope='made_flow_'+str(i+1))
 
             sigma = tf.nn.sigmoid(s)
 
@@ -393,8 +393,8 @@ def made_network(z, h, n_units, init, scope):
         z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
         z = nonlinearity(z)
 
-        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
-        z = nonlinearity(z)
+        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
+        #z = nonlinearity(z)
 
         mu, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
         s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
