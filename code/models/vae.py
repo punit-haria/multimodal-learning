@@ -135,7 +135,6 @@ class VAE(base.Model):
             n_fmaps = self.args['n_feature_maps']
             n_layers = self.args['n_pixelcnn_layers']
 
-            logits = None
             if self.nw_type == "fc":
                 z = nw.fc_decode(z, n_units=n_units, n_x=self.n_x, init=init, scope='fc_network')
 

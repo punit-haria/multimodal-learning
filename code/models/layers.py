@@ -71,7 +71,7 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
         z = nonlinearity(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
-                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_1')
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_3')
         z = tf.pad(z, paddings=[[0, 0], [0, 1], [0, 1], [0, 0]])
         z = nonlinearity(z)
 
@@ -84,7 +84,7 @@ def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
         z = nonlinearity(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
-                                  stride=True, init=init, scope='res_3')
+                                  stride=True, init=init, scope='res_1')
 
         return z
 
