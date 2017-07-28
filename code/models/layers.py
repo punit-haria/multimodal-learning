@@ -344,13 +344,8 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
     Normalizing flow.
     """
     with tf.variable_scope(scope):
-        ### to do: Initialize network so that output s is sufficiently positive (i.e. close to +1 or +2)
 
         z = mu0 + tf.multiply(sigma0, epsilon)
-
-        log_q_part_1 = -tf.reduce_sum(tf.log(sigma0), axis=1)
-        log_q_part_2 = -tf.reduce_sum(0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
-        log_q_part_3 = 0
 
         log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
 
@@ -363,18 +358,12 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
             else:
                 m, s = made_network(z, h=h, n_units=n_units, init=init, scope='made_flow_'+str(i+1))
 
-            s_mu, s_var = tf.nn.moments(s, axes=[0,1])
-            tf.summary.scalar("s_mean", s_mu)
-            tf.summary.scalar("s_var", s_var)
-
             sigma = tf.nn.sigmoid(s)
 
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
             log_q = log_q - tf.reduce_sum(tf.log(sigma), axis=1)
 
-            log_q_part_3 -= tf.reduce_sum(tf.log(sigma), axis=1)
-
-        return z, log_q, log_q_part_1, log_q_part_2, log_q_part_3
+        return z, log_q
 
 
 
@@ -393,11 +382,11 @@ def made_network(z, h, n_units, init, scope):
         #h = nonlinearity(h)
         #z = z + h
 
-        z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
-        z = nonlinearity(z)
+        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
+        #z = nonlinearity(z)
 
-        h = ar_mult(h, n_out=n_units, init=init, scope='layer_h')
-        z = nonlinearity(z + h)
+        #h = ar_mult(h, n_out=n_units, init=init, scope='layer_h')
+        #z = nonlinearity(z + h)
 
         #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2')
         #z = nonlinearity(z)
@@ -463,7 +452,7 @@ def ar_linear(x, n_out, m_prev, is_final, init, scope, is_sigma=False):
             _ = tf.get_variable("g", initializer=inv)
 
             if is_sigma:
-                _ = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(2))
+                _ = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(1))
             else:
                 _ = tf.get_variable("b", initializer=-mu_t * inv)
 
@@ -474,10 +463,9 @@ def ar_linear(x, n_out, m_prev, is_final, init, scope, is_sigma=False):
 
         else:
             if m_prev is None:
-                assert is_final == False
                 m_prev = np.arange(Kin) + 1
-                m = np.random.randint(low=1, high=Kin, size=Kout)
-            elif is_final:
+
+            if is_final:
                 m = np.arange(Kout)
             else:
                 m = np.random.randint(low=np.min(m_prev), high=Kin, size=Kout)

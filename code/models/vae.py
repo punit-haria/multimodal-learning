@@ -53,12 +53,12 @@ class VAE(base.Model):
         self._model(x_init, init=True)
 
         # variational autoencoder
-        self.z_mu, self.z_sigma, self.z, self.log_q, self.rx, self.rx_probs = self._model(self.x, init=False)
+        self.z_mu, self.z_sigma, self.z, log_q, self.rx, self.rx_probs = self._model(self.x, init=False)
 
         # reconstruction and penalty terms
         self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
         self.l2 = self._penalty(mu=self.z_mu, sigma=self.z_sigma,
-                                log_q=self.log_q, z_K=self.z, scope='penalty')
+                                log_q=log_q, z_K=self.z, scope='penalty')
 
         # training and test bounds
         self.bound = self._variational_bound(scope='lower_bound')
@@ -117,9 +117,10 @@ class VAE(base.Model):
                 n_layers = self.args['flow_layers']
                 n_units = self.args['flow_units']
                 flow_type = self.args['flow_type']
-                z, log_q, self.log_q_part_1, self.log_q_part_2, self.log_q_part_3 = \
-                    nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers,
-                                        n_units=n_units, flow_type=flow_type, init=init, scope='normalizing_flow')
+
+                z, log_q = nw.normalizing_flow(mu0, sigma0, h=h, epsilon=epsilon, K=n_layers, n_units=n_units,
+                                               flow_type=flow_type, init=init, scope='normalizing_flow')
+
             else:
                 z = mu0 + tf.multiply(sigma0, epsilon)
                 log_q = None
@@ -176,11 +177,22 @@ class VAE(base.Model):
                 log_p = -(D / 2) * np.log(2*np.pi)  - tf.reduce_sum(tf.square(z_K), axis=1)
 
                 self.log_p = log_p
+                self.loq_q = log_q
 
                 return tf.reduce_mean(-log_q + log_p, axis=0)
 
             else:
-                l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+                D = self.n_z
+                log_p = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma), axis=1)
+                log_q = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma), axis=1)
+
+                self.log_p = log_p
+                self.loq_q = log_q
+
+                l2 = log_p - log_q
+
+                #l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+
                 return tf.reduce_mean(l2, axis=0)
 
 
@@ -195,7 +207,7 @@ class VAE(base.Model):
         with tf.variable_scope(scope):
             alpha = self.args['anneal']
 
-            if alpha > 0:
+            if alpha < 0:
                 if self.is_flow:
                     print("WARNING: DON'T USE CURRENT FREEBITS IMPLEMENTATION WITH NORMALIZING FLOWS!")
                 l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
@@ -257,12 +269,8 @@ class VAE(base.Model):
 
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
-            if self.is_flow:
-                tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
-                tf.summary.scalar('penalty_log_q_part_1', tf.reduce_mean(self.log_q_part_1, axis=0))
-                tf.summary.scalar('penalty_log_q_part_2', tf.reduce_mean(self.log_q_part_2, axis=0))
-                tf.summary.scalar('penalty_log_q_part_3', tf.reduce_mean(self.log_q_part_3, axis=0))
-                tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
+            tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
+            tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
 
             return tf.summary.merge_all()
 

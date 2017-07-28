@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'bias_plus_2'
+experiment_name = 'vanilla_separated'
 
 
 models = [
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         #["fc", True, False, 2, 320, "fc"],
         #["fc", True, False, 2, 512, "fc"],
         #["fc", True, False, 2, 128, "fc"],
-        ["fc", True, False, 2, 320, "made"]
+        ["fc", False, False, 1, 320, "made"]
     ]
     '''
     ["cnn", False, False, 1, 512, "made"],
