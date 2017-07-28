@@ -134,27 +134,48 @@ class VAE(base.Model):
             n_units = self.args['n_units']
             n_fmaps = self.args['n_feature_maps']
             n_layers = self.args['n_pixelcnn_layers']
+            n_x = self.n_x
+            n_ch = self.n_ch
+
+            if self.dataset == "mnist":
+                n_cats = 1
+            else:
+                n_cats = 256
 
             if self.nw_type == "fc":
-                z = nw.fc_decode(z, n_units=n_units, n_x=self.n_x, init=init, scope='fc_network')
+                if not self.is_autoregressive:
+                    n_x = n_x * n_cats
+
+                z = nw.fc_decode(z, n_units=n_units, n_x=n_x, init=init, scope='fc_network')
 
             elif self.nw_type == "cnn":
-                if self.dataset == "mnist":
-                    z = nw.deconvolution_mnist(z, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                                init=init, scope='deconv_network')
+                if not self.is_autoregressive:
+                    n_ch = n_ch * n_cats
+
+                z = nw.deconvolution_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                           init=init, scope='deconv_network')
+            else:
+                raise NotImplementedError
 
             if self.is_autoregressive:
                 x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
-                z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch]) if len(z.get_shape()) == 2 else z
+                z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
 
-                rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, out_ch=self.n_ch,
+                n_ch = self.n_ch * n_cats
+
+                z = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, out_ch=n_ch,
                                               n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
-                logits = tf.reshape(rx, shape=[-1, self.n_x])
 
+            if self.dataset == "mnist":
+                logits = tf.reshape(z, shape=[-1, self.n_x])
+                probs = tf.nn.sigmoid(logits)
+
+            elif self.dataset == "color":
+                logits = tf.reshape(z, shape=[-1, self.n_x, n_cats])
+                probs = tf.nn.softmax(logits, dim=-1)
             else:
-                logits = tf.contrib.layers.flatten(z) if len(z.get_shape()) > 2 else z
+                raise NotImplementedError
 
-            probs = tf.nn.sigmoid(logits)
 
             return logits, probs
 
@@ -163,8 +184,20 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope):
 
-            l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
-            return tf.reduce_mean(l1, axis=0)
+            if self.dataset == "mnist":
+                l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+                l1 = tf.reduce_mean(l1, axis=0)
+
+            elif self.dataset == "color":
+                labels = tf.cast(labels * 255, dtype=tf.int32)   # integers [0,255] inclusive
+                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+                l1 = tf.reduce_sum(l1, axis=1)
+                l1 = tf.reduce_mean(l1, axis=0)
+
+            else:
+                raise NotImplementedError
+
+            return l1
 
 
     def _penalty(self, mu, sigma, log_q, z_K, scope):

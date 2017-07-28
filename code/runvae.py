@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'flows'
+experiment_name = 'nf'
 
 
 models = [
@@ -29,11 +29,11 @@ parms = {
 
     # network parameters
     'n_units': 450,
-    'n_feature_maps': 16,
+    'n_feature_maps': 32,
 
     # normalizing flow parameters
-    'flow_units': 512, #320,
-    'flow_layers': 1,
+    'flow_units': 320,
+    'flow_layers': 2,
     'flow_type': "cnn",  # cnn, made
 
     # autoregressive model parameters
@@ -43,46 +43,27 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.002,
+    'learning_rate': 0.001,
     'batch_size': 128,
     'n_conditional_pixels': 300,
-    'test_sample_size': 1000,
-    'train_steps': 20000,
+    'test_sample_size': 500,
+    'train_steps': 50,
     'test_steps': 50,
-    'save_steps': 20000
+    'save_steps': 10000
 }
 
 
 if __name__ == "__main__":
 
-    # type, flow, autoregressive, flow_layers, flow_units, flow_type
+    # type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers
 
     configs = [
-        ["fc", False, False, 2, 320, "made"],
-        ["fc", True, False, 2, 320, "made"],
-        ["fc", True, False, 2, 1920, "made"],
-        ["fc", True, False, 4, 1920, "made"],
-        ["fc", True, False, 8, 1920, "made"]
+        ["cnn", False, 2, 320, "made", False, 3],
+        ["cnn", True, 2, 320, "made", False, 3],
+        ["cnn", True, 2, 1024, "made", False, 3],
+        ["cnn", True, 4, 1024, "made", False, 3],
+        ["cnn", True, 8, 1024, "made", False, 3]
     ]
-    '''
-    ["cnn", False, False, 1, 512, "made"],
-    ["cnn", False, True, 1, 512, "made"],
-
-    ["fc", True, False, 2, 512, "made"],
-    ["fc", True, False, 4, 512, "made"],
-    ["fc", True, False, 4, 1536, "made"],
-    ["fc", True, False, 8, 512, "made"],
-
-    ["cnn", True, False, 2, 512, "made"],
-    ["cnn", True, False, 4, 1536, "made"],
-
-    ["cnn", True, True, 2, 512, "made"],
-    ["cnn", True, True, 4, 1536, "made"],
-
-    ["cnn", True, False, 2, 512, "cnn"],
-    ["cnn", True, False, 4, 512, "cnn"],
-    ["cnn", True, True, 2, 512, "cnn"],
-    '''
 
 
     mnist = MNIST()    # data
@@ -91,21 +72,26 @@ if __name__ == "__main__":
     for c in configs:
 
         parms['type'] = c[0]
+
         parms['flow'] = c[1]
-        parms['autoregressive'] = c[2]
-        parms['flow_layers'] = c[3]
-        parms['flow_units'] = c[4]
-        parms['flow_type'] = c[5]
+        parms['flow_layers'] = c[2]
+        parms['flow_units'] = c[3]
+        parms['flow_type'] = c[4]
+
+        parms['autoregressive'] = c[5]
+        parms['n_pixelcnn_layers'] = c[6]
 
         for name, model in models.items():
 
             #name = experiment_name + "_" + name
 
             name = experiment_name + "_" + c[0]
-            if c[2]:
-                name += "_autoregressive"
+
             if c[1]:
-                name += "_flow_" + str(c[3]) + "_" + str(c[4]) + "_" + c[5]
+                name += "_flow_" + str(c[2]) + "_" + str(c[3]) + "_" + c[4]
+
+            if c[5]:
+                name += "_autoregressive_" + str(c[6])
 
             train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
 
