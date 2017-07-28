@@ -148,7 +148,7 @@ class VAE(base.Model):
                 x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
                 z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch]) if len(z.get_shape()) == 2 else z
 
-                rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, ka=3, kb=3, out_ch=self.n_ch,
+                rx = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, out_ch=self.n_ch,
                                               n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
                 logits = tf.reshape(rx, shape=[-1, self.n_x])
 

@@ -294,7 +294,7 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
         return c
 
 
-def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
+def conditional_pixel_cnn(x, z, n_layers, out_ch, n_feature_maps, init, scope):
     """
     Conditional PixelCNN
     """
@@ -302,14 +302,18 @@ def conditional_pixel_cnn(x, z, n_layers, ka, kb, out_ch, n_feature_maps, init, 
 
         n_ch = n_feature_maps
         nonlinearity = tf.nn.elu
+        ka = 3
+        kb = 3
 
-        cx = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
-        cz = conv(z, k=ka, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='layer_1z')
-        c = cx + cz
+        c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+
+        z = nonlinearity(z)
 
         for i in range(n_layers):
-            name = 'residual_block_' + str(i + 2)
-            c = masked_residual_block(c, kb, nonlinearity, init=init, scope=name)
+            cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
+            c = c + cz
+
+            c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
 
         c = nonlinearity(c)
 
@@ -356,7 +360,7 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
             if flow_type == "cnn":
                 m, s = pixelcnn_flow(z, h=h, init=init, scope='cnn_flow_'+str(i+1))
             else:
-                m, s = made_network(z, h=h, n_units=n_units, init=init, scope='made_flow_'+str(i+1))
+                m, s = made_flow(z, h=h, n_units=n_units, init=init, scope='made_flow_'+str(i+1))
 
             sigma = tf.nn.sigmoid(s)
 
@@ -367,7 +371,7 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
 
 
 
-def made_network(z, h, n_units, init, scope):
+def made_flow(z, h, n_units, init, scope):
     """
     Masked Network (MADE) based on https://arxiv.org/abs/1502.03509
     used as single normalizing flow transform.
