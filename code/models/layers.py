@@ -363,6 +363,10 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
             else:
                 m, s = made_network(z, h=h, n_units=n_units, init=init, scope='made_flow_'+str(i+1))
 
+            s_mu, s_var = tf.nn.moments(s, axes=[0,1])
+            tf.summary.scalar("s_mean", s_mu)
+            tf.summary.scalar("s_var", s_var)
+
             sigma = tf.nn.sigmoid(s)
 
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
@@ -385,19 +389,21 @@ def made_network(z, h, n_units, init, scope):
         n_z = z.get_shape()[1].value
         m = None
 
-        h = linear(h, n_out=n_z, init=init, scope='h_layer')
-        h = nonlinearity(h)
-
-        z = z + h
+        #h = linear(h, n_out=n_z, init=init, scope='layer_h')
+        #h = nonlinearity(h)
+        #z = z + h
 
         z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_1')
         z = nonlinearity(z)
 
-        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2_z')
+        h = ar_mult(h, n_out=n_units, init=init, scope='layer_h')
+        z = nonlinearity(z + h)
+
+        #z, m = ar_linear(z, n_out=n_units, m_prev=m, is_final=False, init=init, scope='layer_2')
         #z = nonlinearity(z)
 
         mu, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_m')
-        s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, init=init, scope='layer_s')
+        s, _ = ar_linear(z, n_out=n_z, m_prev=m, is_final=True, is_sigma=True, init=init, scope='layer_s')
 
         return mu, s
 
@@ -432,7 +438,7 @@ def pixelcnn_flow(z, h, init, scope):
         return m, s
 
 
-def ar_linear(x, n_out, m_prev, is_final, init, scope):
+def ar_linear(x, n_out, m_prev, is_final, init, scope, is_sigma=False):
     """
     Masked linear transform based on MADE network (https://arxiv.org/abs/1502.03509)
     Results in autoregressive relationship between input and output.
@@ -455,7 +461,11 @@ def ar_linear(x, n_out, m_prev, is_final, init, scope):
             inv = 1 / tf.sqrt(var_t + 1e-10)
 
             _ = tf.get_variable("g", initializer=inv)
-            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            if is_sigma:
+                _ = tf.get_variable("b", shape=[Kout], initializer=tf.constant_initializer(2))
+            else:
+                _ = tf.get_variable("b", initializer=-mu_t * inv)
 
             inv = tf.reshape(inv, shape=[1, n_out])
             mu_t = tf.reshape(mu_t, shape=[1, n_out])

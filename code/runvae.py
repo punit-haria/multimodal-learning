@@ -4,7 +4,7 @@ from data import MNIST
 from training import train, Results
 
 
-experiment_name = 'flow_experiments'
+experiment_name = 'bias_plus_2'
 
 
 models = [
@@ -34,7 +34,7 @@ parms = {
     # normalizing flow parameters
     'flow_units': 512, #320,
     'flow_layers': 1,
-    'flow_type': "cnn",  # cnn, fc
+    'flow_type': "cnn",  # cnn, made
 
     # autoregressive model parameters
     'n_pixelcnn_layers': 3,
@@ -47,7 +47,7 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 5000,
+    'train_steps': 2000,
     'test_steps': 50,
     'save_steps': 30000
 }
@@ -61,22 +61,22 @@ if __name__ == "__main__":
         #["fc", True, False, 2, 320, "fc"],
         #["fc", True, False, 2, 512, "fc"],
         #["fc", True, False, 2, 128, "fc"],
-        ["fc", True, False, 1, 320, "fc"]
+        ["fc", True, False, 2, 320, "made"]
     ]
     '''
-    ["cnn", False, False, 1, 512, "fc"],
-    ["cnn", False, True, 1, 512, "fc"],
+    ["cnn", False, False, 1, 512, "made"],
+    ["cnn", False, True, 1, 512, "made"],
 
-    ["fc", True, False, 2, 512, "fc"],
-    ["fc", True, False, 4, 512, "fc"],
-    ["fc", True, False, 4, 1536, "fc"],
-    ["fc", True, False, 8, 512, "fc"],
+    ["fc", True, False, 2, 512, "made"],
+    ["fc", True, False, 4, 512, "made"],
+    ["fc", True, False, 4, 1536, "made"],
+    ["fc", True, False, 8, 512, "made"],
 
-    ["cnn", True, False, 2, 512, "fc"],
-    ["cnn", True, False, 4, 1536, "fc"],
+    ["cnn", True, False, 2, 512, "made"],
+    ["cnn", True, False, 4, 1536, "made"],
 
-    ["cnn", True, True, 2, 512, "fc"],
-    ["cnn", True, True, 4, 1536, "fc"],
+    ["cnn", True, True, 2, 512, "made"],
+    ["cnn", True, True, 4, 1536, "made"],
 
     ["cnn", True, False, 2, 512, "cnn"],
     ["cnn", True, False, 4, 512, "cnn"],
