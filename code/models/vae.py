@@ -57,7 +57,7 @@ class VAE(base.Model):
 
         # reconstruction and penalty terms
         self.l1 = self._reconstruction(logits=self.rx, labels=self.x, scope='reconstruction')
-        self.l2 = self._penalty(mu=self.z_mu, sigma=self.z_sigma,
+        self.l2, self.log_q, self.log_p = self._penalty(mu=self.z_mu, sigma=self.z_sigma,
                                 log_q=log_q, z_K=self.z, scope='penalty')
 
         # training and test bounds
@@ -206,25 +206,28 @@ class VAE(base.Model):
             if self.is_flow:
                 D = z_K.get_shape()[1].value
 
-                log_p = -(D / 2) * np.log(2*np.pi)  -  0.5 * tf.reduce_sum(tf.square(z_K), axis=1)
+                log_p = -0.5 * tf.square(z_K)  - (D / 2) * np.log(2*np.pi)
 
-                self.log_p = log_p
-                self.log_q = log_q
+                #self.log_p = -(D / 2) * np.log(2*np.pi)  -  0.5 * tf.reduce_sum(tf.square(z_K), axis=1)
 
-                return tf.reduce_mean(-log_q + log_p, axis=0)
+                penalty = tf.reduce_sum(-log_q + log_p, axis=1)
+                penalty = tf.reduce_mean(penalty, axis=0)
 
             else:
 
-                #D = self.n_z
+                D = self.n_z
+
+                log_p = -0.5*(tf.square(mu) + tf.square(sigma)) - (D / 2)*np.log(2*np.pi)
+                log_q = -0.5*(1 + 2*tf.log(sigma)) - (D / 2)*np.log(2*np.pi)
+
                 #log_p = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma), axis=1)
                 #log_q = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma), axis=1)
-                #self.log_p = log_p
-                #self.log_q = log_q
-                #l2 = log_p - log_q
 
-                l2 = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+                penalty = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+                penalty = tf.reduce_mean(penalty, axis=0)
 
-                return tf.reduce_mean(l2, axis=0)
+            return penalty, log_q, log_p
+
 
 
     def _variational_bound(self, scope):
@@ -301,8 +304,10 @@ class VAE(base.Model):
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
             if self.is_flow:
-                tf.summary.scalar('penalty_log_q', tf.reduce_mean(self.log_q, axis=0))
-                tf.summary.scalar('penalty_log_p', tf.reduce_mean(self.log_p, axis=0))
+                lq = tf.reduce_sum(self.log_q, axis=1)
+                tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
+                lp = tf.reduce_sum(self.log_p, axis=1)
+                tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
 
             return tf.summary.merge_all()
 

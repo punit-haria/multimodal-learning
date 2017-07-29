@@ -351,7 +351,8 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
 
         z = mu0 + tf.multiply(sigma0, epsilon)
 
-        log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
+        #log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
+        log_q = tf.log(sigma0) + 0.5*tf.square(epsilon) + 0.5*np.log(2*np.pi)
 
         for i in range(K):
             if i > 0:
@@ -365,7 +366,9 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
             sigma = tf.nn.sigmoid(s)
 
             z = tf.multiply(sigma, z) + tf.multiply(1-sigma, m)
-            log_q = log_q - tf.reduce_sum(tf.log(sigma), axis=1)
+
+            #log_q = log_q - tf.reduce_sum(tf.log(sigma), axis=1)
+            log_q = log_q - tf.log(sigma)
 
         return z, log_q
 
@@ -643,15 +646,20 @@ def linear(x, n_out, init, scope):
             return tf.multiply(scaling, x) + b
 
 
-def freebits_penalty(mu, sigma, alpha):
+def freebits_penalty(mu, sigma, alpha, flow):
     """
     Freebits penalty function as specified in the Inverse Autoregressive Flow paper (Kingma et al).
     """
-    l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
-    l2 = tf.reduce_mean(l2, axis=0)
-    l2 = tf.minimum(l2, alpha)
+    if flow: # using normalizing flow
+        pass
 
-    return tf.reduce_sum(l2)
+    else:
+        l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
+        l2 = tf.reduce_mean(l2, axis=0)
+        l2 = tf.minimum(l2, alpha)
+        l2 = tf.reduce_sum(l2, axis=1)
+
+    return l2
 
 
 def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm'):
