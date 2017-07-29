@@ -213,8 +213,6 @@ class VAE(base.Model):
 
             else:
 
-                D = self.n_z
-
                 log_p = -0.5*(tf.square(mu) + tf.square(sigma)) #- (D / 2)*np.log(2*np.pi)
                 log_q = -0.5*(1 + 2*tf.log(sigma)) #- (D / 2)*np.log(2*np.pi)
 
@@ -240,7 +238,7 @@ class VAE(base.Model):
                 # free bits penalty  (also works with normalizing flows)
                 l2 = tf.reduce_mean(-self.log_q + self.log_p, axis=0)
                 l2 = tf.minimum(l2, alpha)
-                l2 = tf.reduce_sum(l2, axis=1)
+                l2 = tf.reduce_sum(l2)
 
             else:
                 l2 = self.l2
