@@ -40,11 +40,11 @@ parms = {
     'n_pixelcnn_layers': 3,
 
     # loss function parameters
-    'anneal': -0.125,  # 0, -0.0625, -0.125, -0.25
+    'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.001,
-    'batch_size': 64,
+    'learning_rate': 0.002,
+    'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
     'train_steps': 10000,
@@ -83,9 +83,9 @@ if __name__ == "__main__":
         parms['autoregressive'] = c[5]
         parms['n_pixelcnn_layers'] = c[6]
 
-        for name, model in models.items():
+        parms['anneal'] = c[7]
 
-            #name = experiment_name + "_" + name
+        for name, model in models.items():
 
             name = experiment_name + "_" + c[0]
 
