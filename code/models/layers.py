@@ -646,22 +646,6 @@ def linear(x, n_out, init, scope):
             return tf.multiply(scaling, x) + b
 
 
-def freebits_penalty(mu, sigma, alpha, flow):
-    """
-    Freebits penalty function as specified in the Inverse Autoregressive Flow paper (Kingma et al).
-    """
-    if flow: # using normalizing flow
-        pass
-
-    else:
-        l2 = 0.5 * (1 + 2 * tf.log(sigma) - tf.square(mu) - tf.square(sigma))
-        l2 = tf.reduce_mean(l2, axis=0)
-        l2 = tf.minimum(l2, alpha)
-        l2 = tf.reduce_sum(l2, axis=1)
-
-    return l2
-
-
 def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm'):
     """
     Batch normalization layer

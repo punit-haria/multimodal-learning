@@ -208,8 +208,6 @@ class VAE(base.Model):
 
                 log_p = -0.5 * tf.square(z_K)  - (D / 2) * np.log(2*np.pi)
 
-                #self.log_p = -(D / 2) * np.log(2*np.pi)  -  0.5 * tf.reduce_sum(tf.square(z_K), axis=1)
-
                 penalty = tf.reduce_sum(-log_q + log_p, axis=1)
                 penalty = tf.reduce_mean(penalty, axis=0)
 
@@ -217,11 +215,8 @@ class VAE(base.Model):
 
                 D = self.n_z
 
-                log_p = -0.5*(tf.square(mu) + tf.square(sigma)) - (D / 2)*np.log(2*np.pi)
-                log_q = -0.5*(1 + 2*tf.log(sigma)) - (D / 2)*np.log(2*np.pi)
-
-                #log_p = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(tf.square(mu) + tf.square(sigma), axis=1)
-                #log_q = -(D / 2) * np.log(2*np.pi)  - 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma), axis=1)
+                log_p = -0.5*(tf.square(mu) + tf.square(sigma)) #- (D / 2)*np.log(2*np.pi)
+                log_q = -0.5*(1 + 2*tf.log(sigma)) #- (D / 2)*np.log(2*np.pi)
 
                 penalty = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
                 penalty = tf.reduce_mean(penalty, axis=0)
@@ -242,9 +237,11 @@ class VAE(base.Model):
             alpha = self.args['anneal']
 
             if alpha < 0:
-                if self.is_flow:
-                    print("WARNING: DON'T USE CURRENT FREEBITS IMPLEMENTATION WITH NORMALIZING FLOWS!")
-                l2 = nw.freebits_penalty(self.z_mu, self.z_sigma, alpha)
+                # free bits penalty  (also works with normalizing flows)
+                l2 = tf.reduce_mean(-self.log_q + self.log_p, axis=0)
+                l2 = tf.minimum(l2, alpha)
+                l2 = tf.reduce_sum(l2, axis=1)
+
             else:
                 l2 = self.l2
 
@@ -304,9 +301,12 @@ class VAE(base.Model):
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
             if self.is_flow:
-                lq = tf.reduce_sum(self.log_q, axis=1)
+                c = - (self.n_z / 2)*np.log(2*np.pi)
+
+                lq = tf.reduce_sum(self.log_q - c, axis=1)
                 tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
-                lp = tf.reduce_sum(self.log_p, axis=1)
+
+                lp = tf.reduce_sum(self.log_p - c, axis=1)
                 tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
 
             return tf.summary.merge_all()
