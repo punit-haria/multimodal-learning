@@ -64,7 +64,7 @@ def image_plot(tracker, models, data, n_rows, n_cols,
         parms['n_conditional_pixels'] = n_pixels
 
         if suffix is None:
-            suffix = '_' + str(parms['train_steps'])
+            suffix = str(parms['train_steps'])
 
         model = initialize(name, _model, parms, data, tracker)
         model.load_state(suffix=suffix)

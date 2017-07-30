@@ -3,7 +3,7 @@ from training import Results
 from results import image_plot
 
 
-from runvae import models, parms, experiment_name
+from runvae import models, experiment_name
 
 
 
