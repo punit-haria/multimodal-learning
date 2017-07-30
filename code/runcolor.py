@@ -22,13 +22,13 @@ parms = {
     'flow': False,
 
     # basic parameters
-    'n_z': 49,  # 32, 49, 200
+    'n_z': 100,  # 32, 49, 200
     'height': 32,
     'width': 32,
     'n_channels': 3,
 
     # network parameters
-    'n_units': 450,
+    'n_units': 500,
     'n_feature_maps': 32,
 
     # normalizing flow parameters
@@ -47,9 +47,9 @@ parms = {
     'batch_size': 64,
     'n_conditional_pixels': 300,
     'test_sample_size': 500,
-    'train_steps': 10000,
+    'train_steps': 80000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 20000
 }
 
 

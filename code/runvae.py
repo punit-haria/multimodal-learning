@@ -4,7 +4,7 @@ from data import MNIST, ColouredMNIST
 from training import train, Results
 
 
-experiment_name = 'exp'
+experiment_name = 'test'
 
 
 models = [
