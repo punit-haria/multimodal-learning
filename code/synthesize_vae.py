@@ -13,17 +13,7 @@ tracker = Results.load(experiment_name)  # performance tracker
 data = CIFAR()    # MNIST, CIFAR
 
 
+syntheses = ['reconstruct', 'sample', 'fix_latents', 'latent_activations']
 
-image_plot(tracker, models, data=data, suffix=None, n_rows=8, n_cols=8, n_pixels=300,
-           spacing=0, synthesis_type='fix_latents')
-
-image_plot(tracker, models, data=data, suffix=None, n_rows=8, n_cols=8, n_pixels=300,
-           spacing=0, synthesis_type='reconstruct')
-
-image_plot(tracker, models, data=data, suffix=None, n_rows=8, n_cols=8, n_pixels=300,
-           spacing=0, synthesis_type='sample')
-
-image_plot(tracker, models, data=data, suffix=None, n_rows=8, n_cols=8, n_pixels=300,
-           spacing=0, synthesis_type='latent_activations')
-
-
+image_plot(tracker, models, data=data, suffix=None, syntheses=syntheses,
+           n_rows=8, n_cols=8, n_pixels=300, spacing=0, )

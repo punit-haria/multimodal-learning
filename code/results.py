@@ -46,8 +46,8 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 
 
 
-def image_plot(tracker, models, data, n_rows, n_cols,
-               n_pixels=300, spacing=0, suffix=None, synthesis_type='reconstruct'):
+def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
+               n_pixels=300, spacing=0, suffix=None):
 
     n_images = n_rows * n_cols
     assert n_images % 2 == 0
@@ -68,26 +68,28 @@ def image_plot(tracker, models, data, n_rows, n_cols,
         model = initialize(name, _model, parms, data, tracker)
         model.load_state(suffix=suffix)
 
-        path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type
+        for synthesis_type in syntheses:
 
-        if synthesis_type == 'reconstruct':
-            images = reconstruction(model, data, n_rows, n_cols)
-            _image_plot(images, parms, spacing, path)
+            path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type
 
-        elif synthesis_type == 'fix_latents':
-            images = fix_latents(model, data, n_rows, n_cols)
-            _image_plot(images, parms, spacing, path)
+            if synthesis_type == 'reconstruct':
+                images = reconstruction(model, data, n_rows, n_cols)
+                _image_plot(images, parms, spacing, path)
 
-        elif synthesis_type == 'sample':
-            x, rx = separate_samples(model, data, n_rows, n_cols)
-            _image_plot(x, parms, spacing, path+'__test')
-            _image_plot(rx, parms, spacing, path+'__model')
+            elif synthesis_type == 'fix_latents':
+                images = fix_latents(model, data, n_rows, n_cols)
+                _image_plot(images, parms, spacing, path)
 
-        elif synthesis_type == 'latent_activations':
-            latent_activation_plot(model, data, 1000, path)
+            elif synthesis_type == 'sample':
+                x, rx = separate_samples(model, data, n_rows, n_cols)
+                _image_plot(x, parms, spacing, path+'__test')
+                _image_plot(rx, parms, spacing, path+'__model')
 
-        else:
-            raise NotImplementedError
+            elif synthesis_type == 'latent_activations':
+                latent_activation_plot(model, data, 1000, path)
+
+            else:
+                raise NotImplementedError
 
         model.close()
 
