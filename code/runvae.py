@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["color", "fc", True, 1, 320, "made", False, 6, -0.125]
+        ["color", "fc", False, 1, 320, "made", False, 6, 0]
     ]
 
     if configs[0][0] == "color":
