@@ -1,16 +1,16 @@
-from data import MNIST, ColouredMNIST
+from data import MNIST, CIFAR
 from training import Results
 from results import image_plot
 
 
-from runvae import models, experiment_name
+from runcolor import models, experiment_name
 
 
 
 tracker = Results.load(experiment_name)  # performance tracker
 
 
-data = MNIST()    # ColouredMNIST(50000)
+data = CIFAR()    # MNIST, CIFAR
 
 
 

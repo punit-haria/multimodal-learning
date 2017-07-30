@@ -315,10 +315,10 @@ class VAE(base.Model):
         Sample from probabilities rx in a factorized way.
         """
         if self.n_ch == 3:
-            rxp = self._categorical_sampling(rx)
+            rxp = self._categorical_sampling(rx) / 255
+
         elif self.n_ch == 1:
             rxp = np.random.binomial(n=1, p=rx)
-
         else:
             raise NotImplementedError
 

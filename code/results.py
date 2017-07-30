@@ -202,8 +202,6 @@ def fix_latents(model, data, n_rows, n_cols):
     return images
 
 
-
-
 def _image_plot(images, parms, spacing, path):
 
     h = parms['height']

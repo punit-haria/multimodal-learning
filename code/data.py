@@ -524,13 +524,24 @@ class CIFAR(object):
             ytr.extend(y)
 
         xtr = np.concatenate(xtr, axis=0)
+        xtr = self._transpose(xtr)
         ytr = np.array(ytr)
 
         path = prefix + "test_batch"
         xte, yte = self._unpickle(path)
+        xte = self._transpose(xte)
         yte = np.array(yte)
 
         return xtr, ytr, xte, yte
+
+
+    def _transpose(self, x):
+
+        x = np.reshape(x, newshape=[-1, 3, 32, 32])
+        x = np.transpose(x, axes=(0,2,3,1))
+        x = np.reshape(x, newshape=[-1, 3072])
+
+        return x
 
 
     def _unpickle(self, f_name):
