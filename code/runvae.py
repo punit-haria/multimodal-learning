@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name = experiment_name + "_" + c[0] + "_" + c[1]
+            name =  c[0] + "_" + c[1]
 
             if c[2]:
                 name += "_flow_" + str(c[3]) + "_" + str(c[4]) + "_" + c[5]
