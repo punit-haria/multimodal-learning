@@ -147,7 +147,7 @@ def reconstruction(model, data, n_rows, n_cols):
     images[1::2] = rx
 
     images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
-    images = np.transpose(images, axes=[1,0,2])
+    #images = np.transpose(images, axes=[1,0,2])
 
     return images
 
@@ -193,11 +193,11 @@ def fix_latents(model, data, n_rows, n_cols):
     images = np.empty((n_rows, n_cols, n_x))
 
     for i in range(n_rows):
-        for j in range(n_vary):
-            if i == 0:
+        for j in range(n_cols):
+            if j == 0:
                 images[i,j,:] = x[i]
             else:
-                images[i,j,:] = rxs[j][i]
+                images[i,j,:] = rxs[j-1][i]
 
     return images
 
