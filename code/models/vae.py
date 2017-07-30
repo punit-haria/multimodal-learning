@@ -276,12 +276,21 @@ class VAE(base.Model):
         for i in range(remain):
             feed = {self.z: z, self.x: x, self.is_training: False}
             probs = self.sess.run(self.rx_probs, feed_dict=feed)
-            probs = np.reshape(probs, newshape=[-1, h, w, ch])
 
             hp, wp = _locate_2d(n_pixels + i, w)
 
             x = np.reshape(x, newshape=[-1, h, w, ch])
-            x[:, hp, wp, :] = np.random.binomial(n=1, p=probs[:, hp, wp, :])
+
+            if self.dataset == "color":
+                probs = np.reshape(probs, newshape=[-1, h, w, ch, 256])
+                probs = probs[:, hp, wp, :, :]
+                x[:, hp, wp, :] = self._categorical_sampling(probs)
+
+            else:
+                probs = np.reshape(probs, newshape=[-1, h, w, ch])
+                probs = probs[:, hp, wp, :]
+                x[:, hp, wp, :] = np.random.binomial(n=1, p=probs)
+
             x = np.reshape(x, newshape=[-1, n_x])
 
         return x
@@ -292,16 +301,24 @@ class VAE(base.Model):
         Sample from probabilities rx in a factorized way.
         """
         if self.dataset == "color":
-            h = rx.shape[0]
-            w = rx.shape[1]
-            rxp = np.empty([h, w], dtype=rx.dtype)
-
-            for i in range(h):
-                for j in range(w):
-                    rxp[i, j] = np.random.choice(a=256, p=rx[i, j])
-
+            rxp = self._categorical_sampling(rx)
         else:
             rxp = np.random.binomial(n=1, p=rx)
+
+        return rxp
+
+
+    def _categorical_sampling(self, rx):
+        """
+        Categorical sampling. Probabilities assumed to be on third dimension of three dimensional vector.
+        """
+        h = rx.shape[0]
+        w = rx.shape[1]
+        rxp = np.empty([h, w], dtype=rx.dtype)
+
+        for i in range(h):
+            for j in range(w):
+                rxp[i, j] = np.random.choice(a=256, p=rx[i, j])
 
         return rxp
 
