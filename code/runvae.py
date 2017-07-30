@@ -1,5 +1,5 @@
 from models import vae
-from data import MNIST
+from data import MNIST, ColouredMNIST
 
 from training import train, Results
 
@@ -55,46 +55,49 @@ parms = {
 
 if __name__ == "__main__":
 
-    # type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["fc", True, 1, 320, "made", False, 6, -0.125]
-        #["cnn", False, 2, 320, "made", True, 6, -0.125],
-        #["cnn", False, 2, 320, "made", True, 6, -0.25],
-        #["fc", True, 8, 320, "made", False, 5, -0.125],
-        #["fc", True, 4, 320, "made", False, 5, -0.125]
+        ["color", "fc", True, 1, 320, "made", False, 6, -0.125]
     ]
 
+    if configs[0][0] == "color":
+        data = ColouredMNIST(50000)
+    else:
+        data = MNIST()
 
-    mnist = MNIST()    # data
     tracker = Results(experiment_name)  # performance tracker
 
     for c in configs:
 
-        parms['type'] = c[0]
+        parms['data'] = c[0]
+        if c[0] == "color":
+            parms['n_channels'] = 3
 
-        parms['flow'] = c[1]
-        parms['flow_layers'] = c[2]
-        parms['flow_units'] = c[3]
-        parms['flow_type'] = c[4]
+        parms['type'] = c[1]
 
-        parms['autoregressive'] = c[5]
-        parms['n_pixelcnn_layers'] = c[6]
+        parms['flow'] = c[2]
+        parms['flow_layers'] = c[3]
+        parms['flow_units'] = c[4]
+        parms['flow_type'] = c[5]
 
-        parms['anneal'] = c[7]
+        parms['autoregressive'] = c[6]
+        parms['n_pixelcnn_layers'] = c[7]
+
+        parms['anneal'] = c[8]
 
         for name, model in models.items():
 
-            name = experiment_name + "_" + c[0]
+            name = experiment_name + "_" + c[0] + "_" + c[1]
 
-            if c[1]:
-                name += "_flow_" + str(c[2]) + "_" + str(c[3]) + "_" + c[4]
+            if c[2]:
+                name += "_flow_" + str(c[3]) + "_" + str(c[4]) + "_" + c[5]
 
-            if c[5]:
-                name += "_autoregressive_" + str(c[6])
+            if c[6]:
+                name += "_autoregressive_" + str(c[7])
 
-            if c[7] < 0:
-                name += "_anneal_" + str(c[7])
+            if c[8] < 0:
+                name += "_anneal_" + str(c[8])
 
-            train(name=name, model=model, parameters=parms, data=mnist, tracker=tracker)
+            train(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 

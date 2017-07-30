@@ -287,7 +287,7 @@ class ColouredMNIST(MNIST):
         self.x_only = set(np.random.choice(list(_remain), size=_x_size, replace=False))
         self.y_only = set(np.array(list(_remain - set(self.x_only))))
 
-    def sample(self, dtype='train', batch_size=100, include_labels=False):
+    def sample(self, batch_size=100, dtype='train', include_labels=False):
         """
         Sample minibatch.
         """

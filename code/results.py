@@ -70,6 +70,7 @@ def image_plot(tracker, models, data, n_rows, n_cols,
         model.load_state(suffix=suffix)
 
         path = '../plots/' + tracker.name + '_' + name + '_' + synthesis_type
+        path = path.replace(".", "-")
 
         if synthesis_type == 'reconstruct':
             images = reconstruction(model, data, n_rows, n_cols)
