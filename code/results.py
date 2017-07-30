@@ -47,8 +47,8 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 
 
 
-def image_plot(tracker, models, data, suffix, n_rows, n_cols,
-               n_pixels=300, spacing=0, synthesis_type='reconstruct'):
+def image_plot(tracker, models, data, n_rows, n_cols,
+               n_pixels=300, spacing=0, suffix=None, synthesis_type='reconstruct'):
 
     n_images = n_rows * n_cols
     assert n_images % 2 == 0
@@ -62,6 +62,9 @@ def image_plot(tracker, models, data, suffix, n_rows, n_cols,
         _model = models[trial.model_name]
         parms = trial.parameters
         parms['n_conditional_pixels'] = n_pixels
+
+        if suffix is None:
+            suffix = '_' + str(parms['train_steps'])
 
         model = initialize(name, _model, parms, data, tracker)
         model.load_state(suffix=suffix)
@@ -88,6 +91,7 @@ def image_plot(tracker, models, data, suffix, n_rows, n_cols,
             raise NotImplementedError
 
         model.close()
+
 
 
 def latent_activation_plot(model, data, n_samples, path):

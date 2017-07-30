@@ -352,7 +352,9 @@ def normalizing_flow(mu0, sigma0, h, epsilon, K, n_units, flow_type, init, scope
         z = mu0 + tf.multiply(sigma0, epsilon)
 
         #log_q = -tf.reduce_sum(tf.log(sigma0) + 0.5 * tf.square(epsilon) + 0.5 * np.log(2 * np.pi), axis=1)
-        log_q = tf.log(sigma0) + 0.5*tf.square(epsilon) + 0.5*np.log(2*np.pi)
+
+        D = z.get_shape()[1].value
+        log_q = -tf.log(sigma0) - 0.5*tf.square(epsilon) - 0.5*np.log(2*np.pi)
 
         for i in range(K):
             if i > 0:

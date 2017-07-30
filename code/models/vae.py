@@ -204,17 +204,16 @@ class VAE(base.Model):
         with tf.variable_scope(scope):
 
             if self.is_flow:
-                D = z_K.get_shape()[1].value
 
-                log_p = -0.5 * tf.square(z_K)  - (D / 2) * np.log(2*np.pi)
+                log_p = -0.5 * tf.square(z_K)  - 0.5 * np.log(2*np.pi)
 
                 penalty = tf.reduce_sum(-log_q + log_p, axis=1)
                 penalty = tf.reduce_mean(penalty, axis=0)
 
             else:
 
-                log_p = -0.5*(tf.square(mu) + tf.square(sigma)) #- (D / 2)*np.log(2*np.pi)
-                log_q = -0.5*(1 + 2*tf.log(sigma)) #- (D / 2)*np.log(2*np.pi)
+                log_p = -0.5*(tf.square(mu) + tf.square(sigma)) #- 0.5*np.log(2*np.pi)
+                log_q = -0.5*(1 + 2*tf.log(sigma)) #- 0.5*np.log(2*np.pi)
 
                 penalty = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
                 penalty = tf.reduce_mean(penalty, axis=0)
@@ -298,14 +297,11 @@ class VAE(base.Model):
 
             tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
 
-            if self.is_flow:
-                c = - (self.n_z / 2)*np.log(2*np.pi)
-
-                lq = tf.reduce_sum(self.log_q - c, axis=1)
-                tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
-
-                lp = tf.reduce_sum(self.log_p - c, axis=1)
-                tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
+            c = 0.5 * np.log(2*np.pi)
+            lq = tf.reduce_sum(self.log_q - c, axis=1)
+            tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
+            lp = tf.reduce_sum(self.log_p - c, axis=1)
+            tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
 
             return tf.summary.merge_all()
 

@@ -47,7 +47,7 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 10000,
+    'train_steps': 500,
     'test_steps': 50,
     'save_steps': 10000
 }
@@ -58,13 +58,11 @@ if __name__ == "__main__":
     # type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", False, 2, 320, "made", True, 6, -0.125],
-        ["cnn", False, 2, 320, "made", True, 6, -0.25],
-        ["fc", True, 8, 320, "made", False, 5, -0.125],
-        ["fc", True, 4, 320, "made", False, 5, -0.125]
-        #["cnn", True, 2, 1024, "made", False, 3],
-        #["cnn", True, 4, 1024, "made", False, 3],
-        #["cnn", True, 8, 1024, "made", False, 3]
+        ["fc", True, 1, 320, "made", False, 6, -0.125]
+        #["cnn", False, 2, 320, "made", True, 6, -0.125],
+        #["cnn", False, 2, 320, "made", True, 6, -0.25],
+        #["fc", True, 8, 320, "made", False, 5, -0.125],
+        #["fc", True, 4, 320, "made", False, 5, -0.125]
     ]
 
 
