@@ -477,32 +477,24 @@ class ColouredStratifiedMNIST(ColouredMNIST):
 class CIFAR(object):
 
     def __init__(self, ):
-        self.train_path = '../data/mnist_train'
-        self.test_path = '../data/mnist_test'
-        self.train_labels_path = self.train_path + '_labels'
-        self.test_labels_path = self.test_path + '_labels'
-
-        self.Xtr, self.ytr = self._get_data(self.train_path, self.train_labels_path)
-        self.Xte, self.yte = self._get_data(self.test_path, self.test_labels_path)
-
-        self.mu = np.mean(self.Xtr, axis=0)
-        self.sigma = np.std(self.Xtr, axis=0) + 1e-12
+        self.xtr, self.ytr, self.xte, self.yte = self._get_data()
+        self.xtr = self.xtr / 255
+        self.xte = self.xte / 255
 
 
     def train_set(self, ):
-        return self.Xtr, self.ytr
+        return self.xtr, self.ytr
 
     def test_set(self, ):
-        return self.Xte, self.yte
+        return self.xte, self.yte
 
 
-    def sample(self, batch_size, dtype='train', binarize=True):
+    def sample(self, batch_size, dtype='train'):
         """
         Samples data from training or test set.
         """
         _, (X, Y) = self._sample(dtype, batch_size)
-        if binarize:
-            X = self._binarize(X)
+
         return X, Y
 
 
@@ -511,28 +503,36 @@ class CIFAR(object):
         Samples data from training set.
         """
         if dtype == 'train':
-            return sample([self.Xtr, self.ytr], batch_size)
+            return sample([self.xtr, self.ytr], batch_size)
         elif dtype == 'test':
-            return sample([self.Xte, self.yte], batch_size)
+            return sample([self.xte, self.yte], batch_size)
         else:
             raise Exception('Training or test set not selected..')
 
 
-    def _get_data(self, data_path, labels_path):
-        """
-        Reads MNIST data. Rescales image pixels to be between 0 and 1.
-        """
-        data = self._read_mnist(data_path)
-        data = data / 255
-        labels = self._read_mnist(labels_path)
+    def _get_data(self, ):
 
-        n = len(data)
-        data = data.reshape([n, -1])
+        prefix = "../data/cifar-10/"
 
-        return data, labels
+        xtr = ytr = []
+        for i in range(1,6):
+            path = prefix + "data_batch_" + str(i)
+            x, y = self._unpickle(path)
+            xtr.append(x)
+            ytr.extend(y)
 
-    def unpickle(self, f_name):
+        xtr = np.concatenate(xtr, axis=0)
+        ytr = np.array(ytr)
+
+        path = prefix + "test_batch"
+        xte, yte = self._unpickle(path)
+        yte = np.array(yte)
+
+        return xtr, ytr, xte, yte
+
+
+    def _unpickle(self, f_name):
         import pickle
         with open(f_name, 'rb') as fo:
-            dict = pickle.load(fo, encoding='bytes')
-        return dict
+            dd = pickle.load(fo, encoding='bytes')
+        return dd[b'data'], dd[b'labels']
