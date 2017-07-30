@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "cnn",              # fc, cnn
-    'data': "mnist",            # mnist, color
+    'data': "mnist",            # mnist
     'autoregressive': False,
     'flow': False,
 

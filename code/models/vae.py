@@ -100,8 +100,14 @@ class VAE(base.Model):
                                             init=init, scope='fc_network')
 
             elif self.nw_type == "cnn":
-                mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                if self.dataset == "mnist":
+                    mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                     n_z=self.n_z, extra=extra, init=init, scope='conv_network')
+                elif self.dataset == "cifar":
+                    mu, sigma, h = nw.convolution_cifar(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                        n_z=self.n_z, extra=extra, init=init, scope='conv_network')
+                else:
+                    raise NotImplementedError
 
             return mu, sigma, h
 
@@ -136,7 +142,7 @@ class VAE(base.Model):
             n_x = self.n_x
             n_ch = self.n_ch
 
-            if self.dataset == "mnist":
+            if self.n_ch == 1:
                 n_cats = 1
             else:
                 n_cats = 256
@@ -151,10 +157,15 @@ class VAE(base.Model):
                 if not self.is_autoregressive:
                     n_ch = n_ch * n_cats
 
-                z = nw.deconvolution_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                if self.dataset == "mnist":
+                    z = nw.deconvolution_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                            init=init, scope='deconv_network')
-            else:
-                raise NotImplementedError
+                elif self.dataset == "cifar":
+                    z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                               init=init, scope='deconv_network')
+
+                else:
+                    raise NotImplementedError
 
             if self.is_autoregressive:
                 x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
@@ -165,11 +176,11 @@ class VAE(base.Model):
                 z = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, out_ch=n_ch,
                                               n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
 
-            if self.dataset == "mnist":
+            if self.n_ch == 1:
                 logits = tf.reshape(z, shape=[-1, self.n_x])
                 probs = tf.nn.sigmoid(logits)
 
-            elif self.dataset == "color":
+            elif self.n_ch == 3:
                 logits = tf.reshape(z, shape=[-1, self.n_x, n_cats])
                 probs = tf.nn.softmax(logits, dim=-1)
             else:
@@ -183,11 +194,11 @@ class VAE(base.Model):
 
         with tf.variable_scope(scope):
 
-            if self.dataset == "mnist":
+            if self.n_ch == 1:
                 l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
 
-            elif self.dataset == "color":
+            elif self.n_ch == 3:
                 labels = tf.cast(labels * 255, dtype=tf.int32)   # integers [0,255] inclusive
                 l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
                 l1 = tf.reduce_sum(l1, axis=1)
@@ -281,15 +292,18 @@ class VAE(base.Model):
 
             x = np.reshape(x, newshape=[-1, h, w, ch])
 
-            if self.dataset == "color":
+            if self.n_ch == 3:
                 probs = np.reshape(probs, newshape=[-1, h, w, ch, 256])
                 probs = probs[:, hp, wp, :, :]
                 x[:, hp, wp, :] = self._categorical_sampling(probs)
 
-            else:
+            elif self.n_ch == 1:
                 probs = np.reshape(probs, newshape=[-1, h, w, ch])
                 probs = probs[:, hp, wp, :]
                 x[:, hp, wp, :] = np.random.binomial(n=1, p=probs)
+
+            else:
+                raise NotImplementedError
 
             x = np.reshape(x, newshape=[-1, n_x])
 
@@ -300,10 +314,13 @@ class VAE(base.Model):
         """
         Sample from probabilities rx in a factorized way.
         """
-        if self.dataset == "color":
+        if self.n_ch == 3:
             rxp = self._categorical_sampling(rx)
-        else:
+        elif self.n_ch == 1:
             rxp = np.random.binomial(n=1, p=rx)
+
+        else:
+            raise NotImplementedError
 
         return rxp
 

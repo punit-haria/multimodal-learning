@@ -514,10 +514,12 @@ class CIFAR(object):
 
         prefix = "../data/cifar-10/"
 
-        xtr = ytr = []
+        xtr = []
+        ytr = []
         for i in range(1,6):
             path = prefix + "data_batch_" + str(i)
             x, y = self._unpickle(path)
+
             xtr.append(x)
             ytr.extend(y)
 

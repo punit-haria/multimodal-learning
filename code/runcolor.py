@@ -4,7 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'exp'
+experiment_name = 'cifar'
 
 
 models = [
@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "cnn",              # fc, cnn
-    'data': "color",            # mnist, color
+    'data': "cifar",            # cifar
     'autoregressive': False,
     'flow': False,
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name =  "color" + "_" + c[0]
+            name =  "cifar" + "_" + c[0]
 
             if c[1]:
                 name += "_flow_" + str(c[2]) + "_" + str(c[3]) + "_" + c[4]

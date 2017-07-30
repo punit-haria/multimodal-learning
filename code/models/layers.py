@@ -3,6 +3,90 @@ import numpy as np
 
 
 
+def convolution_cifar(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope):
+    """
+    Convolution network for use with CIFAR dataset.
+    """
+    with tf.variable_scope(scope):
+
+        x = tf.reshape(x, shape=[-1, 32, 32, n_ch])
+        nonlinearity = tf.nn.elu
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_1')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_1')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_2')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=True, init=init, scope='res_3')
+        x = nonlinearity(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_2')
+        x = nonlinearity(x)  #
+
+        x = tf.contrib.layers.flatten(x)
+
+        x = linear(x, n_out=n_units, init=init, scope='linear_layer')
+        x = nonlinearity(x)
+
+        mu = linear(x, n_z, init=init, scope="mu_layer")
+
+        sigma = linear(x, n_z, init=init, scope="sigma_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        h = linear(x, n_z, init=init, scope="h_layer") if extra else None
+
+        return mu, sigma, h
+
+
+def deconvolution_cifar(z, n_ch, n_feature_maps, n_units, init, scope):
+    """
+    Deconvolution network for use with MNIST dataset.
+    """
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+
+        z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')
+        z = nonlinearity(z)
+
+        h = w = 4
+        dim = h * w * n_feature_maps
+        z = linear(z, n_out=dim, init=init, scope='linear_layer')
+        z = nonlinearity(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_2')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_3')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_2')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_1')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_ch, nonlinearity=nonlinearity,
+                                  stride=True, init=init, scope='res_1')
+
+        return z
+
+
 def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope):
     """
     Convolution network for use with MNIST dataset.
@@ -42,7 +126,6 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        # note: h must be same dimensionality as z
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
         return mu, sigma, h
