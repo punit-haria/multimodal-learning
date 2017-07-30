@@ -14,6 +14,19 @@ class VAE(base.Model):
         # dictionary of model/inference arguments
         self.args = deepcopy(arguments)
 
+        # options
+        self.nw_type = self.args["type"]
+        self.dataset = self.args["data"]
+        self.is_autoregressive = self.args["autoregressive"]
+        self.is_flow = self.args["flow"]
+
+        # input and latent dimensions
+        self.n_z = self.args['n_z']
+        self.n_ch = self.args['n_channels']
+        self.h = self.args['height']
+        self.w = self.args['width']
+        self.n_x = self.h * self.w * self.n_ch
+
         # sample minibatch for weight initialization
         self.init_minibatch = init_minibatch
 
@@ -30,20 +43,6 @@ class VAE(base.Model):
 
 
     def _initialize(self):
-
-        # options
-        self.nw_type = self.args["type"]
-        self.dataset = self.args["data"]
-        self.is_autoregressive = self.args["autoregressive"]
-        self.is_flow = self.args["flow"]
-
-        # input and latent dimensions
-        self.n_z = self.args['n_z']
-        self.n_ch = self.args['n_channels']
-        self.h = self.args['height']
-        self.w = self.args['width']
-        self.n_x = self.h * self.w * self.n_ch
-
         # placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
