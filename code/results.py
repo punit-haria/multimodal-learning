@@ -3,7 +3,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-import seaborn as sns
 import pandas as pd
 import numpy as np
 
@@ -69,8 +68,7 @@ def image_plot(tracker, models, data, n_rows, n_cols,
         model = initialize(name, _model, parms, data, tracker)
         model.load_state(suffix=suffix)
 
-        path = '../plots/' + tracker.name + '_' + name + '_' + synthesis_type
-        path = path.replace(".", "-")
+        path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type
 
         if synthesis_type == 'reconstruct':
             images = reconstruction(model, data, n_rows, n_cols)
@@ -100,6 +98,8 @@ def latent_activation_plot(model, data, n_samples, path):
     if model.is_flow:
         print("WARNING: CAN'T PLOT LATENT ACTIVATIONS FOR NORMALIZING FLOW!")
         return
+
+    import seaborn as sns
 
     x = data.sample(n_samples, dtype='test')
     if type(x) in [list, tuple]:
@@ -251,6 +251,8 @@ def plot_latent_space(Z, Y, path):
     Y: labels
     path: save figure to this path
     """
+    import seaborn as sns
+
     # create dataframe for plotting
     Y = np.expand_dims(Y, axis=1)
     X = np.concatenate((Z,Y), axis=1)

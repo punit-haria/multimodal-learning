@@ -287,6 +287,25 @@ class VAE(base.Model):
         return x
 
 
+    def _factorized_sampling(self, rx):
+        """
+        Sample from probabilities rx in a factorized way.
+        """
+        if self.dataset == "color":
+            h = rx.shape[0]
+            w = rx.shape[1]
+            rxp = np.empty([h, w], dtype=rx.dtype)
+
+            for i in range(h):
+                for j in range(w):
+                    rxp[i, j] = np.random.choice(a=256, p=rx[i, j])
+
+        else:
+            rxp = np.random.binomial(n=1, p=rx)
+
+        return rxp
+
+
     def _summaries(self,):
 
         with tf.variable_scope("summaries"):
@@ -357,7 +376,9 @@ class VAE(base.Model):
 
         else:
             feed = {self.x: x, self.is_training: False}
-            return self.sess.run(self.rx_probs, feed_dict=feed)
+            rx = self.sess.run(self.rx_probs, feed_dict=feed)
+
+            return self._factorized_sampling(rx)
 
 
     def encode(self, x, mean=False):
@@ -382,7 +403,9 @@ class VAE(base.Model):
 
         else:
             feed = {self.z: z, self.is_training: False}
-            return self.sess.run(self.rx_probs, feed_dict=feed)
+            rx = self.sess.run(self.rx_probs, feed_dict=feed)
+
+            return self._factorized_sampling(rx)
 
 
     def sample_prior(self, n_samples):

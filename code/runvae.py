@@ -47,9 +47,9 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 500,
+    'train_steps': 10000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 500
 }
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["color", "fc", False, 1, 320, "made", False, 6, 0]
+        ["mnist", "cnn", False, 1, 320, "made", True, 6, -0.25]
     ]
 
     if configs[0][0] == "color":
