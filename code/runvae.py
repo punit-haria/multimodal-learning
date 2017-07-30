@@ -101,3 +101,5 @@ if __name__ == "__main__":
 
             train(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 
+
+    print("Finished :)", flush=True)
