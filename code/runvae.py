@@ -4,7 +4,7 @@ from data import MNIST, ColouredMNIST
 from training import train, Results
 
 
-experiment_name = 'test'
+experiment_name = 'basic'
 
 
 models = [
@@ -22,13 +22,13 @@ parms = {
     'flow': False,
 
     # basic parameters
-    'n_z': 49,  # 32, 49, 200
+    'n_z': 100,  # 32, 49, 200
     'height': 28,
     'width': 28,
     'n_channels': 1,
 
     # network parameters
-    'n_units': 450,
+    'n_units': 500,
     'n_feature_maps': 32,
 
     # normalizing flow parameters
@@ -44,12 +44,12 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 128,
+    'batch_size': 64,
     'n_conditional_pixels': 300,
     'test_sample_size': 1000,
-    'train_steps': 10000,
+    'train_steps': 20000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 20000
 }
 
 
@@ -58,8 +58,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", True, 4, 1024, "made", False, 6, 0],
-        ["cnn", True, 4, 1024, "made", False, 6, -0.125]
+        ["fc", False, 4, 1024, "made", False, 6, 0]
     ]
 
     data = MNIST()
