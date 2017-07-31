@@ -190,17 +190,45 @@ class VAE(base.Model):
             return logits, probs
 
 
-    def _mixture_of_logistics_loss(self, x, x_true, scope):
-
+    def _log_mixture_of_logistics(self, x, parms, scope):
+        """
+        Discretized Mixture of Logisitics based on PixelCNN++ (Salismans et al, 2017).
+        x:  ground truth data
+        parms: decoder output (i.e. mixture parameters)
+        """
         with tf.variable_scope(scope):
-            # x.shape = [batch_size, n_x, n_mix]
+            # x.shape = [batch_size, n_x]
+            # parms.shape = [batch_size, n_x, n_mix]
             # n_mix = 5*5*5 for K=5 mixtures
 
-            K = self.args['n_mix']
+            K = self.args['n_mixtures']
+            assert K == parms.get_shape()[2].value / 3
 
-            m = tf.slice(x, begin=[0, 0, 0], size=[-1, -1, K])
-            s = tf.slice(x, begin=[0, 0, K], size=[-1, -1, K])
-            pi = tf.slice(x, begin=[0, 0, 2*K], size=[-1, -1, K])
+            m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])          # means
+            log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])      # log scale
+            pi_logits = tf.slice(parms, begin=[0, 0, 2*K], size=[-1, -1, K])
+
+            log_pi = nw.logsoftmax(pi_logits)   # log mixture proportions
+
+            c_x = x - m
+            inv_s = tf.exp(-log_s)
+
+            plus = inv_s * (c_x + 0.5)
+            minus = inv_s * (c_x - 0.5)
+
+            cdf_plus = tf.nn.sigmoid(plus)
+            cdf_minus = tf.nn.sigmoid(minus)
+
+            pdf = cdf_plus - cdf_minus              # case (0,255)
+            log_pdf0 = plus - tf.nn.softplus(plus)  # case 0
+            log_pdf255 = -tf.nn.softplus(minus)     # case 255
+
+            log_pdf = tf.where(x < 0.5, log_pdf0,
+                    tf.where(x > 254.5, log_pdf255, tf.log(tf.maximum(pdf, 1e-12))))
+
+            log_mixture = nw.logsumexp(log_pdf + log_pi)
+
+            return log_mixture
 
 
 

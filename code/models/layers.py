@@ -750,6 +750,29 @@ def linear(x, n_out, init, scope):
             return tf.multiply(scaling, x) + b
 
 
+def logsumexp(x):
+    """
+    Numerically stable log_sum_exp implementation that prevents overflow.
+    Taken from https://github.com/openai/pixel-cnn
+    """
+    axis = len(x.get_shape()) - 1
+    m = tf.reduce_max(x, axis)
+    m2 = tf.reduce_max(x, axis, keep_dims=True)
+
+    return m + tf.log(tf.reduce_sum(tf.exp(x - m2), axis))
+
+
+def logsoftmax(x):
+    """
+    Numerically stable log_softmax implementation that prevents overflow.
+    Taken from https://github.com/openai/pixel-cnn
+    """
+    axis = len(x.get_shape()) - 1
+    m = tf.reduce_max(x, axis, keep_dims=True)
+
+    return x - m - tf.log(tf.reduce_sum(tf.exp(x - m), axis, keep_dims=True))
+
+
 def batch_norm(x, is_training, decay=0.99, epsilon=1e-3, center=False, scope='batch_norm'):
     """
     Batch normalization layer
