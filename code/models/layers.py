@@ -689,7 +689,6 @@ def fc_encode(x, n_units, n_z, extra, init, scope):
         sigma = linear(x, n_z, init=init, scope="var_layer")
         sigma = tf.nn.softplus(sigma)
 
-        # note: h must be same dimensionality as z
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
         return mean, sigma, h

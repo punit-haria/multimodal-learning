@@ -17,18 +17,14 @@ class JointVAE(vae.VAE):
         # initialization minibatches
         self.x1_init, self.x2_init, self.x1p_init, self.x2p_init = init_minibatches
 
-        # additional parameters
-        self.n_x1 = self.args['n_x1']
-        self.n_x2 = self.args['n_x2']
-
 
     def _initialize(self,):
 
         # input placeholders
-        self.x1 = tf.placeholder(tf.float32, [None, self.n_x1], name='x1')
-        self.x2 = tf.placeholder(tf.float32, [None, self.n_x2], name='x2')
-        self.x1p = tf.placeholder(tf.float32, [None, self.n_x1], name='x1_paired')
-        self.x2p = tf.placeholder(tf.float32, [None, self.n_x2], name='x2_paired')
+        self.x1 = tf.placeholder(tf.float32, [None, self.n_x], name='x1')
+        self.x2 = tf.placeholder(tf.float32, [None, self.n_x], name='x2')
+        self.x1p = tf.placeholder(tf.float32, [None, self.n_x], name='x1_paired')
+        self.x2p = tf.placeholder(tf.float32, [None, self.n_x], name='x2_paired')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
@@ -68,76 +64,85 @@ class JointVAE(vae.VAE):
 
     def _model(self, xs, init):
 
-        x1, x2, x1p, x2p = xs
+        with tf.variable_scope('joint_autoencoder') as scope:
 
-        # encoders
-        self.z1_mu, self.z1_var = self._encoder(self.x1, n_x1, n_z, scope='x1_enc', reuse=False)
-        self.z2_mu, self.z2_var = self._encoder(self.x2, n_x2, n_z, scope='x2_enc', reuse=False)
-        z1p_mu, z1p_var = self._encoder(self.x1p, n_x1, n_z, scope='x1_enc', reuse=True)
-        z2p_mu, z2p_var = self._encoder(self.x2p, n_x2, n_z, scope='x2_enc', reuse=True)
+            if not init:
+                scope.reuse_variables()
 
-        # constrain paired encoder
-        self.z12_mu, self.z12_var = self._constrain(z1p_mu, z1p_var, z2p_mu, z2p_var, scope='x1x2_enc', reuse=False)
+            x1, x2, x1p, x2p = xs
 
-        # samples
-        self.z1 = self._sample(self.z1_mu, self.z1_var, n_z, scope='sample_1', reuse=False)
-        self.z2 = self._sample(self.z2_mu, self.z2_var, n_z, scope='sample_2', reuse=False)
-        self.z12 = self._sample(self.z12_mu, self.z12_var, n_z, scope='sample_12', reuse=False)
-        self.z1p = self._sample(z1p_mu, z1p_var, n_z, scope='sample_1p', reuse=False)
-        self.z2p = self._sample(z2p_mu, z2p_var, n_z, scope='sample_2p', reuse=False)
+            z1_mu, z1_sigma, h1 = self._encoder(self.x1, init=init, scope='x1_enc')
+            z2_mu, z2_sigma, h2 = self._encoder(self.x2, init=init, scope='x2_enc')
 
-        # decoders
-        self.rx1_1, self.rx1_1_probs = self._decoder(self.z1, n_z, n_x1, scope='x1_dec', reuse=False)
-        self.rx1_2, self.rx1_2_probs = self._decoder(self.z2, n_z, n_x1, scope='x1_dec', reuse=True)
-        self.rx2_1, self.rx2_1_probs = self._decoder(self.z1, n_z, n_x2, scope='x2_dec', reuse=False)
-        self.rx2_2, self.rx2_2_probs = self._decoder(self.z2, n_z, n_x2, scope='x2_dec', reuse=True)
-        self.rx1p, self.rx1p_probs = self._decoder(self.z12, n_z, n_x1, scope='x1_dec', reuse=True)
-        self.rx2p, self.rx2p_probs = self._decoder(self.z12, n_z, n_x2, scope='x2_dec', reuse=True)
+            if not init:
+                z1p_mu, z1p_sigma, h1p = self._encoder(self.x1p, init=init, scope='x1_enc')
+                z2p_mu, z2p_sigma, h2p = self._encoder(self.x2p, init=init, scope='x2_enc')
 
-        # additional decoders
-        self.rx1p_1, self.rx1p_1_probs = self._decoder(self.z1p, n_z, n_x1, scope='x1_dec', reuse=True)
-        self.rx1p_2, self.rx1p_2_probs = self._decoder(self.z2p, n_z, n_x1, scope='x1_dec', reuse=True)
-        self.rx2p_1, self.rx2p_1_probs = self._decoder(self.z1p, n_z, n_x2, scope='x2_dec', reuse=True)
-        self.rx2p_2, self.rx2p_2_probs = self._decoder(self.z2p, n_z, n_x2, scope='x2_dec', reuse=True)
+                z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
+                h12p = tf.nn.elu(h1p + h2p)
 
 
 
 
+            # encoders
+            self.z1_mu, self.z1_var = self._encoder(self.x1, n_x1, n_z, scope='x1_enc', reuse=False)
+            self.z2_mu, self.z2_var = self._encoder(self.x2, n_x2, n_z, scope='x2_enc', reuse=False)
+            z1p_mu, z1p_var = self._encoder(self.x1p, n_x1, n_z, scope='x1_enc', reuse=True)
+            z2p_mu, z2p_var = self._encoder(self.x2p, n_x2, n_z, scope='x2_enc', reuse=True)
 
-    def _encoder(self, x, n_x, n_z, scope, reuse):
+
+            # samples
+            self.z1 = self._sample(self.z1_mu, self.z1_var, n_z, scope='sample_1', reuse=False)
+            self.z2 = self._sample(self.z2_mu, self.z2_var, n_z, scope='sample_2', reuse=False)
+            self.z12 = self._sample(self.z12_mu, self.z12_var, n_z, scope='sample_12', reuse=False)
+            self.z1p = self._sample(z1p_mu, z1p_var, n_z, scope='sample_1p', reuse=False)
+            self.z2p = self._sample(z2p_mu, z2p_var, n_z, scope='sample_2p', reuse=False)
+
+            # decoders
+            self.rx1_1, self.rx1_1_probs = self._decoder(self.z1, n_z, n_x1, scope='x1_dec', reuse=False)
+            self.rx1_2, self.rx1_2_probs = self._decoder(self.z2, n_z, n_x1, scope='x1_dec', reuse=True)
+            self.rx2_1, self.rx2_1_probs = self._decoder(self.z1, n_z, n_x2, scope='x2_dec', reuse=False)
+            self.rx2_2, self.rx2_2_probs = self._decoder(self.z2, n_z, n_x2, scope='x2_dec', reuse=True)
+            self.rx1p, self.rx1p_probs = self._decoder(self.z12, n_z, n_x1, scope='x1_dec', reuse=True)
+            self.rx2p, self.rx2p_probs = self._decoder(self.z12, n_z, n_x2, scope='x2_dec', reuse=True)
+
+            # additional decoders
+            self.rx1p_1, self.rx1p_1_probs = self._decoder(self.z1p, n_z, n_x1, scope='x1_dec', reuse=True)
+            self.rx1p_2, self.rx1p_2_probs = self._decoder(self.z2p, n_z, n_x1, scope='x1_dec', reuse=True)
+            self.rx2p_1, self.rx2p_1_probs = self._decoder(self.z1p, n_z, n_x2, scope='x2_dec', reuse=True)
+            self.rx2p_2, self.rx2p_2_probs = self._decoder(self.z2p, n_z, n_x2, scope='x2_dec', reuse=True)
+
+
+
+    def _constrain(self, x1_mu, x1_sigma, x2_mu, x2_sigma, scope):
+        """
+        Computes mean and standard deviation of the product of two Gaussians.
+        """
+        with tf.variable_scope(scope):
+            x1_var = tf.square(x1_sigma)
+            x2_var = tf.square(x2_sigma)
+            x1v_inv = tf.reciprocal(x1_var)
+            x2v_inv = tf.reciprocal(x2_var)
+            x12_var = tf.reciprocal(x1v_inv + x2v_inv)
+            xx = tf.multiply(x1v_inv, x1_mu)
+            yy = tf.multiply(x2v_inv, x2_mu)
+            x12_mu = tf.multiply(x12_var, xx + yy)
+            x12_sigma = tf.sqrt(x12_var)
+
+            return x12_mu, x12_sigma
+
+
+    def _sample(self, z_mu, z_var, n_z, scope='sampling', reuse=False):
 
         with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_enc_units']
+            n_samples = tf.shape(z_mu)[0]
 
-            a1 = self._linear(x, n_x, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
+            z_std = tf.sqrt(z_var)
+            eps = tf.random_normal((n_samples, n_z))
+            z = z_mu + tf.multiply(z_std, eps)
 
-            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
+            return z
 
-            mean = self._linear(h2, n_units, n_z, "mean_layer", reuse=reuse)
-
-            a3 = self._linear(h2, n_units, n_z, "var_layer", reuse=reuse)
-            var = tf.nn.softplus(a3)
-
-            return mean, var
-
-
-    def _decoder(self, z, n_z, n_x, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_dec_units']
-
-            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
-
-            a2 = self._linear(h1, n_units, n_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
-
-            logits = self._linear(h2, n_units, n_x, "layer_3", reuse=reuse)
-            probs = tf.nn.sigmoid(logits)
-
-            return logits, probs
 
 
     def _training_bound(self,):
@@ -190,32 +195,6 @@ class JointVAE(vae.VAE):
             step = tf.train.RMSPropOptimizer(lr).minimize(loss)
 
             return step
-
-
-    def _sample(self, z_mu, z_var, n_z, scope='sampling', reuse=False):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            n_samples = tf.shape(z_mu)[0]
-
-            z_std = tf.sqrt(z_var)
-            eps = tf.random_normal((n_samples, n_z))
-            z = z_mu + tf.multiply(z_std, eps)
-
-            return z
-
-
-    def _constrain(self, x1_mu, x1_var, x2_mu, x2_var, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            # Computes mean and variance of the product of two Gaussians.
-            x1v_inv = tf.reciprocal(x1_var)
-            x2v_inv = tf.reciprocal(x2_var)
-            x12_var = tf.reciprocal(x1v_inv + x2v_inv)
-            xx = tf.multiply(x1v_inv, x1_mu)
-            yy = tf.multiply(x2v_inv, x2_mu)
-            x12_mu = tf.multiply(x12_var, xx + yy)
-
-            return x12_mu, x12_var
 
 
     def _summaries(self,):

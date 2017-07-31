@@ -4,7 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'cifar'
+experiment_name = 'exp1'
 
 
 models = [
@@ -43,7 +43,7 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.002,
+    'learning_rate': 0.001,
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 500,
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name =  "cifar" + "_" + c[0]
+            name =  experiment_name + "_cifar_" + c[0]
 
             if c[1]:
                 name += "_flow_" + str(c[2]) + "_" + str(c[3]) + "_" + c[4]
