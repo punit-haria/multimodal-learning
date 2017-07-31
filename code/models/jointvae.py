@@ -318,13 +318,7 @@ class JointVAE(vae.VAE):
         Computes lower bound on test data.
         """
         x1, x2 = xs
-
-        x1_shape = list(x1.shape)
-        x1_shape[0] = 0
-        x2_shape = list(x2.shape)
-        x2_shape[0] = 0
-        x1_empty = np.zeros(shape=x1_shape)
-        x2_empty = np.zeros(shape=x2_shape)
+        x1_empty, x2_empty = self._empty_like(x1, x2)
 
         feed = {self.x1: x1_empty, self.x2: x2_empty, self.x1p: x1, self.x2p: x2}
         outputs = [self.summary, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
@@ -337,75 +331,129 @@ class JointVAE(vae.VAE):
         self.te_writer.add_summary(summary, self.n_steps)
 
 
-    def reconstruct(self, x1, x2):
+    def reconstruct(self, xs):
         """
-        Reconstruct x1, x2 given both x1 and x2.
+        Reconstruct input.
+        If one input is None, then this can be interpretted as a translation from the other input.
+
+        xs: (x1, x2) or (x1, None) or (None, x2)
         """
+        z = self.encode(xs, mean=False)
+        x1, x2 = self.decode(z)
+
+
+    def encode(self, xs, mean=False):
+        """
+        Encodes x1 or x2 or both x1 and x2 to the latent space.
+        """
+        x1, x2 = xs
         feed = {self.x1p: x1, self.x2p: x2}
-        return self.sess.run([self.rx1p_probs, self.rx2p_probs], feed_dict=feed)
+        outputs = self.z12_mu, self.z12
 
+        if x1 is None and x2 is None:
+            raise ValueError
 
-    def reconstruct_from_x1(self, x1):
-        """
-        Reconstruct x1, x2 given only x1.
-        """
-        feed = {self.x1: x1}
-        return self.sess.run([self.rx1_1_probs, self.rx2_1_probs], feed_dict=feed)
+        elif x1 is None:
+            feed = {self.x2p: x2}
+            outputs = self.z2p_mu, self.z2p
 
+        elif x2 is None:
+            feed = {self.x1p: x1}
+            outputs = self.z1p_mu, self.z1p
 
-    def reconstruct_from_x2(self, x2):
-        """
-        Reconstruct x1, x2 given only x2.
-        """
-        feed = {self.x2: x2}
-        return self.sess.run([self.rx1_2_probs, self.rx2_2_probs], feed_dict=feed)
-
-
-    def translate_x1(self, x1):
-        """
-        Translate x1 to x2.
-        """
-        feed = {self.x1: x1}
-        return self.sess.run(self.rx2_1_probs, feed_dict=feed)
-
-
-    def translate_x2(self, x2):
-        """
-        Translate x2 to x1.
-        """
-        feed = {self.x2: x2}
-        return self.sess.run(self.rx1_2_probs, feed_dict=feed)
-
-
-    def encode_x1(self, x1):
-        """
-        Encode x1.
-        """
-        feed = {self.x1: x1}
-        return self.sess.run(self.z1_mu, feed_dict=feed)
-
-
-    def encode_x2(self, x2):
-        """
-        Encode x2.
-        """
-        feed = {self.x2: x2}
-        return self.sess.run(self.z2_mu, feed_dict=feed)
-
-
-    def encode(self, x1, x2):
-        """
-        Encode x1 and x2 jointly.
-        """
-        feed = {self.x1p: x1, self.x2p: x2}
-        return self.sess.run(self.z12_mu, feed_dict=feed)
+        if mean:
+            assert self.is_flow == False
+            return self.sess.run(outputs[0], feed_dict=feed)
+        else:
+            return self.sess.run(outputs[1], feed_dict=feed)
 
 
     def decode(self, z):
-        """
-        Decodes x1 and x2.
-        """
-        feed = {self.z12: z}
-        return self.sess.run([self.rx1p_probs, self.rx2p_probs], feed_dict=feed)
+
+        if self.is_autoregressive:
+            x1 = np.random.rand(z.shape[0], self.n_x)
+            x2 = np.random.rand(z.shape[0], self.n_x)
+
+            x1, x2 = self._joint_autoregressive_sampling(z, x1, x2, n_pixels=0,
+                    z_var=self.z12, p1_var=self.rx1_12_probs, p2_var=self.rx2_12_probs)
+
+        else:
+            feed = {self.z12: z}
+            outputs = [self.rx1_12_probs, self.rx2_12_probs]
+            rx1, rx2 = self.sess.run(outputs, feed_dict=feed)
+
+            x1 = self._factorized_sampling(rx1)
+            x2 = self._factorized_sampling(rx2)
+
+        return x1, x2
 
 
+    def _joint_autoregressive_sampling(self, z, x1, x2, n_pixels, z_var, p1_var, p2_var):
+        """
+        Synthesize images autoregressively.
+        """
+        def _locate_2d(idx, w):
+            pos = idx + 1
+            r = np.ceil(pos / w)
+            c = pos - (r-1)*w
+
+            return int(r-1), int(c-1)
+
+        h = self.h
+        w = self.w
+        ch = self.n_ch
+        n_x = h * w * ch
+
+        remain = h*w - n_pixels
+
+        x1 = x1.copy()
+        x2 = x2.copy()
+        x1_empty, x2_empty = self._empty_like(x1, x2)
+
+        for i in range(remain):
+
+            feed = {z_var: z, self.x1p: x1, self.x2p: x2, self.x1: x1_empty, self.x2: x2_empty}
+            p1, p2 = self.sess.run([p1_var, p2_var], feed_dict=feed)
+
+            hp, wp = _locate_2d(n_pixels + i, w)
+
+            x1 = np.reshape(x1, newshape=[-1, h, w, ch])
+            x2 = np.reshape(x2, newshape=[-1, h, w, ch])
+
+            if self.n_ch == 3:
+                p1 = np.reshape(p1, newshape=[-1, h, w, ch, 256])
+                p1 = p1[:, hp, wp, :, :]
+                x1[:, hp, wp, :] = self._categorical_sampling(p1)
+
+                p2 = np.reshape(p2, newshape=[-1, h, w, ch, 256])
+                p2 = p2[:, hp, wp, :, :]
+                x2[:, hp, wp, :] = self._categorical_sampling(p2)
+
+            elif self.n_ch == 1:
+                p1 = np.reshape(p1, newshape=[-1, h, w, ch])
+                p1 = p1[:, hp, wp, :]
+                x1[:, hp, wp, :] = np.random.binomial(n=1, p=p1)
+
+                p2 = np.reshape(p2, newshape=[-1, h, w, ch])
+                p2 = p2[:, hp, wp, :]
+                x2[:, hp, wp, :] = np.random.binomial(n=1, p=p2)
+
+            else:
+                raise NotImplementedError
+
+            x1 = np.reshape(x1, newshape=[-1, n_x])
+            x2 = np.reshape(x2, newshape=[-1, n_x])
+
+        return x1, x2
+
+
+    def _empty_like(self, x1, x2):
+
+        x1_shape = list(x1.shape)
+        x1_shape[0] = 0
+        x2_shape = list(x2.shape)
+        x2_shape[0] = 0
+        x1_empty = np.zeros(shape=x1_shape)
+        x2_empty = np.zeros(shape=x2_shape)
+
+        return x1_empty, x2_empty
