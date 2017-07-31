@@ -85,7 +85,7 @@ def initialize_joint(name, model, parameters, data, tracker):
     xs = data.sample_stratified(n_paired_samples=parameters['n_paired_samples'],
                                               n_unpaired_samples=parameters['n_unpaired_samples'], dtype='train')
     # constructor
-    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatch=xs)
+    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatches=xs)
 
     return mod
 

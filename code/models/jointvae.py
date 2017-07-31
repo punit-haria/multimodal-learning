@@ -11,17 +11,16 @@ class JointVAE(vae.VAE):
     """
     def __init__(self, arguments, name, tracker, init_minibatches, session=None, log_dir=None, model_dir=None):
 
+        self.x1_init, self.x2_init, self.x1p_init, self.x2p_init = init_minibatches
+
+        # constructor
         super(JointVAE, self).__init__(arguments=arguments, name=name, tracker=tracker, init_minibatch=None,
                                        session=session, log_dir=log_dir, model_dir=model_dir)
 
-        # initialization minibatches
-        self.x1_init, self.x2_init, self.x1p_init, self.x2p_init = init_minibatches
-
-        # additional parameters
-        self.objective = self.args["objective"]
-
 
     def _initialize(self,):
+        # additional parameters
+        self.objective = self.args["objective"]
 
         # input placeholders
         self.x1 = tf.placeholder(tf.float32, [None, self.n_x], name='x1')
@@ -71,16 +70,19 @@ class JointVAE(vae.VAE):
         if self.objective == "joint":
             self.bound = self.lx12
 
-        elif self.objective == "average":
+        elif self.objective == "translate":
             self.bound = self.tx1 + self.tx2   # divide by 2?
-
         else:
             raise NotImplementedError
 
         # loss function
         self.loss = self._loss(scope='loss')
 
+        # optimizer
         self.step = self._optimizer(self.loss)
+
+        # summary variables
+        self.summary = self._summaries()
 
 
     def _model(self, xs, init):
@@ -108,7 +110,11 @@ class JointVAE(vae.VAE):
                 scope.reuse_variables()
 
             z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
-            h12 = tf.nn.elu(h1p + h2p)
+
+            if h1p is not None and h2p is not None:
+                h12 = tf.nn.elu(h1p + h2p)
+            else:
+                h12 = None
 
             z12, log_q12 = self._sample(z12_mu, z12_sigma, h12, init=init, scope='sample')
 
@@ -258,7 +264,7 @@ class JointVAE(vae.VAE):
 
                 bound = lx12 + lx1 + lx2
 
-            elif self.objective == "average":
+            elif self.objective == "translate":
                 # marginal x1p
                 lx1ppen = self._freebits(self.lx1ppen,  self.logq1p, self.logp1p, alpha)
                 lx1p = self.lx1prec + lx1ppen

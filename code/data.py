@@ -199,7 +199,7 @@ class JointStratifiedMNIST(MNIST):
         self.y12 = self.ytr[self.x1_and_x2]
 
 
-    def sample(self, n_paired_samples, n_unpaired_samples=250, dtype='train',
+    def sample_stratified(self, n_paired_samples, n_unpaired_samples=250, dtype='train',
                binarize=True, include_labels=False):
 
         # test set case

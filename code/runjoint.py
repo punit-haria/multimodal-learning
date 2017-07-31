@@ -1,5 +1,5 @@
 from models import jointvae
-from data import ColouredMNIST, ColouredStratifiedMNIST
+from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 
 from training import train_joint, Results
 
@@ -20,12 +20,13 @@ parms = {
     'data': "mnist",            # mnist, ???
     'autoregressive': False,
     'flow': False,
+    'objective': 'joint',    # joint, translate
 
     # basic parameters
     'n_z': 49,  # 32, 49, 200
-    'height': 28,
+    'height': 14,
     'width': 28,
-    'n_channels': 3,
+    'n_channels': 1,
 
     # network parameters
     'n_units': 500,
@@ -44,8 +45,8 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'n_unpaired_samples': 96,
-    'n_paired_samples': 32,
+    'n_unpaired_samples': 32,
+    'n_paired_samples': 16,
 
     'n_paired': 1000,
     'n_conditional_pixels': 0,
@@ -64,7 +65,10 @@ if __name__ == "__main__":
         ["fc", False, 4, 1024, "made", False, 6, 0]
     ]
 
-    data = ColouredStratifiedMNIST(parms['n_paired'])
+    if parms['n_channels'] == 3:
+        data = ColouredStratifiedMNIST(parms['n_paired'])
+    else:
+        data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
