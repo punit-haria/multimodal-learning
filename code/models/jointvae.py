@@ -17,6 +17,9 @@ class JointVAE(vae.VAE):
         # initialization minibatches
         self.x1_init, self.x2_init, self.x1p_init, self.x2p_init = init_minibatches
 
+        # additional parameters
+        self.objective = self.args["objective"]
+
 
     def _initialize(self,):
 
@@ -33,85 +36,146 @@ class JointVAE(vae.VAE):
         x1p_init = tf.constant(self.x1p_init, tf.float32)
         x2p_init = tf.constant(self.x2p_init, tf.float32)
 
+        # compute weight initializations
+        self._model((x1_init, x2_init, x1p_init, x2p_init), init=True)
 
-        self._model([x1_init, x2_init, x1p_init, x2p_init], init=True)
+        # model specification
+        self._model((self.x1, self.x2, self.x1p, self.x2p), init=False)
+
+        # marginal bounds
+
+        self.lx1, self.lx1rec, self.lx1pen, self.logq1, self.logp1 = self._marginal_bound(self.rx1_1, self.x1,
+                                        self.z1_mu, self.z1_sigma, self.log_q1, self.z1, scope='marg_x1')
+
+        self.lx2, self.lx2rec, self.lx2pen, self.logq2, self.logp2 = self._marginal_bound(self.rx2_2, self.x2,
+                                        self.z2_mu, self.z2_sigma, self.log_q2, self.z2, scope='marg_x2')
 
 
+        self.lx1p, self.lx1prec, self.lx1ppen, self.logq1p, self.logp1p = self._marginal_bound(self.rx1_1p, self.x1p,
+                             self.z1p_mu, self.z1p_sigma, self.log_q1p, self.z1p, scope='marg_x1p')
 
+        self.lx2p, self.lx2prec, self.lx2ppen, self.logq2p, self.logp2p = self._marginal_bound(self.rx2_2p, self.x2p,
+                             self.z2p_mu, self.z2p_sigma, self.log_q2p, self.z2p, scope='marg_x2p')
 
+        # joint bound
 
-        # choice of variational bounds
-        self.l_x1 = self._marginal_bound(self.rx1_1, self.x1, self.z1_mu, self.z1_var, scope='marginal_x1')
-        self.l_x2 = self._marginal_bound(self.rx2_2, self.x2, self.z2_mu, self.z2_var, scope='marginal_x2')
+        self.lx12, self.lx12rec1, self.lx12rec2, self.lx12pen, self.logq12, self.logp12 = self._joint_bound(
+            self.rx1_12, self.x1p, self.rx2_12, self.x2p,
+            self.z12_mu, self.z12_sigma, self.log_q12, self.z12, scope='joint_bound')
 
-        self.t_x1 = self._translation_bound(self.rx1p_2, self.x1p, scope='translate_to_x1')
-        self.t_x2 = self._translation_bound(self.rx2p_1, self.x2p, scope='translate_to_x2')
-        self.l_x1p = self._marginal_bound(self.rx1p_1, self.x1p, z1p_mu, z1p_var, scope='marginal_x1p')
-        self.l_x2p = self._marginal_bound(self.rx2p_2, self.x2p, z2p_mu, z2p_var, scope='marginal_x2p')
+        # translation bounds
 
-        self.l_x1x2 = self._joint_bound(self.rx1p, self.x1p, self.rx2p, self.x2p, self.z12_mu, self.z12_var)
+        self.tx1 = self._translation_bound(self.rx1_2p, self.x1p, scope='translate_to_x1')
+        self.tx2 = self._translation_bound(self.rx2_1p, self.x2p, scope='translate_to_x2')
 
-        # training and test bounds
-        self.bound = self._training_bound()
-        self.test_bound = self._test_bound()
+        # variational bound at test time
+        if self.objective == "joint":
+            self.bound = self.lx12
+
+        elif self.objective == "average":
+            self.bound = self.tx1 + self.tx2   # divide by 2?
+
+        else:
+            raise NotImplementedError
 
         # loss function
-        self.loss = -self.bound
+        self.loss = self._loss(scope='loss')
 
-        # optimizer
         self.step = self._optimizer(self.loss)
 
 
     def _model(self, xs, init):
 
         with tf.variable_scope('joint_autoencoder') as scope:
-
             if not init:
                 scope.reuse_variables()
 
             x1, x2, x1p, x2p = xs
 
-            z1_mu, z1_sigma, h1 = self._encoder(self.x1, init=init, scope='x1_enc')
-            z2_mu, z2_sigma, h2 = self._encoder(self.x2, init=init, scope='x2_enc')
+            z1p_mu, z1p_sigma, h1p = self._encoder(x1p, init=init, scope='x1_enc')
+            z2p_mu, z2p_sigma, h2p = self._encoder(x2p, init=init, scope='x2_enc')
 
+
+        with tf.variable_scope('joint_autoencoder') as scope:
+
+            scope.reuse_variables()
+
+            z1_mu, z1_sigma, h1 = self._encoder(x1, init=init, scope='x1_enc')
+            z2_mu, z2_sigma, h2 = self._encoder(x2, init=init, scope='x2_enc')
+
+
+        with tf.variable_scope('joint_autoencoder') as scope:
             if not init:
-                z1p_mu, z1p_sigma, h1p = self._encoder(self.x1p, init=init, scope='x1_enc')
-                z2p_mu, z2p_sigma, h2p = self._encoder(self.x2p, init=init, scope='x2_enc')
+                scope.reuse_variables()
 
-                z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
-                h12p = tf.nn.elu(h1p + h2p)
+            z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
+            h12 = tf.nn.elu(h1p + h2p)
 
-
-
-
-            # encoders
-            self.z1_mu, self.z1_var = self._encoder(self.x1, n_x1, n_z, scope='x1_enc', reuse=False)
-            self.z2_mu, self.z2_var = self._encoder(self.x2, n_x2, n_z, scope='x2_enc', reuse=False)
-            z1p_mu, z1p_var = self._encoder(self.x1p, n_x1, n_z, scope='x1_enc', reuse=True)
-            z2p_mu, z2p_var = self._encoder(self.x2p, n_x2, n_z, scope='x2_enc', reuse=True)
+            z12, log_q12 = self._sample(z12_mu, z12_sigma, h12, init=init, scope='sample')
 
 
-            # samples
-            self.z1 = self._sample(self.z1_mu, self.z1_var, n_z, scope='sample_1', reuse=False)
-            self.z2 = self._sample(self.z2_mu, self.z2_var, n_z, scope='sample_2', reuse=False)
-            self.z12 = self._sample(self.z12_mu, self.z12_var, n_z, scope='sample_12', reuse=False)
-            self.z1p = self._sample(z1p_mu, z1p_var, n_z, scope='sample_1p', reuse=False)
-            self.z2p = self._sample(z2p_mu, z2p_var, n_z, scope='sample_2p', reuse=False)
+        with tf.variable_scope('joint_autoencoder') as scope:
 
-            # decoders
-            self.rx1_1, self.rx1_1_probs = self._decoder(self.z1, n_z, n_x1, scope='x1_dec', reuse=False)
-            self.rx1_2, self.rx1_2_probs = self._decoder(self.z2, n_z, n_x1, scope='x1_dec', reuse=True)
-            self.rx2_1, self.rx2_1_probs = self._decoder(self.z1, n_z, n_x2, scope='x2_dec', reuse=False)
-            self.rx2_2, self.rx2_2_probs = self._decoder(self.z2, n_z, n_x2, scope='x2_dec', reuse=True)
-            self.rx1p, self.rx1p_probs = self._decoder(self.z12, n_z, n_x1, scope='x1_dec', reuse=True)
-            self.rx2p, self.rx2p_probs = self._decoder(self.z12, n_z, n_x2, scope='x2_dec', reuse=True)
+            scope.reuse_variables()
 
-            # additional decoders
-            self.rx1p_1, self.rx1p_1_probs = self._decoder(self.z1p, n_z, n_x1, scope='x1_dec', reuse=True)
-            self.rx1p_2, self.rx1p_2_probs = self._decoder(self.z2p, n_z, n_x1, scope='x1_dec', reuse=True)
-            self.rx2p_1, self.rx2p_1_probs = self._decoder(self.z1p, n_z, n_x2, scope='x2_dec', reuse=True)
-            self.rx2p_2, self.rx2p_2_probs = self._decoder(self.z2p, n_z, n_x2, scope='x2_dec', reuse=True)
+            z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, init=init, scope='sample')
+            z2, log_q2 = self._sample(z2_mu, z2_sigma, h2, init=init, scope='sample')
+            z1p, log_q1p = self._sample(z1p_mu, z1p_sigma, h1p, init=init, scope='sample')
+            z2p, log_q2p = self._sample(z2p_mu, z2p_sigma, h2p, init=init, scope='sample')
 
+
+        with tf.variable_scope('joint_autoencoder') as scope:
+            if not init:
+                scope.reuse_variables()
+
+            rx1_12, rx1_12_probs = self._decoder(z12, x1p, init=init, scope='x1_dec')
+            rx2_12, rx2_12_probs = self._decoder(z12, x2p, init=init, scope='x2_dec')
+
+        with tf.variable_scope('joint_autoencoder') as scope:
+
+            scope.reuse_variables()
+
+            # reconstructions
+            rx1_1, rx1_1_probs = self._decoder(z1, x1, init=init, scope='x1_dec')
+            rx2_2, rx2_2_probs = self._decoder(z2, x2, init=init, scope='x2_dec')
+
+            # translations
+            rx1_2, rx1_2_probs = self._decoder(z2, x1, init=init, scope='x1_dec')
+            rx2_1, rx2_1_probs = self._decoder(z1, x2, init=init, scope='x2_dec')
+
+            # reconstructions (from paired input)
+            rx1_1p, rx1_1p_probs = self._decoder(z1p, x1p, init=init, scope='x1_dec')
+            rx2_2p, rx2_2p_probs = self._decoder(z2p, x2p, init=init, scope='x2_dec')
+
+            # translations (from paired input)
+            rx1_2p, rx1_2p_probs = self._decoder(z2p, x1p, init=init, scope='x1_dec')
+            rx2_1p, rx2_1p_probs = self._decoder(z1p, x2p, init=init, scope='x2_dec')
+
+        if not init:
+            self.z12_mu, self.z12_sigma = (z12_mu, z12_sigma)
+            self.z1_mu, self.z1_sigma = (z1_mu, z1_sigma)
+            self.z2_mu, self.z2_sigma = (z2_mu, z2_sigma)
+            self.z1p_mu, self.z1p_sigma = (z1p_mu, z1p_sigma)
+            self.z2p_mu, self.z2p_sigma = (z2p_mu, z2p_sigma)
+
+            self.z12, self.log_q12 = (z12, log_q12)
+            self.z1, self.log_q1 = (z1, log_q1)
+            self.z2, self.log_q2 = (z2, log_q2)
+            self.z1p, self.log_q1p = (z1p, log_q1p)
+            self.z2p, self.log_q2p = (z2p, log_q2p)
+
+            self.rx1_12, self.rx1_12_probs = (rx1_12, rx1_12_probs)
+            self.rx2_12, self.rx2_12_probs = (rx2_12, rx2_12_probs)
+
+            self.rx1_1, self.rx1_1_probs = (rx1_1, rx1_1_probs)
+            self.rx2_2, self.rx2_2_probs = (rx2_2, rx2_2_probs)
+            self.rx1_2, self.rx1_2_probs = (rx1_2, rx1_2_probs)
+            self.rx2_1, self.rx2_1_probs = (rx2_1, rx2_1_probs)
+
+            self.rx1_1p, self.rx1_1p_probs = (rx1_1p, rx1_1p_probs)
+            self.rx2_2p, self.rx2_2p_probs = (rx2_2p, rx2_2p_probs)
+            self.rx1_2p, self.rx1_2p_probs = (rx1_2p, rx1_2p_probs)
+            self.rx2_1p, self.rx2_1p_probs = (rx2_1p, rx2_1p_probs)
 
 
     def _constrain(self, x1_mu, x1_sigma, x2_mu, x2_sigma, scope):
@@ -132,88 +196,115 @@ class JointVAE(vae.VAE):
             return x12_mu, x12_sigma
 
 
-    def _sample(self, z_mu, z_var, n_z, scope='sampling', reuse=False):
+    def _marginal_bound(self, logits, labels, mu, sigma, log_q, z_K, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
-            n_samples = tf.shape(z_mu)[0]
+        with tf.variable_scope(scope):
 
-            z_std = tf.sqrt(z_var)
-            eps = tf.random_normal((n_samples, n_z))
-            z = z_mu + tf.multiply(z_std, eps)
+            l1 = self._reconstruction(logits=logits, labels=labels, scope='reconstruction')
+            l2, log_q, log_p = self._penalty(mu=mu, sigma=sigma, log_q=log_q, z_K=z_K, scope='penalty')
+            bound = l1 + l2
 
-            return z
-
+            return bound, l1, l2, log_q, log_p
 
 
-    def _training_bound(self,):
-        joint = tf.reduce_mean(self.l_x1x2) + tf.reduce_mean(self.l_x1) + tf.reduce_mean(self.l_x2)
+    def _joint_bound(self, x1_logits, x1_labels, x2_logits, x2_labels, mu, sigma, log_q, z_K, scope):
 
-        return joint
+        with tf.variable_scope(scope):
 
+            l1_x1 = self._reconstruction(logits=x1_logits, labels=x1_labels, scope='reconstruction_x1')
+            l1_x2 = self._reconstruction(logits=x2_logits, labels=x2_labels, scope='reconstruction_x2')
 
-    def _test_bound(self,):
-        return tf.reduce_mean(self.l_x1x2, axis=0)
+            l2, log_q, log_p = self._penalty(mu=mu, sigma=sigma, log_q=log_q, z_K=z_K, scope='penalty')
 
+            bound = l1_x1 + l1_x2 + l2
 
-    def _marginal_bound(self, logits, labels, mean, var, scope='marginal_bound', reuse=False):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            l1 = self._reconstruction_loss(logits=logits, labels=labels)
-
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
-
-            return l1 + l2
+            return bound, l1_x1, l1_x2, l2, log_q, log_p
 
 
-    def _joint_bound(self, x1_logits, x1_labels, x2_logits, x2_labels, mean, var, scope='joint_bound', reuse=False):
+    def _translation_bound(self, logits, labels, scope):
 
-        with tf.variable_scope(scope, reuse=reuse):
-
-            l1_x = self._reconstruction_loss(logits=x1_logits, labels=x1_labels)
-            l1_y = self._reconstruction_loss(logits=x2_logits, labels=x2_labels)
-
-            l2 = 0.5 * tf.reduce_sum(1 + tf.log(var) - tf.square(mean) - var, axis=1)
-
-            return l1_x + l1_y + l2
+        with tf.variable_scope(scope):
+            return self._reconstruction(logits=logits, labels=labels, scope='reconstruction')
 
 
-    def _translation_bound(self, logits, labels, scope='translation_bound', reuse=False):
+    def _freebits(self, l2, log_q, log_p, alpha):
+        """
+        Compute freebits penalty if alpha < 0, otherwise return original penalty l2.
+        """
+        if alpha < 0:
+            l2 = tf.reduce_mean(-log_q + log_p, axis=0)
+            l2 = tf.minimum(l2, alpha)
+            l2 = tf.reduce_sum(l2)
 
-        with tf.variable_scope(scope, reuse=reuse):
-            return self._reconstruction_loss(logits=logits, labels=labels)
+        return l2
 
 
-    def _reconstruction_loss(self, logits, labels):
+    def _loss(self, scope):
 
-        return tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
+        with tf.variable_scope(scope):
+            alpha = self.args['anneal']
+
+            # marginal x1
+            lx1pen = self._freebits(self.lx1pen, self.logq1, self.logp1, alpha)
+            lx1 = self.lx1rec + lx1pen
+
+            # marginal x2
+            lx2pen = self._freebits(self.lx2pen, self.logq2, self.logp2, alpha)
+            lx2 = self.lx2rec + lx2pen
+
+            if self.objective == "joint":
+                # joint x1 and x2
+                lx12pen = self._freebits(self.lx12pen, self.logq12, self.logp12, alpha)
+                lx12 = self.lx12rec1 + self.lx12rec2 + lx12pen
+
+                bound = lx12 + lx1 + lx2
+
+            elif self.objective == "average":
+                # marginal x1p
+                lx1ppen = self._freebits(self.lx1ppen,  self.logq1p, self.logp1p, alpha)
+                lx1p = self.lx1prec + lx1ppen
+
+                # marginal x2p
+                lx2ppen = self._freebits(self.lx2ppen, self.logq2p, self.logp2p, alpha)
+                lx2p = self.lx2prec + lx2ppen
+
+                bound = (self.tx1 + lx2p) + (self.tx2 + lx1p) + lx1 + lx2
+
+            else:
+                raise NotImplementedError
+
+            loss = -bound
+            return loss
 
 
-    def _optimizer(self, loss, scope='optimizer', reuse=False):
+    def _summaries(self,):
 
-        with tf.variable_scope(scope, reuse=reuse):
-            lr = self.args['learning_rate']
-            step = tf.train.RMSPropOptimizer(lr).minimize(loss)
+        with tf.variable_scope("summaries"):
+            tf.summary.scalar('lower_bound', self.bound)
+            tf.summary.scalar('loss', self.loss)
+            tf.summary.scalar('reconstruction', self.l1)
+            tf.summary.scalar('penalty', self.l2)
 
-            return step
+            tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
+
+            c = 0.5 * np.log(2*np.pi)
+            lq = tf.reduce_sum(self.log_q - c, axis=1)
+            tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
+            lp = tf.reduce_sum(self.log_p - c, axis=1)
+            tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
+
+            return tf.summary.merge_all()
 
 
     def _summaries(self,):
 
         with tf.variable_scope("summaries", reuse=False):
-            tf.summary.scalar('training_bound', self.bound)
-            tf.summary.scalar('lower_bound_on_log_p_x_y', self.test_bound)
+            tf.summary.scalar('loss', self.loss)
+            tf.summary.scalar('lower_bound_on_log_p_x_y', self.bound)
 
             return tf.summary.merge_all()
 
 
-    def _linear(self, x, n_x, n_w, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            w = tf.get_variable("W", shape=[n_x,n_w],
-                                initializer=tf.truncated_normal_initializer(mean=0.0, stddev=0.1))
-            b = tf.get_variable("b", shape=[n_w], initializer=tf.constant_initializer(0.1))
-
-            return tf.matmul(x, w) + b
 
 
     def train(self, x1, x2, x1_pairs, x2_pairs, write=True):
@@ -321,169 +412,5 @@ class JointVAE(vae.VAE):
         """
         feed = {self.z12: z}
         return self.sess.run([self.rx1p_probs, self.rx2p_probs], feed_dict=feed)
-
-
-
-class VAETranslate(VAE):
-
-    def __init__(self, arguments, name="VAETranslate", session=None, log_dir=None, model_dir=None):
-
-        super(VAETranslate, self).__init__(arguments=arguments, name=name, session=session,
-                                              log_dir=log_dir, model_dir=model_dir)
-
-
-    def _training_bound(self,):
-        tx1 = tf.reduce_mean(self.t_x1 + self.l_x2p)
-        tx2 = tf.reduce_mean(self.t_x2 + self.l_x1p)
-        #lx1x2 = tf.reduce_mean(self.l_x1x2)
-        bound = tx1 + tx2 + tf.reduce_mean(self.l_x1) + tf.reduce_mean(self.l_x2)
-
-        return bound
-
-
-    def _test_bound(self,):
-        tx1 = tf.reduce_mean(self.t_x1 + self.l_x2p)
-        tx2 = tf.reduce_mean(self.t_x2 + self.l_x1p)
-        #lx1x2 = tf.reduce_mean(self.l_x1x2)
-
-        return (tx1 + tx2) / 2
-
-
-
-
-
-class VAECNN(VAE):
-
-    """
-    Variational Auto-Encoder with PixelCNN Decoder. Bernouli Output distribution.
-
-    Arguments:
-    n_x1, n_x2, n_z: dimensionality of input and latent variables
-    learning_rate: optimizer learning_rate
-    n_enc_units: number of hidden units in encoder fully-connected layers
-    n_dec_units: number of hidden units in decoder fully-connected layers
-    image_dim: shape of input image
-    filter_w: width of convolutional filter (with width = height)
-    n_dec_layers: number of layers in decoder
-    """
-    def __init__(self, arguments, name="VAECNN", session=None, log_dir=None, model_dir=None):
-
-        super(VAECNN, self).__init__(arguments=arguments, name=name, session=session,
-                                              log_dir=log_dir, model_dir=model_dir)
-
-
-    def _encoder(self, x, n_x, n_z, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-            n_units = self.args['n_enc_units']
-            im_dim = self.args['image_dim']
-            in_ch = im_dim[2]
-
-            x_image = tf.reshape(x, shape=[-1]+im_dim)
-
-            h1 = nw.conv_pool(x_image, in_ch, 32, 'layer_1', reuse=reuse)
-
-            h2 = nw.conv_pool(h1, 32, 32, 'layer_2', reuse=reuse)
-
-            dim = h2.get_shape()[1].value * h2.get_shape()[2].value * h2.get_shape()[3].value
-            flat = tf.reshape(h2, shape=[-1,dim])
-
-            fc = self._linear(flat, dim, n_units, 'layer_3', reuse=reuse)
-            h3 = tf.nn.relu(fc)
-
-            mean = self._linear(h3, n_units, n_z, "mean_layer", reuse=reuse)
-
-            a3 = self._linear(h3, n_units, n_z, "var_layer", reuse=reuse)
-            var = tf.nn.softplus(a3)
-
-            return mean, var
-
-
-    def _decoder(self, z, n_z, n_x, scope, reuse):
-
-        with tf.variable_scope(scope, reuse=reuse):
-
-            n_units = self.args['n_dec_units']
-            im_dim = self.args['image_dim']
-            n_layers = self.args['n_dec_layers']
-            k = self.args['filter_w']
-            out_ch = im_dim[2]
-
-            a1 = self._linear(z, n_z, n_units, "layer_1", reuse=reuse)
-            h1 = tf.nn.relu(a1)
-
-            z_units = im_dim[0] * im_dim[1] * im_dim[2]
-            a2 = self._linear(h1, n_units, z_units, "layer_2", reuse=reuse)
-            h2 = tf.nn.relu(a2)
-
-            z_image = tf.reshape(h2, shape=[-1]+im_dim)
-
-            logits, probs = self._decoder_cnn(z_image, n_layers, k, out_ch, 'pixel_cnn', reuse)
-
-            return logits, probs
-
-
-    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
-        """
-        Combines CNN network with output distribution.
-
-        x: tensor of images
-        n_layers: number of layers in CNN
-        k: convolution filter size
-        out_ch: network output channels
-        """
-        c = nw.pixel_cnn(x, n_layers, k, out_ch, scope, reuse=reuse)
-
-        n_c = c.get_shape()[1].value * c.get_shape()[2].value * c.get_shape()[3].value
-
-        logits = tf.reshape(c, shape=[-1, n_c])
-        probs = tf.nn.sigmoid(logits)
-
-        return logits, probs
-
-
-
-
-class VAECNN_Color(VAECNN):
-
-    """
-    Variational Auto-Encoder with PixelCNN Decoder. 256-way Categorical output distribution.
-
-    Arguments:
-    n_x1, n_x2, n_z: dimensionality of input and latent variables
-    learning_rate: optimizer learning_rate
-    n_enc_units: number of hidden units in encoder fully-connected layers
-    n_dec_units: number of hidden units in decoder fully-connected layers
-    image_dim: shape of input image
-    filter_w: width of convolutional filter (with width = height)
-    n_dec_layers: number of layers in decoder
-    """
-    def __init__(self, arguments, name="VAECNN_Color", session=None, log_dir=None, model_dir=None):
-
-        super(VAECNN_Color, self).__init__(arguments=arguments, name=name, session=session,
-                                              log_dir=log_dir, model_dir=model_dir)
-
-
-    def _decoder_cnn(self, x, n_layers, k, out_ch, scope, reuse):
-        """
-        Combines CNN network with output distribution.
-        """
-        logits = nw.pixel_cnn_categorical(x, n_layers, k, out_ch, n_cats=256, scope=scope, reuse=reuse)
-        probs = tf.nn.softmax(logits, dim=-1)
-
-        return logits, probs
-
-
-    def _reconstruction_loss(self, logits, labels):
-
-        # note: labels have dimension [batch_size, h*w*ch]
-
-        # scale and discretize pixel intensities
-        labels = tf.cast(labels * 255, dtype=tf.int32)
-
-        # reshape to images
-        labels = tf.reshape(labels, shape=[-1]+self.args['image_dim'])
-
-        return tf.reduce_sum(-tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels), axis=[1,2,3])
 
 
