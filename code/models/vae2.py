@@ -19,6 +19,7 @@ class VAE(base.Model):
         self.dataset = self.args["data"]
         self.is_autoregressive = self.args["autoregressive"]
         self.is_flow = self.args["flow"]
+        self.distribution = self.args["output"]
 
         # input and latent dimensions
         self.n_z = self.args['n_z']
@@ -140,11 +141,16 @@ class VAE(base.Model):
             n_layers = self.args['n_pixelcnn_layers']
             n_x = self.n_x
             n_ch = self.n_ch
+            n_mix = self.args['n_mixtures']
 
             if self.n_ch == 1:
                 n_cats = 1
-            else:
+            elif self.distribution == 'discrete':
                 n_cats = 256
+            elif self.distribution == 'continuous':
+                n_cats = n_mix * 3
+            else:
+                raise NotImplementedError
 
             if self.nw_type == "fc":
                 if not self.is_autoregressive:
@@ -162,7 +168,6 @@ class VAE(base.Model):
                 elif self.dataset == "cifar":
                     z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                init=init, scope='deconv_network')
-
                 else:
                     raise NotImplementedError
 
@@ -180,8 +185,12 @@ class VAE(base.Model):
                 probs = tf.nn.sigmoid(logits)
 
             elif self.n_ch == 3:
+
                 logits = tf.reshape(z, shape=[-1, self.n_x, n_cats])
-                probs = tf.nn.softmax(logits, dim=-1)
+                probs = None
+
+                if self.distribution == 'discrete':
+                    probs = tf.nn.softmax(logits, dim=-1)
 
             else:
                 raise NotImplementedError
@@ -240,16 +249,24 @@ class VAE(base.Model):
                 l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
 
+                return l1
+
             elif self.n_ch == 3:
-                labels = tf.cast(labels * 255, dtype=tf.int32)   # integers [0,255] inclusive
-                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                if self.distribution == 'discrete':
+                    labels = tf.cast(labels * 255, dtype=tf.int32)  # integers [0,255] inclusive
+                    l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                elif self.distribution == 'continuous':
+                    labels = tf.cast(labels * 255, dtype=tf.int32)  # integers [0,255] inclusive
+                    l1 = self._log_mixture_of_logistics(x=labels, parms=logits, scope='mixture_of_logistics')
+                else:
+                    raise NotImplementedError
+
                 l1 = tf.reduce_sum(l1, axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
 
-            else:
-                raise NotImplementedError
-
-            return l1
+                return l1
 
 
     def _penalty(self, mu, sigma, log_q, z_K, scope):

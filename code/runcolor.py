@@ -20,6 +20,7 @@ parms = {
     'data': "cifar",            # cifar
     'autoregressive': False,
     'flow': False,
+    'output': 'continuous',     # discrete, continuous
 
     # basic parameters
     'n_z': 100,  # 32, 49, 200
