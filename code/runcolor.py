@@ -4,8 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'mixture'   # decoder, reconstruction, decode?
-
+experiment_name = 'mixture'
 
 models = [
     vae.VAE
@@ -27,10 +26,11 @@ parms = {
     'height': 32,
     'width': 32,
     'n_channels': 3,
+    'n_mixtures': 5,
 
     # network parameters
-    'n_units': 500,
-    'n_feature_maps': 64,
+    'n_units': 450,
+    'n_feature_maps': 16,  # 64
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -45,8 +45,8 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'batch_size': 128,
-    'n_conditional_pixels': 300,
+    'batch_size': 64,
+    'n_conditional_pixels': 0,
     'test_sample_size': 500,
     'train_steps': 20000,
     'test_steps': 50,

@@ -5,6 +5,7 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/vae2.py" afterPath="$PROJECT_DIR$/code/models/vae2.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runcolor.py" afterPath="$PROJECT_DIR$/code/runcolor.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runvae.py" afterPath="$PROJECT_DIR$/code/runvae.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -26,8 +27,8 @@
       <file leaf-file-name="vae2.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/models/vae2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="476" column="36" lean-forward="true" selection-start-line="476" selection-start-column="36" selection-end-line="476" selection-end-column="36" />
+            <state relative-caret-position="243">
+              <caret line="225" column="34" lean-forward="true" selection-start-line="225" selection-start-column="34" selection-end-line="225" selection-end-column="34" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -38,8 +39,8 @@
       <file leaf-file-name="layers.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/models/layers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="329">
-              <caret line="760" column="0" lean-forward="true" selection-start-line="760" selection-start-column="0" selection-end-line="760" selection-end-column="0" />
+            <state relative-caret-position="-394">
+              <caret line="5" column="4" lean-forward="false" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="4" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -50,8 +51,8 @@
       <file leaf-file-name="runcolor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/runcolor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="25" column="30" lean-forward="true" selection-start-line="25" selection-start-column="30" selection-end-line="25" selection-end-column="30" />
+            <state relative-caret-position="391">
+              <caret line="52" column="23" lean-forward="true" selection-start-line="52" selection-start-column="23" selection-end-line="52" selection-end-column="23" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
               </folding>
@@ -148,8 +149,8 @@
         <option value="$PROJECT_DIR$/code/data.py" />
         <option value="$PROJECT_DIR$/code/models/jointvae.py" />
         <option value="$PROJECT_DIR$/code/runjoint.py" />
-        <option value="$PROJECT_DIR$/code/runvae.py" />
         <option value="$PROJECT_DIR$/code/models/layers.py" />
+        <option value="$PROJECT_DIR$/code/runvae.py" />
         <option value="$PROJECT_DIR$/code/runcolor.py" />
         <option value="$PROJECT_DIR$/code/models/vae2.py" />
       </list>
@@ -317,13 +318,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00094" summary="update">
-      <created>1501116738435</created>
-      <option name="number" value="00094" />
-      <option name="presentableId" value="LOCAL-00094" />
-      <option name="project" value="LOCAL" />
-      <updated>1501116738435</updated>
     </task>
     <task id="LOCAL-00095" summary="update">
       <created>1501160814197</created>
@@ -661,7 +655,14 @@
       <option name="project" value="LOCAL" />
       <updated>1501537155324</updated>
     </task>
-    <option name="localTasksCounter" value="143" />
+    <task id="LOCAL-00143" summary="update">
+      <created>1501538011993</created>
+      <option name="number" value="00143" />
+      <option name="presentableId" value="LOCAL-00143" />
+      <option name="project" value="LOCAL" />
+      <updated>1501538011993</updated>
+    </task>
+    <option name="localTasksCounter" value="144" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -941,14 +942,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/runvae.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="145">
-          <caret line="39" column="23" lean-forward="false" selection-start-line="39" selection-start-column="23" selection-end-line="39" selection-end-column="23" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="134">
@@ -977,30 +970,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/layers.py">
+    <entry file="file://$PROJECT_DIR$/code/runvae.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="329">
-          <caret line="760" column="0" lean-forward="true" selection-start-line="760" selection-start-column="0" selection-end-line="760" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="243">
+          <caret line="47" column="29" lean-forward="false" selection-start-line="47" selection-start-column="29" selection-end-line="47" selection-end-column="29" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/code/runcolor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="25" column="30" lean-forward="true" selection-start-line="25" selection-start-column="30" selection-end-line="25" selection-end-column="30" />
+        <state relative-caret-position="391">
+          <caret line="52" column="23" lean-forward="true" selection-start-line="52" selection-start-column="23" selection-end-line="52" selection-end-column="23" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/layers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-394">
+          <caret line="5" column="4" lean-forward="false" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="4" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/vae2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="476" column="36" lean-forward="true" selection-start-line="476" selection-start-column="36" selection-end-line="476" selection-end-column="36" />
+        <state relative-caret-position="243">
+          <caret line="225" column="34" lean-forward="true" selection-start-line="225" selection-start-column="34" selection-end-line="225" selection-end-column="34" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>

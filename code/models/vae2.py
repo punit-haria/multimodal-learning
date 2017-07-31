@@ -219,6 +219,9 @@ class VAE(base.Model):
 
             log_pi = nw.logsoftmax(pi_logits)   # log mixture proportions
 
+            x = tf.expand_dims(x, axis=-1)
+            x = tf.tile(x, multiples=[1,1,K])
+
             c_x = x - m
             inv_s = tf.exp(-log_s)
 
@@ -258,7 +261,7 @@ class VAE(base.Model):
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif self.distribution == 'continuous':
-                    labels = tf.cast(labels * 255, dtype=tf.int32)  # integers [0,255] inclusive
+                    labels = tf.cast(labels * 255, dtype=tf.float32)  # integers [0,255] inclusive
                     l1 = self._log_mixture_of_logistics(x=labels, parms=logits, scope='mixture_of_logistics')
                 else:
                     raise NotImplementedError
