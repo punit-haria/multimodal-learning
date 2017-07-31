@@ -40,6 +40,7 @@ class JointVAE(vae.VAE):
         # model specification
         self._model((self.x1, self.x2, self.x1p, self.x2p), init=False)
 
+
         # marginal bounds
 
         self.lx1, self.lx1rec, self.lx1pen, self.logq1, self.logp1 = self._marginal_bound(self.rx1_1, self.x1,
@@ -47,7 +48,6 @@ class JointVAE(vae.VAE):
 
         self.lx2, self.lx2rec, self.lx2pen, self.logq2, self.logp2 = self._marginal_bound(self.rx2_2, self.x2,
                                         self.z2_mu, self.z2_sigma, self.log_q2, self.z2, scope='marg_x2')
-
 
         self.lx1p, self.lx1prec, self.lx1ppen, self.logq1p, self.logp1p = self._marginal_bound(self.rx1_1p, self.x1p,
                              self.z1p_mu, self.z1p_sigma, self.log_q1p, self.z1p, scope='marg_x1p')
@@ -66,6 +66,7 @@ class JointVAE(vae.VAE):
         self.tx1 = self._translation_bound(self.rx1_2p, self.x1p, scope='translate_to_x1')
         self.tx2 = self._translation_bound(self.rx2_1p, self.x2p, scope='translate_to_x2')
 
+
         # variational bound at test time
         if self.objective == "joint":
             self.bound = self.lx12
@@ -74,6 +75,7 @@ class JointVAE(vae.VAE):
             self.bound = self.tx1 + self.tx2   # divide by 2?
         else:
             raise NotImplementedError
+
 
         # loss function
         self.loss = self._loss(scope='loss')

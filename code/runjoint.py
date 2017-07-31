@@ -24,9 +24,9 @@ parms = {
 
     # basic parameters
     'n_z': 49,  # 32, 49, 200
-    'height': 14,
+    'height': 28,
     'width': 28,
-    'n_channels': 1,
+    'n_channels': 3,
 
     # network parameters
     'n_units': 500,
