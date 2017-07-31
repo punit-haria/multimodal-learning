@@ -20,6 +20,11 @@ def convolution_cifar(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
                                 stride=False, init=init, scope='unstrided_1')
         x = nonlinearity(x)
 
+        # extra
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_1a')
+        x = nonlinearity(x)
+
         x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
                                 stride=True, init=init, scope='res_2')
         x = nonlinearity(x)
@@ -30,7 +35,12 @@ def convolution_cifar(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
 
         x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
                                 stride=False, init=init, scope='unstrided_2')
-        x = nonlinearity(x)  #
+        x = nonlinearity(x)
+
+        # extra
+        x = conv_residual_block(x, k=3, n_feature_maps=n_feature_maps, nonlinearity=nonlinearity,
+                                stride=False, init=init, scope='unstrided_2a')
+        x = nonlinearity(x)
 
         x = tf.contrib.layers.flatten(x)
 
@@ -65,6 +75,11 @@ def deconvolution_cifar(z, n_ch, n_feature_maps, n_units, init, scope):
 
         z = tf.reshape(z, shape=[-1, h, w, n_feature_maps])
 
+        # extra
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_2a')
+        z = nonlinearity(z)
+
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
                                   nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_2')
         z = nonlinearity(z)
@@ -75,6 +90,11 @@ def deconvolution_cifar(z, n_ch, n_feature_maps, n_units, init, scope):
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
                                   nonlinearity=nonlinearity, stride=True, init=init, scope='res_2')
+        z = nonlinearity(z)
+
+        # extra
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,
+                                  nonlinearity=nonlinearity, stride=False, init=init, scope='unstrided_1a')
         z = nonlinearity(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_feature_maps, out_ch=n_feature_maps,

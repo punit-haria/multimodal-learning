@@ -29,7 +29,7 @@ parms = {
 
     # network parameters
     'n_units': 500,
-    'n_feature_maps': 32,
+    'n_feature_maps': 64,
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -43,11 +43,11 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.001,
-    'batch_size': 64,
+    'learning_rate': 0.002,
+    'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 500,
-    'train_steps': 80000,
+    'train_steps': 10000,
     'test_steps': 50,
     'save_steps': 20000
 }
