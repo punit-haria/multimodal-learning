@@ -28,7 +28,6 @@ class JointVAE(vae.VAE):
         self.x2 = tf.placeholder(tf.float32, [None, self.n_x], name='x2')
         self.x1p = tf.placeholder(tf.float32, [None, self.n_x], name='x1_paired')
         self.x2p = tf.placeholder(tf.float32, [None, self.n_x], name='x2_paired')
-        self.is_training = tf.placeholder(tf.bool, name='is_training')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         x1_init = tf.constant(self.x1_init, tf.float32)
@@ -280,52 +279,46 @@ class JointVAE(vae.VAE):
     def _summaries(self,):
 
         with tf.variable_scope("summaries"):
-            tf.summary.scalar('lower_bound', self.bound)
-            tf.summary.scalar('loss', self.loss)
-            tf.summary.scalar('reconstruction', self.l1)
-            tf.summary.scalar('penalty', self.l2)
-
-            tf.summary.scalar('sigma0', tf.reduce_mean(self.z_sigma))
-
-            c = 0.5 * np.log(2*np.pi)
-            lq = tf.reduce_sum(self.log_q - c, axis=1)
-            tf.summary.scalar('penalty_log_q', tf.reduce_mean(lq, axis=0))
-            lp = tf.reduce_sum(self.log_p - c, axis=1)
-            tf.summary.scalar('penalty_log_p', tf.reduce_mean(lp, axis=0))
-
-            return tf.summary.merge_all()
-
-
-    def _summaries(self,):
-
-        with tf.variable_scope("summaries", reuse=False):
             tf.summary.scalar('loss', self.loss)
             tf.summary.scalar('lower_bound_on_log_p_x_y', self.bound)
 
+            tf.summary.scalar('marg_x1', self.lx1)
+            tf.summary.scalar('marg_x2', self.lx2)
+            tf.summary.scalar('marg_x1p', self.lx1p)
+            tf.summary.scalar('marg_x2p', self.lx2p)
+
+            tf.summary.scalar('joint', self.lx12)
+            tf.summary.scalar('trans_to_x1', self.tx1)
+            tf.summary.scalar('trans_to_x2', self.tx2)
+
             return tf.summary.merge_all()
 
 
-
-
-    def train(self, x1, x2, x1_pairs, x2_pairs, write=True):
+    def train(self, xs):
         """
         Performs single training step.
         """
-        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.step, self.bound]
+        x1, x2, x1_pairs, x2_pairs = xs
 
-        summary, _, bound = self.sess.run(outputs, feed_dict=feed)
-        if write:
-            self.tr_writer.add_summary(summary, self.n_steps)
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
+        outputs = [self.summary, self.step, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
+
+        summary, _, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
+
+        terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
+                 'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        self._track(terms, prefix='train_')
+        self.tr_writer.add_summary(summary, self.n_steps)
+
         self.n_steps = self.n_steps + 1
 
-        return bound
 
-
-    def test(self, x1, x2):
+    def test(self, xs):
         """
         Computes lower bound on test data.
         """
+        x1, x2 = xs
+
         x1_shape = list(x1.shape)
         x1_shape[0] = 0
         x2_shape = list(x2.shape)
@@ -334,28 +327,14 @@ class JointVAE(vae.VAE):
         x2_empty = np.zeros(shape=x2_shape)
 
         feed = {self.x1: x1_empty, self.x2: x2_empty, self.x1p: x1, self.x2p: x2}
-        outputs = [self.summary, self.test_bound]
+        outputs = [self.summary, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
 
-        summary, test_bound = self.sess.run(outputs, feed_dict=feed)
+        summary, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
+
+        terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
+                 'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
-
-        return test_bound
-
-
-    def translate_x1(self, x1):
-        """
-        Translate x1 to x2.
-        """
-        feed = {self.x1: x1}
-        return self.sess.run(self.rx2_1_probs, feed_dict=feed)
-
-
-    def translate_x2(self, x2):
-        """
-        Translate x2 to x1.
-        """
-        feed = {self.x2: x2}
-        return self.sess.run(self.rx1_2_probs, feed_dict=feed)
 
 
     def reconstruct(self, x1, x2):
@@ -380,6 +359,22 @@ class JointVAE(vae.VAE):
         """
         feed = {self.x2: x2}
         return self.sess.run([self.rx1_2_probs, self.rx2_2_probs], feed_dict=feed)
+
+
+    def translate_x1(self, x1):
+        """
+        Translate x1 to x2.
+        """
+        feed = {self.x1: x1}
+        return self.sess.run(self.rx2_1_probs, feed_dict=feed)
+
+
+    def translate_x2(self, x2):
+        """
+        Translate x2 to x1.
+        """
+        feed = {self.x2: x2}
+        return self.sess.run(self.rx1_2_probs, feed_dict=feed)
 
 
     def encode_x1(self, x1):
