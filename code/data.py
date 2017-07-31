@@ -328,9 +328,9 @@ class ColouredMNIST(MNIST):
                 lX = labels[x_idx]
                 lY = labels[y_idx]
                 l_joint = labels[xy_idx]
-                return (X_joint, l_joint), (Y_joint, l_joint), (X, lX), (Y, lY)
+                return (X, lX), (Y, lY), (X_joint, l_joint), (Y_joint, l_joint)
             else:
-                return X_joint, Y_joint, X, Y
+                return X, Y, X_joint, Y_joint
 
 
     def _create_modalities(self, data):
