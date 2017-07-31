@@ -29,7 +29,7 @@ parms = {
     'n_channels': 3,
 
     # network parameters
-    'n_units': 500,
+    'n_units': 450,
     'n_feature_maps': 32,
 
     # normalizing flow parameters
@@ -50,7 +50,7 @@ parms = {
 
     'n_paired': 1000,
     'n_conditional_pixels': 0,
-    'test_sample_size': 256,
+    'test_sample_size': 128,
     'train_steps': 1000,
     'test_steps': 50,
     'save_steps': 20000
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["fc", False, 4, 1024, "made", False, 6, 0]
+        ["cnn", False, 4, 1024, "made", False, 6, 0]
     ]
 
     if parms['n_channels'] == 3:

@@ -1,10 +1,10 @@
-from models import vae
+from models import vae2 as vae
 from data import CIFAR
 
 from training import train, Results
 
 
-experiment_name = 'exp1'
+experiment_name = 'mixture'   # decoder, reconstruction, decode?
 
 
 models = [
@@ -47,7 +47,7 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 300,
     'test_sample_size': 500,
-    'train_steps': 10000,
+    'train_steps': 20000,
     'test_steps': 50,
     'save_steps': 20000
 }
