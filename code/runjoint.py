@@ -21,7 +21,7 @@ parms = {
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
-    'objective': 'translate',    # joint, translate
+    'objective': 'joint',    # joint, translate
 
     # basic parameters
     'n_z': 20,  # 32, 49, 200

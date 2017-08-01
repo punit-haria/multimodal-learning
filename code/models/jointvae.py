@@ -295,13 +295,6 @@ class JointVAE(vae.VAE):
         x1, x2, x1_pairs, x2_pairs = xs
 
         feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-
-        if True:
-            outputs = [self.step]
-            self.sess.run(outputs, feed_dict=feed)
-
-            return
-
         outputs = [self.summary, self.step, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
 
         summary, _, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
