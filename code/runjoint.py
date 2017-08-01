@@ -21,17 +21,17 @@ parms = {
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
-    'objective': 'joint',    # joint, translate
+    'objective': 'translate',    # joint, translate
 
     # basic parameters
-    'n_z': 49,  # 32, 49, 200
+    'n_z': 20,  # 32, 49, 200
     'height': 28,
     'width': 28,
     'n_channels': 3,
     'n_mixtures': 5,
 
     # network parameters
-    'n_units': 450,
+    'n_units': 200,
     'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters

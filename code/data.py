@@ -217,7 +217,11 @@ class JointStratifiedMNIST(MNIST):
 
         # training set case
         elif dtype == 'train':
-            n_x1 = np.random.randint(n_unpaired_samples + 1)
+            n_min = n_unpaired_samples // 4
+            n_min = max(1, n_min)
+            n_max = n_unpaired_samples - n_min
+
+            n_x1 = np.random.randint(low=n_min, high=n_max + 1)
             n_x2 = n_unpaired_samples - n_x1
 
             _, (batch_p, y12) = sample([self.x12, self.y12], n_paired_samples)
@@ -286,6 +290,7 @@ class ColouredMNIST(MNIST):
         _x_size = int(len(_remain) / 2)
         self.x_only = set(np.random.choice(list(_remain), size=_x_size, replace=False))
         self.y_only = set(np.array(list(_remain - set(self.x_only))))
+
 
     def sample(self, batch_size=100, dtype='train', include_labels=False):
         """
@@ -357,6 +362,7 @@ class ColouredMNIST(MNIST):
 
         return X, Y
 
+
     def _edge_map(self, data):
         """
         Converts MNIST digits into corresponding edge map.
@@ -375,6 +381,7 @@ class ColouredMNIST(MNIST):
 
         return edges
 
+
     def _colour(self, data, colours):
         """
         Randomly colours MNIST digits into one of 3 colours.
@@ -392,6 +399,7 @@ class ColouredMNIST(MNIST):
             rgb.append(rgb_comp)
 
         return np.stack(rgb, axis=-1)
+
 
     def _sample_random_colours(self, n_samples):
         """
@@ -453,7 +461,11 @@ class ColouredStratifiedMNIST(ColouredMNIST):
 
         # training set case
         elif dtype == 'train':
-            n_x1 = np.random.randint(n_unpaired_samples + 1)
+            n_min = n_unpaired_samples // 4
+            n_min = max(1, n_min)
+            n_max = n_unpaired_samples - n_min
+
+            n_x1 = np.random.randint(low=n_min, high=n_max + 1)
             n_x2 = n_unpaired_samples - n_x1
 
             _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
