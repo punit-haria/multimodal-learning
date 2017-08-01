@@ -88,110 +88,87 @@ class JointVAE(vae.VAE):
 
 
     def _model(self, xs, init):
-        global_init = init
 
         with tf.variable_scope('joint_autoencoder') as scope:
-            if not global_init:
+            if not init:
                 scope.reuse_variables()
-            #init = global_init
 
             x1, x2, x1p, x2p = xs
 
+            # encoders
             z1p_mu, z1p_sigma, h1p = self._encoder(x1p, init=init, scope='x1_enc')
             z2p_mu, z2p_sigma, h2p = self._encoder(x2p, init=init, scope='x2_enc')
 
-
-        with tf.variable_scope('joint_autoencoder') as scope:
-
-            scope.reuse_variables()
-            #init = False
-
-            z1_mu, z1_sigma, h1 = self._encoder(x1, init=init, scope='x1_enc')
-            z2_mu, z2_sigma, h2 = self._encoder(x2, init=init, scope='x2_enc')
-
-
-        with tf.variable_scope('joint_autoencoder') as scope:
-            if not global_init:
-                scope.reuse_variables()
-            #init = global_init
-
             z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
 
+            h12 = None
             if h1p is not None and h2p is not None:
                 h12 = tf.nn.elu(h1p + h2p)
-            else:
-                h12 = None
 
+            # sample network
             z12, log_q12 = self._sample(z12_mu, z12_sigma, h12, init=init, scope='sample')
 
-
-        with tf.variable_scope('joint_autoencoder') as scope:
-
-            scope.reuse_variables()
-            #init = False
-
-            z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, init=init, scope='sample')
-            z2, log_q2 = self._sample(z2_mu, z2_sigma, h2, init=init, scope='sample')
-            z1p, log_q1p = self._sample(z1p_mu, z1p_sigma, h1p, init=init, scope='sample')
-            z2p, log_q2p = self._sample(z2p_mu, z2p_sigma, h2p, init=init, scope='sample')
-
-
-        with tf.variable_scope('joint_autoencoder') as scope:
-            if not global_init:
-                scope.reuse_variables()
-            #init = global_init
-
+            # decoders
             rx1_12, rx1_12_probs = self._decoder(z12, x1p, init=init, scope='x1_dec')
             rx2_12, rx2_12_probs = self._decoder(z12, x2p, init=init, scope='x2_dec')
 
+        if not init:
 
-        with tf.variable_scope('joint_autoencoder') as scope:
+            with tf.variable_scope('joint_autoencoder') as scope:
 
-            scope.reuse_variables()
-            #init = False
+                scope.reuse_variables()
 
-            # reconstructions
-            rx1_1, rx1_1_probs = self._decoder(z1, x1, init=init, scope='x1_dec')
-            rx2_2, rx2_2_probs = self._decoder(z2, x2, init=init, scope='x2_dec')
+                # unpaired encodings
+                z1_mu, z1_sigma, h1 = self._encoder(x1, init=init, scope='x1_enc')
+                z2_mu, z2_sigma, h2 = self._encoder(x2, init=init, scope='x2_enc')
 
-            # translations
-            rx1_2, rx1_2_probs = self._decoder(z2, x1, init=init, scope='x1_dec')
-            rx2_1, rx2_1_probs = self._decoder(z1, x2, init=init, scope='x2_dec')
+                # additional samples
+                z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, init=init, scope='sample')
+                z2, log_q2 = self._sample(z2_mu, z2_sigma, h2, init=init, scope='sample')
+                z1p, log_q1p = self._sample(z1p_mu, z1p_sigma, h1p, init=init, scope='sample')
+                z2p, log_q2p = self._sample(z2p_mu, z2p_sigma, h2p, init=init, scope='sample')
 
-            # reconstructions (from paired input)
-            rx1_1p, rx1_1p_probs = self._decoder(z1p, x1p, init=init, scope='x1_dec')
-            rx2_2p, rx2_2p_probs = self._decoder(z2p, x2p, init=init, scope='x2_dec')
+                # reconstructions
+                rx1_1, rx1_1_probs = self._decoder(z1, x1, init=init, scope='x1_dec')
+                rx2_2, rx2_2_probs = self._decoder(z2, x2, init=init, scope='x2_dec')
 
-            # translations (from paired input)
-            rx1_2p, rx1_2p_probs = self._decoder(z2p, x1p, init=init, scope='x1_dec')
-            rx2_1p, rx2_1p_probs = self._decoder(z1p, x2p, init=init, scope='x2_dec')
+                # translations
+                rx1_2, rx1_2_probs = self._decoder(z2, x1, init=init, scope='x1_dec')
+                rx2_1, rx2_1_probs = self._decoder(z1, x2, init=init, scope='x2_dec')
 
+                # reconstructions (from paired input)
+                rx1_1p, rx1_1p_probs = self._decoder(z1p, x1p, init=init, scope='x1_dec')
+                rx2_2p, rx2_2p_probs = self._decoder(z2p, x2p, init=init, scope='x2_dec')
 
-        if not global_init:
-            self.z12_mu, self.z12_sigma = (z12_mu, z12_sigma)
-            self.z1_mu, self.z1_sigma = (z1_mu, z1_sigma)
-            self.z2_mu, self.z2_sigma = (z2_mu, z2_sigma)
-            self.z1p_mu, self.z1p_sigma = (z1p_mu, z1p_sigma)
-            self.z2p_mu, self.z2p_sigma = (z2p_mu, z2p_sigma)
+                # translations (from paired input)
+                rx1_2p, rx1_2p_probs = self._decoder(z2p, x1p, init=init, scope='x1_dec')
+                rx2_1p, rx2_1p_probs = self._decoder(z1p, x2p, init=init, scope='x2_dec')
 
-            self.z12, self.log_q12 = (z12, log_q12)
-            self.z1, self.log_q1 = (z1, log_q1)
-            self.z2, self.log_q2 = (z2, log_q2)
-            self.z1p, self.log_q1p = (z1p, log_q1p)
-            self.z2p, self.log_q2p = (z2p, log_q2p)
+                # final tensors
+                self.z12_mu, self.z12_sigma = (z12_mu, z12_sigma)
+                self.z1_mu, self.z1_sigma = (z1_mu, z1_sigma)
+                self.z2_mu, self.z2_sigma = (z2_mu, z2_sigma)
+                self.z1p_mu, self.z1p_sigma = (z1p_mu, z1p_sigma)
+                self.z2p_mu, self.z2p_sigma = (z2p_mu, z2p_sigma)
 
-            self.rx1_12, self.rx1_12_probs = (rx1_12, rx1_12_probs)
-            self.rx2_12, self.rx2_12_probs = (rx2_12, rx2_12_probs)
+                self.z12, self.log_q12 = (z12, log_q12)
+                self.z1, self.log_q1 = (z1, log_q1)
+                self.z2, self.log_q2 = (z2, log_q2)
+                self.z1p, self.log_q1p = (z1p, log_q1p)
+                self.z2p, self.log_q2p = (z2p, log_q2p)
 
-            self.rx1_1, self.rx1_1_probs = (rx1_1, rx1_1_probs)
-            self.rx2_2, self.rx2_2_probs = (rx2_2, rx2_2_probs)
-            self.rx1_2, self.rx1_2_probs = (rx1_2, rx1_2_probs)
-            self.rx2_1, self.rx2_1_probs = (rx2_1, rx2_1_probs)
+                self.rx1_12, self.rx1_12_probs = (rx1_12, rx1_12_probs)
+                self.rx2_12, self.rx2_12_probs = (rx2_12, rx2_12_probs)
 
-            self.rx1_1p, self.rx1_1p_probs = (rx1_1p, rx1_1p_probs)
-            self.rx2_2p, self.rx2_2p_probs = (rx2_2p, rx2_2p_probs)
-            self.rx1_2p, self.rx1_2p_probs = (rx1_2p, rx1_2p_probs)
-            self.rx2_1p, self.rx2_1p_probs = (rx2_1p, rx2_1p_probs)
+                self.rx1_1, self.rx1_1_probs = (rx1_1, rx1_1_probs)
+                self.rx2_2, self.rx2_2_probs = (rx2_2, rx2_2_probs)
+                self.rx1_2, self.rx1_2_probs = (rx1_2, rx1_2_probs)
+                self.rx2_1, self.rx2_1_probs = (rx2_1, rx2_1_probs)
+
+                self.rx1_1p, self.rx1_1p_probs = (rx1_1p, rx1_1p_probs)
+                self.rx2_2p, self.rx2_2p_probs = (rx2_2p, rx2_2p_probs)
+                self.rx1_2p, self.rx1_2p_probs = (rx1_2p, rx1_2p_probs)
+                self.rx2_1p, self.rx2_1p_probs = (rx2_1p, rx2_1p_probs)
 
 
     def _constrain(self, x1_mu, x1_sigma, x2_mu, x2_sigma, scope):
@@ -474,9 +451,9 @@ class JointVAE(vae.VAE):
     def _empty_like(self, x1, x2):
 
         x1_shape = list(x1.shape)
-        x1_shape[0] = 0
+        #x1_shape[0] = 0
         x2_shape = list(x2.shape)
-        x2_shape[0] = 0
+        #x2_shape[0] = 0
         x1_empty = np.zeros(shape=x1_shape)
         x2_empty = np.zeros(shape=x2_shape)
 
