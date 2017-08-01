@@ -7,14 +7,14 @@ from runcolor import models
 
 
 experiment_name = "mix"
-
-tracker = Results.load(experiment_name)  # performance tracker
-
+suffix = "10000"  # None
 
 data = CIFAR()    # MNIST, CIFAR
 
 
+tracker = Results.load(experiment_name)  # performance tracker
+
 syntheses = ['reconstruct', 'sample', 'fix_latents', 'latent_activations']
 
-image_plot(tracker, models, data=data, suffix=None, syntheses=syntheses,
+image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
            n_rows=8, n_cols=8, n_pixels=300, spacing=0, )

@@ -2,35 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/components.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/experiment_coloured_mnist.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/experiment_mnist.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/global_present.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/joint_vae_cnn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/joint_vae_extended.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/latest_vae.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_data.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_experiment_coloured_mnist.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_experiment_mnist.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_experiment_semi_supervised.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_experiment_vae.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_joint_vae.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_present.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_results.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/old_vae.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/pixel_cnn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/pixelcnn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/present.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/present_coloured.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/reset.sh" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/runpixelcnn.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/utils.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/vae.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/vae_ar.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/vae_color.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/code/old/vae_joint.py" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runjoint.py" afterPath="$PROJECT_DIR$/code/runjoint.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_vae.py" afterPath="$PROJECT_DIR$/code/synthesize_vae.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -62,8 +36,8 @@
       <file leaf-file-name="jointvae.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/models/jointvae.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="566">
-              <caret line="387" column="8" lean-forward="false" selection-start-line="387" selection-start-column="8" selection-end-line="387" selection-end-column="8" />
+            <state relative-caret-position="220">
+              <caret line="137" column="0" lean-forward="true" selection-start-line="137" selection-start-column="0" selection-end-line="137" selection-end-column="0" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -83,21 +57,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/runjoint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="311">
-              <caret line="60" column="0" lean-forward="false" selection-start-line="60" selection-start-column="0" selection-end-line="60" selection-end-column="0" />
+            <state relative-caret-position="345">
+              <caret line="61" column="26" lean-forward="true" selection-start-line="61" selection-start-column="26" selection-end-line="61" selection-end-column="26" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="synthesize_vae.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="synthesize_vae.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/synthesize_vae.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="8" column="23" lean-forward="false" selection-start-line="8" selection-start-column="23" selection-end-line="8" selection-end-column="23" />
+            <state relative-caret-position="300">
+              <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -192,12 +166,12 @@
         <option value="$PROJECT_DIR$/code/models/layers.py" />
         <option value="$PROJECT_DIR$/code/runvae.py" />
         <option value="$PROJECT_DIR$/code/models/vae2.py" />
-        <option value="$PROJECT_DIR$/code/synthesize_vae.py" />
         <option value="$PROJECT_DIR$/code/results.py" />
         <option value="$PROJECT_DIR$/code/runcolor.py" />
         <option value="$PROJECT_DIR$/code/models/jointvae.py" />
         <option value="$PROJECT_DIR$/code/models/vae.py" />
         <option value="$PROJECT_DIR$/code/runjoint.py" />
+        <option value="$PROJECT_DIR$/code/synthesize_vae.py" />
       </list>
     </option>
   </component>
@@ -363,13 +337,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00107" summary="update">
-      <created>1501328710359</created>
-      <option name="number" value="00107" />
-      <option name="presentableId" value="LOCAL-00107" />
-      <option name="project" value="LOCAL" />
-      <updated>1501328710359</updated>
     </task>
     <task id="LOCAL-00108" summary="update">
       <created>1501329341225</created>
@@ -707,7 +674,14 @@
       <option name="project" value="LOCAL" />
       <updated>1501590324448</updated>
     </task>
-    <option name="localTasksCounter" value="156" />
+    <task id="LOCAL-00156" summary="update">
+      <created>1501591219189</created>
+      <option name="number" value="00156" />
+      <option name="presentableId" value="LOCAL-00156" />
+      <option name="project" value="LOCAL" />
+      <updated>1501591219189</updated>
+    </task>
+    <option name="localTasksCounter" value="157" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -996,7 +970,7 @@
         <state relative-caret-position="104">
           <caret line="25" column="17" lean-forward="true" selection-start-line="25" selection-start-column="17" selection-end-line="25" selection-end-column="17" />
           <folding>
-            <element signature="e#0#22#0" expanded="true" />
+            <element signature="e#0#22#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1009,20 +983,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/synthesize_vae.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="23" lean-forward="false" selection-start-line="8" selection-start-column="23" selection-end-line="8" selection-end-column="23" />
-          <folding>
-            <element signature="e#0#29#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/jointvae.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="566">
-          <caret line="387" column="8" lean-forward="false" selection-start-line="387" selection-start-column="8" selection-end-line="387" selection-end-column="8" />
+        <state relative-caret-position="220">
+          <caret line="137" column="0" lean-forward="true" selection-start-line="137" selection-start-column="0" selection-end-line="137" selection-end-column="0" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
@@ -1031,9 +995,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/runjoint.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="311">
-          <caret line="60" column="0" lean-forward="false" selection-start-line="60" selection-start-column="0" selection-end-line="60" selection-end-column="0" />
+        <state relative-caret-position="345">
+          <caret line="61" column="26" lean-forward="true" selection-start-line="61" selection-start-column="26" selection-end-line="61" selection-end-column="26" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/synthesize_vae.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="20" column="0" lean-forward="true" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#29#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
