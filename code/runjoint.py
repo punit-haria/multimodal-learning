@@ -24,14 +24,14 @@ parms = {
     'objective': 'joint',    # joint, translate
 
     # basic parameters
-    'n_z': 20,  # 32, 49, 200
+    'n_z': 49,  # 32, 49, 200
     'height': 28,
     'width': 28,
     'n_channels': 3,
     'n_mixtures': 5,
 
     # network parameters
-    'n_units': 200,
+    'n_units': 450,
     'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
@@ -53,9 +53,9 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 128,
-    'train_steps': 10000,
+    'train_steps': 200,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 1000
 }
 
 
@@ -64,7 +64,10 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", False, 4, 1024, "made", False, 6, 0]
+        ["cnn", True, 4, 1024, "made", False, 6, 0],
+        ["cnn", True, 1, 1024, "cnn", False, 6, 0],
+        ["cnn", False, 4, 1024, "made", True, 6, -0.25],
+        ["cnn", True, 4, 1024, "made", True, 6, -0.25]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])

@@ -49,10 +49,6 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
                n_pixels=300, spacing=0, suffix=None):
 
-    n_images = n_rows * n_cols
-    assert n_images % 2 == 0
-    n = n_images // 2
-
     for name in tracker.get_runs():
 
         print("Plotting ", name, flush=True)
