@@ -55,7 +55,7 @@ parms = {
     'test_sample_size': 128,
     'train_steps': 200,
     'test_steps': 50,
-    'save_steps': 1000
+    'save_steps': 200
 }
 
 
@@ -64,10 +64,10 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", True, 4, 1024, "made", False, 6, 0],
-        ["cnn", True, 1, 1024, "cnn", False, 6, 0],
-        ["cnn", False, 4, 1024, "made", True, 6, -0.25],
-        ["cnn", True, 4, 1024, "made", True, 6, -0.25]
+        ["cnn", False, 4, 1024, "made", False, 6, 0]
+        #["cnn", True, 1, 1024, "cnn", False, 6, 0],
+        #["cnn", False, 4, 1024, "made", True, 6, -0.25],
+        #["cnn", True, 4, 1024, "made", True, 6, -0.25]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])

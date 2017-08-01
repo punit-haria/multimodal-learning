@@ -74,16 +74,20 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
                 reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path)
 
             elif synthesis_type == 'fix_latents':
-                images = fix_latents(model, data, n_rows, n_cols, model_type)
-                _image_plot(images, parms, spacing, path)
+                if model_type == "joint":
+                    print("WARNING: Not implemented for joint model.")
+                else:
+                    images = fix_latents(model, data, n_rows, n_cols)
+                    _image_plot(images, parms, spacing, path)
 
             elif synthesis_type == 'sample':
-                x, rx = separate_samples(model, data, n_rows, n_cols, model_type)
-                _image_plot(x, parms, spacing, path+'__test')
-                _image_plot(rx, parms, spacing, path+'__model')
+                separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path)
 
             elif synthesis_type == 'latent_activations':
-                latent_activation_plot(model, data, 1000, path, model_type)
+                if model_type == "joint":
+                    print("WARNING: Not implemented for joint model.")
+                else:
+                    latent_activation_plot(model, data, 1000, path)
 
             else:
                 raise NotImplementedError
@@ -92,11 +96,6 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
 
 
 def initialize(name, model, parameters, data, tracker, model_type):
-
-    # sample minibatch for weight initialization
-    x = data.sample(parameters['batch_size'], dtype='train')
-    if type(x) in [list, tuple]:
-        x = x[0]
 
     if model_type == 'joint':
         paired = parameters['n_paired_samples']
@@ -225,24 +224,41 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
 
 
-def separate_samples(model, data, n_rows, n_cols):
+def separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path):
+
+    n_x = model.n_x
 
     n = n_rows * n_cols
 
-    x = data.sample(n, dtype='test')
-    if type(x) in [list, tuple]:
-        x = x[0]
+    if model_type == "joint":
+        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
 
-    n_x = x.shape[1]
+        x1 = np.reshape(x1, newshape=[n_rows, n_cols, n_x])
+        x2 = np.reshape(x2, newshape=[n_rows, n_cols, n_x])
 
-    z = model.sample_prior(n)
-    rx = model.decode(z)
+        _image_plot(x1, parms, spacing, path + '__testset_x1')
+        _image_plot(x2, parms, spacing, path + '__testset_x2')
 
-    x = np.reshape(x, newshape=[n_rows, n_cols, n_x])
-    rx = np.reshape(rx, newshape=[n_rows, n_cols, n_x])
+        z = model.sample_prior(n)
+        rx1, rx2 = model.decode(z)
 
-    return x, rx
+        rx1 = np.reshape(rx1, newshape=[n_rows, n_cols, n_x])
+        rx2 = np.reshape(rx2, newshape=[n_rows, n_cols, n_x])
 
+        _image_plot(rx1, parms, spacing, path + '__model_x1')
+        _image_plot(rx2, parms, spacing, path + '__model_x2')
+
+    else:
+        x = sample(data, n_samples=n, model_type=model_type, dtype='test')
+
+        z = model.sample_prior(n)
+        rx = model.decode(z)
+
+        x = np.reshape(x, newshape=[n_rows, n_cols, n_x])
+        rx = np.reshape(rx, newshape=[n_rows, n_cols, n_x])
+
+        _image_plot(x, parms, spacing, path + '__testset')
+        _image_plot(rx, parms, spacing, path + '__model')
 
 
 def fix_latents(model, data, n_rows, n_cols):
