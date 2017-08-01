@@ -20,6 +20,7 @@ parms = {
     'data': "mnist",            # mnist, ???
     'autoregressive': False,
     'flow': False,
+    'output': 'continuous',     # discrete, continuous
     'objective': 'joint',    # joint, translate
 
     # basic parameters
@@ -27,10 +28,11 @@ parms = {
     'height': 28,
     'width': 28,
     'n_channels': 3,
+    'n_mixtures': 5,
 
     # network parameters
     'n_units': 450,
-    'n_feature_maps': 32,
+    'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -45,15 +47,15 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'n_unpaired_samples': 96,
-    'n_paired_samples': 32,
+    'n_unpaired_samples': 96,  # 96
+    'n_paired_samples': 32,    # 32
 
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 128,
     'train_steps': 1000,
     'test_steps': 50,
-    'save_steps': 20000
+    'save_steps': 1000
 }
 
 
@@ -65,10 +67,8 @@ if __name__ == "__main__":
         ["cnn", False, 4, 1024, "made", False, 6, 0]
     ]
 
-    if parms['n_channels'] == 3:
-        data = ColouredStratifiedMNIST(parms['n_paired'])
-    else:
-        data = JointStratifiedMNIST(parms['n_paired'])
+    data = ColouredStratifiedMNIST(parms['n_paired'])
+    #data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
