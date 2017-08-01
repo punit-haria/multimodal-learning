@@ -1,4 +1,4 @@
-from models import vae2 as vae
+from models import vae
 from data import CIFAR
 
 from training import train, Results

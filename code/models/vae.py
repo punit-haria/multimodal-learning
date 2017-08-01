@@ -19,6 +19,7 @@ class VAE(base.Model):
         self.dataset = self.args["data"]
         self.is_autoregressive = self.args["autoregressive"]
         self.is_flow = self.args["flow"]
+        self.distribution = self.args["output"]
 
         # input and latent dimensions
         self.n_z = self.args['n_z']
@@ -45,7 +46,6 @@ class VAE(base.Model):
     def _initialize(self):
         # placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
-        self.is_training = tf.placeholder(tf.bool, name='is_training')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         x_init = tf.constant(self.init_minibatch, tf.float32)
@@ -140,11 +140,16 @@ class VAE(base.Model):
             n_layers = self.args['n_pixelcnn_layers']
             n_x = self.n_x
             n_ch = self.n_ch
+            n_mix = self.args['n_mixtures']
 
             if self.n_ch == 1:
                 n_cats = 1
-            else:
+            elif self.distribution == 'discrete':
                 n_cats = 256
+            elif self.distribution == 'continuous':
+                n_cats = n_mix * 3
+            else:
+                raise NotImplementedError
 
             if self.nw_type == "fc":
                 if not self.is_autoregressive:
@@ -162,7 +167,6 @@ class VAE(base.Model):
                 elif self.dataset == "cifar":
                     z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                init=init, scope='deconv_network')
-
                 else:
                     raise NotImplementedError
 
@@ -177,16 +181,68 @@ class VAE(base.Model):
 
             if self.n_ch == 1:
                 logits = tf.reshape(z, shape=[-1, self.n_x])
-                probs = tf.nn.sigmoid(logits)
+                parms = tf.nn.sigmoid(logits)
 
-            elif self.n_ch == 3:
-                logits = tf.reshape(z, shape=[-1, self.n_x, n_cats])
-                probs = tf.nn.softmax(logits, dim=-1)
             else:
-                raise NotImplementedError
+                logits = tf.reshape(z, shape=[-1, self.n_x, n_cats])
+
+                if self.distribution == 'discrete':
+                    parms = tf.nn.softmax(logits, dim=-1)
+
+                elif self.distribution == 'continuous':
+                    parms = self._sample_mixture(logits)
+
+                else:
+                    raise NotImplementedError
 
 
-            return logits, probs
+            return logits, parms
+
+
+    def _log_mixture_of_logistics(self, x, parms, scope):
+        """
+        Discretized Mixture of Logisitics based on PixelCNN++ (Salismans et al, 2017).
+        x:  ground truth data
+        parms: decoder output (i.e. mixture parameters)
+        """
+        with tf.variable_scope(scope):
+            # x.shape = [batch_size, n_x]
+            # parms.shape = [batch_size, n_x, n_mix], n_mix = 5*5*5 for 5 mixtures
+
+            K = self.args['n_mixtures']
+            assert K == parms.get_shape()[2].value / 3
+
+            m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])          # means
+
+            log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])      # log scale
+            log_s = tf.maximum(log_s, -7)
+
+            pi_logits = tf.slice(parms, begin=[0, 0, 2*K], size=[-1, -1, K])
+            log_pi = nw.logsoftmax(pi_logits)   # log mixture proportions
+
+            x = tf.expand_dims(x, axis=-1)
+            x = tf.tile(x, multiples=[1,1,K])
+
+            c_x = x - m
+            inv_s = tf.exp(-log_s)
+
+            bin_w = 1 / 255
+            plus = inv_s * (c_x + bin_w)
+            minus = inv_s * (c_x - bin_w)
+
+            cdf_plus = tf.nn.sigmoid(plus)
+            cdf_minus = tf.nn.sigmoid(minus)
+
+            pdf = tf.maximum(cdf_plus - cdf_minus, 1e-12)              # case (0,255)
+            log_pdf0 = plus - tf.nn.softplus(plus)  # case 0
+            log_pdf255 = -tf.nn.softplus(minus)     # case 255
+
+            log_pdf = tf.where(x < -0.999, log_pdf0,
+                    tf.where(x > 0.999, log_pdf255, tf.log(pdf)))
+
+            log_mixture = nw.logsumexp(log_pdf + log_pi)
+
+            return log_mixture
 
 
     def _reconstruction(self, logits, labels, scope):
@@ -197,16 +253,24 @@ class VAE(base.Model):
                 l1 = tf.reduce_sum(-tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels), axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
 
+                return l1
+
             elif self.n_ch == 3:
-                labels = tf.cast(labels * 255, dtype=tf.int32)   # integers [0,255] inclusive
-                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                if self.distribution == 'discrete':
+                    labels = tf.cast(labels * 255, dtype=tf.int32)  # integers [0,255] inclusive
+                    l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                elif self.distribution == 'continuous':
+                    labels = 2 * (labels - 0.5)   # scale to [-1,1]
+                    l1 = self._log_mixture_of_logistics(x=labels, parms=logits, scope='mixture_of_logistics')
+                else:
+                    raise NotImplementedError
+
                 l1 = tf.reduce_sum(l1, axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
 
-            else:
-                raise NotImplementedError
-
-            return l1
+                return l1
 
 
     def _penalty(self, mu, sigma, log_q, z_K, scope):
@@ -284,22 +348,26 @@ class VAE(base.Model):
 
         x = x.copy()
         for i in range(remain):
-            feed = {self.z: z, self.x: x, self.is_training: False}
+            feed = {self.z: z, self.x: x}
             probs = self.sess.run(self.rx_probs, feed_dict=feed)
 
             hp, wp = _locate_2d(n_pixels + i, w)
 
             x = np.reshape(x, newshape=[-1, h, w, ch])
 
-            if self.n_ch == 3:
+            if self.n_ch == 1:
+                probs = np.reshape(probs, newshape=[-1, h, w, ch])
+                probs = probs[:, hp, wp, :]
+                x[:, hp, wp, :] = np.random.binomial(n=1, p=probs)
+
+            elif self.distribution == 'discrete':
                 probs = np.reshape(probs, newshape=[-1, h, w, ch, 256])
                 probs = probs[:, hp, wp, :, :]
                 x[:, hp, wp, :] = self._categorical_sampling(probs)
 
-            elif self.n_ch == 1:
-                probs = np.reshape(probs, newshape=[-1, h, w, ch])
-                probs = probs[:, hp, wp, :]
-                x[:, hp, wp, :] = np.random.binomial(n=1, p=probs)
+            elif self.distribution == 'continuous':
+                samples = np.reshape(probs, newshape=[-1, h, w, ch])
+                x[:, hp, wp, :] = samples[:, hp, wp, :]
 
             else:
                 raise NotImplementedError
@@ -309,15 +377,50 @@ class VAE(base.Model):
         return x
 
 
+    def _sample_mixture(self, parms):
+        """
+        Sample from mixture of logistics.
+        """
+        K = self.args['n_mixtures']
+
+        pi_logits = tf.slice(parms, begin=[0, 0, 2 * K], size=[-1, -1, K])
+
+        samp = tf.random_uniform(pi_logits.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        samp = tf.log(-tf.log(samp))   # scale the samples to (-infty, infty)
+
+        mix_idx = tf.argmax(pi_logits - samp, axis=2)   # sample from categorical distribution
+        mix_choice = tf.one_hot(mix_idx, depth=K, axis=-1, dtype=tf.float32)
+
+        m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])  # means
+        m = m * mix_choice
+        m = tf.reduce_sum(m, axis=2)
+
+        log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])  # log scale
+        log_s = log_s * mix_choice
+        log_s = tf.reduce_sum(log_s, axis=2)
+        log_s = tf.maximum(log_s, -7)
+        s = tf.exp(log_s)
+
+        u = tf.random_uniform(m.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        x = m + s * (tf.log(u) - tf.log(1-u))
+        x = tf.minimum(tf.maximum(x, -1), 1)
+
+        return x
+
+
     def _factorized_sampling(self, rx):
         """
         Sample from probabilities rx in a factorized way.
         """
-        if self.n_ch == 3:
+        if self.n_ch == 1:
+            rxp = np.random.binomial(n=1, p=rx)
+
+        elif self.distribution == 'discrete':
             rxp = self._categorical_sampling(rx) / 255
 
-        elif self.n_ch == 1:
-            rxp = np.random.binomial(n=1, p=rx)
+        elif self.distribution == 'continuous':
+            rxp = rx   # (already sampled within tensorflow)
+
         else:
             raise NotImplementedError
 
@@ -328,12 +431,12 @@ class VAE(base.Model):
         """
         Categorical sampling. Probabilities assumed to be on third dimension of three dimensional vector.
         """
-        h = rx.shape[0]
-        w = rx.shape[1]
-        rxp = np.empty([h, w], dtype=rx.dtype)
+        batch = rx.shape[0]
+        features = rx.shape[1]
+        rxp = np.empty([batch, features], dtype=rx.dtype)
 
-        for i in range(h):
-            for j in range(w):
+        for i in range(batch):
+            for j in range(features):
                 rxp[i, j] = np.random.choice(a=256, p=rx[i, j])
 
         return rxp
@@ -370,7 +473,7 @@ class VAE(base.Model):
         """
         Performs single training step.
         """
-        feed = {self.x: x, self.is_training: True}
+        feed = {self.x: x}
         outputs = [self.summary, self.step, self.bound, self.loss, self.l1, self.l2]
 
         summary, _, bound, loss, reconstruction, penalty = self.sess.run(outputs, feed_dict=feed)
@@ -387,7 +490,7 @@ class VAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        feed = {self.x: x, self.is_training: False}
+        feed = {self.x: x}
         outputs = [self.summary, self.bound, self.loss, self.l1, self.l2]
 
         summary, bound, loss, reconstruction, penalty  = self.sess.run(outputs, feed_dict=feed)
@@ -408,7 +511,7 @@ class VAE(base.Model):
             return self._autoregressive_sampling(z, x, n_pixels)
 
         else:
-            feed = {self.x: x, self.is_training: False}
+            feed = {self.x: x}
             rx = self.sess.run(self.rx_probs, feed_dict=feed)
 
             return self._factorized_sampling(rx)
@@ -418,7 +521,7 @@ class VAE(base.Model):
         """
         Encode x.
         """
-        feed = {self.x: x, self.is_training: False}
+        feed = {self.x: x}
         if mean:
             assert self.is_flow == False
             return self.sess.run(self.z_mu, feed_dict=feed)
@@ -435,7 +538,7 @@ class VAE(base.Model):
             return self._autoregressive_sampling(z, x, n_pixels=0)
 
         else:
-            feed = {self.z: z, self.is_training: False}
+            feed = {self.z: z}
             rx = self.sess.run(self.rx_probs, feed_dict=feed)
 
             return self._factorized_sampling(rx)
