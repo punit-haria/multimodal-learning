@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["fc", False, 4, 1024, "made", False, 6, 0]
+        ["cnn", False, 4, 1024, "made", False, 6, 0]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])

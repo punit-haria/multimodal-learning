@@ -93,7 +93,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
             if not global_init:
                 scope.reuse_variables()
-            init = global_init
+            #init = global_init
 
             x1, x2, x1p, x2p = xs
 
@@ -104,7 +104,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
 
             scope.reuse_variables()
-            init = False
+            #init = False
 
             z1_mu, z1_sigma, h1 = self._encoder(x1, init=init, scope='x1_enc')
             z2_mu, z2_sigma, h2 = self._encoder(x2, init=init, scope='x2_enc')
@@ -113,7 +113,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
             if not global_init:
                 scope.reuse_variables()
-            init = global_init
+            #init = global_init
 
             z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
 
@@ -128,7 +128,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
 
             scope.reuse_variables()
-            init = False
+            #init = False
 
             z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, init=init, scope='sample')
             z2, log_q2 = self._sample(z2_mu, z2_sigma, h2, init=init, scope='sample')
@@ -139,7 +139,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
             if not global_init:
                 scope.reuse_variables()
-            init = global_init
+            #init = global_init
 
             rx1_12, rx1_12_probs = self._decoder(z12, x1p, init=init, scope='x1_dec')
             rx2_12, rx2_12_probs = self._decoder(z12, x2p, init=init, scope='x2_dec')
@@ -148,7 +148,7 @@ class JointVAE(vae.VAE):
         with tf.variable_scope('joint_autoencoder') as scope:
 
             scope.reuse_variables()
-            init = False
+            #init = False
 
             # reconstructions
             rx1_1, rx1_1_probs = self._decoder(z1, x1, init=init, scope='x1_dec')
