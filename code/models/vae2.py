@@ -46,7 +46,6 @@ class VAE(base.Model):
     def _initialize(self):
         # placeholders
         self.x = tf.placeholder(tf.float32, [None, self.n_x], name='x')
-        self.is_training = tf.placeholder(tf.bool, name='is_training')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         x_init = tf.constant(self.init_minibatch, tf.float32)
@@ -213,9 +212,11 @@ class VAE(base.Model):
             assert K == parms.get_shape()[2].value / 3
 
             m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])          # means
-            log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])      # log scale
-            pi_logits = tf.slice(parms, begin=[0, 0, 2*K], size=[-1, -1, K])
 
+            log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])      # log scale
+            log_s = tf.maximum(log_s, -7)
+
+            pi_logits = tf.slice(parms, begin=[0, 0, 2*K], size=[-1, -1, K])
             log_pi = nw.logsoftmax(pi_logits)   # log mixture proportions
 
             x = tf.expand_dims(x, axis=-1)
@@ -231,12 +232,12 @@ class VAE(base.Model):
             cdf_plus = tf.nn.sigmoid(plus)
             cdf_minus = tf.nn.sigmoid(minus)
 
-            pdf = cdf_plus - cdf_minus              # case (0,255)
+            pdf = tf.maximum(cdf_plus - cdf_minus, 1e-12)              # case (0,255)
             log_pdf0 = plus - tf.nn.softplus(plus)  # case 0
             log_pdf255 = -tf.nn.softplus(minus)     # case 255
 
             log_pdf = tf.where(x < -0.999, log_pdf0,
-                    tf.where(x > 0.999, log_pdf255, tf.log(tf.maximum(pdf, 1e-12))))
+                    tf.where(x > 0.999, log_pdf255, tf.log(pdf)))
 
             log_mixture = nw.logsumexp(log_pdf + log_pi)
 
@@ -346,7 +347,7 @@ class VAE(base.Model):
 
         x = x.copy()
         for i in range(remain):
-            feed = {self.z: z, self.x: x, self.is_training: False}
+            feed = {self.z: z, self.x: x}
             probs = self.sess.run(self.rx_probs, feed_dict=feed)
 
             hp, wp = _locate_2d(n_pixels + i, w)
@@ -369,6 +370,21 @@ class VAE(base.Model):
             x = np.reshape(x, newshape=[-1, n_x])
 
         return x
+
+
+    def _output_sampling(self, x, x_var, z, z_var):
+        """
+        x/z: either x or z or both
+        x_var/z_var: corresponding tensorflow placeholder variables
+        """
+        feed = {}
+        if x is not None:
+            feed[x_var] = x
+        if z is not None:
+            feed[z_var] = z
+
+
+
 
 
     def _factorized_sampling(self, rx):
@@ -432,7 +448,7 @@ class VAE(base.Model):
         """
         Performs single training step.
         """
-        feed = {self.x: x, self.is_training: True}
+        feed = {self.x: x}
         outputs = [self.summary, self.step, self.bound, self.loss, self.l1, self.l2]
 
         summary, _, bound, loss, reconstruction, penalty = self.sess.run(outputs, feed_dict=feed)
@@ -449,7 +465,7 @@ class VAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        feed = {self.x: x, self.is_training: False}
+        feed = {self.x: x}
         outputs = [self.summary, self.bound, self.loss, self.l1, self.l2]
 
         summary, bound, loss, reconstruction, penalty  = self.sess.run(outputs, feed_dict=feed)
@@ -470,7 +486,7 @@ class VAE(base.Model):
             return self._autoregressive_sampling(z, x, n_pixels)
 
         else:
-            feed = {self.x: x, self.is_training: False}
+            feed = {self.x: x}
             rx = self.sess.run(self.rx_probs, feed_dict=feed)
 
             return self._factorized_sampling(rx)
@@ -480,7 +496,7 @@ class VAE(base.Model):
         """
         Encode x.
         """
-        feed = {self.x: x, self.is_training: False}
+        feed = {self.x: x}
         if mean:
             assert self.is_flow == False
             return self.sess.run(self.z_mu, feed_dict=feed)
@@ -497,7 +513,7 @@ class VAE(base.Model):
             return self._autoregressive_sampling(z, x, n_pixels=0)
 
         else:
-            feed = {self.z: z, self.is_training: False}
+            feed = {self.z: z}
             rx = self.sess.run(self.rx_probs, feed_dict=feed)
 
             return self._factorized_sampling(rx)
