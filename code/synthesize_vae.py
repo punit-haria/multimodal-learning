@@ -3,9 +3,10 @@ from training import Results
 from results import image_plot
 
 
-from runcolor import models, experiment_name
+from runcolor import models
 
 
+experiment_name = "mix"
 
 tracker = Results.load(experiment_name)  # performance tracker
 

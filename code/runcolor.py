@@ -30,7 +30,7 @@ parms = {
 
     # network parameters
     'n_units': 450,
-    'n_feature_maps': 64,  # 64
+    'n_feature_maps': 16,  # 64
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -45,12 +45,12 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'batch_size': 128,
+    'batch_size': 64,  # 128
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
-    'train_steps': 100000,
+    'train_steps': 500,
     'test_steps': 50,
-    'save_steps': 50000
+    'save_steps': 500
 }
 
 

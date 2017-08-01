@@ -385,7 +385,7 @@ class VAE(base.Model):
 
         pi_logits = tf.slice(parms, begin=[0, 0, 2 * K], size=[-1, -1, K])
 
-        samp = tf.random_uniform(pi_logits.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        samp = tf.random_uniform(tf.shape(pi_logits), minval=1e-5, maxval=1 - 1e-5)
         samp = tf.log(-tf.log(samp))   # scale the samples to (-infty, infty)
 
         mix_idx = tf.argmax(pi_logits - samp, axis=2)   # sample from categorical distribution
@@ -401,7 +401,7 @@ class VAE(base.Model):
         log_s = tf.maximum(log_s, -7)
         s = tf.exp(log_s)
 
-        u = tf.random_uniform(m.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        u = tf.random_uniform(tf.shape(m), minval=1e-5, maxval=1 - 1e-5)
         x = m + s * (tf.log(u) - tf.log(1-u))
         x = tf.minimum(tf.maximum(x, -1), 1)
 
