@@ -66,7 +66,7 @@ def train_joint(name, model, parameters, data, tracker):
             print("At iteration ", i, flush=True)
 
             x1, x2 = data.sample_stratified(n_paired_samples=parameters['test_sample_size'], dtype='test')
-            #model.test((x1, x2))
+            model.test((x1, x2))
 
         if i % parameters['save_steps'] == 0:
             if i != 0:

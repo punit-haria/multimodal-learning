@@ -273,11 +273,11 @@ class JointVAE(vae.VAE):
     def _summaries(self,):
 
         with tf.variable_scope("summaries"):
-            tf.summary.scalar('loss', self.loss)
+            tf.summary.scalar('loss_(ignore_test)', self.loss)
             tf.summary.scalar('lower_bound_on_log_p_x_y', self.bound)
 
-            tf.summary.scalar('marg_x1', self.lx1)
-            tf.summary.scalar('marg_x2', self.lx2)
+            tf.summary.scalar('marg_x1_(ignore_test)', self.lx1)
+            tf.summary.scalar('marg_x2_(ignore_test)', self.lx2)
             tf.summary.scalar('marg_x1p', self.lx1p)
             tf.summary.scalar('marg_x2p', self.lx2p)
 
@@ -312,15 +312,14 @@ class JointVAE(vae.VAE):
         Computes lower bound on test data.
         """
         x1, x2 = xs
-        x1_empty, x2_empty = self._empty_like(x1, x2)
 
-        feed = {self.x1: x1_empty, self.x2: x2_empty, self.x1p: x1, self.x2p: x2}
-        outputs = [self.summary, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
+        feed = {self.x1: x1, self.x2: x2, self.x1p: x1, self.x2p: x2}
+        outputs = [self.summary, self.bound, self.loss, self.lx1p, self.lx2p, self.lx12, self.tx1, self.tx2]
 
         summary, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
 
         terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
-                 'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+                 'lx1p': lx1, 'lx2p': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
         self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
 
