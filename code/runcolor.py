@@ -48,9 +48,9 @@ parms = {
     'batch_size': 128,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
-    'train_steps': 20000,
+    'train_steps': 5000,
     'test_steps': 50,
-    'save_steps': 20000
+    'save_steps': 5000
 }
 
 
