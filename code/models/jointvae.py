@@ -334,6 +334,8 @@ class JointVAE(vae.VAE):
         z = self.encode(xs, mean=False)
         x1, x2 = self.decode(z)
 
+        return x1, x2
+
 
     def encode(self, xs, mean=False):
         """

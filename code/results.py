@@ -177,7 +177,7 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
     if model_type == 'joint':
 
-        names = ['joint', 'joint', 'translate', 'translate', 'marginal', 'marginal']
+        names = ['joint_x1', 'joint_x2', 'translate_x1', 'translate_x2', 'marginal_x1', 'marginal_x2']
         ims = []
 
         x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
