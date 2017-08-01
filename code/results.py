@@ -71,8 +71,7 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
             path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type
 
             if synthesis_type == 'reconstruct':
-                images = reconstruction(model, data, n_rows, n_cols, model_type)
-                _image_plot(images, parms, spacing, path)
+                reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path)
 
             elif synthesis_type == 'fix_latents':
                 images = fix_latents(model, data, n_rows, n_cols, model_type)
@@ -169,7 +168,7 @@ def latent_activation_plot(model, data, n_samples, path):
 
 
 
-def reconstruction(model, data, n_rows, n_cols, model_type):
+def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path):
 
     n_x = model.n_x
 
@@ -178,14 +177,38 @@ def reconstruction(model, data, n_rows, n_cols, model_type):
     n = n_images // 2
 
     if model_type == 'joint':
+
+        names = ['joint', 'joint', 'translate', 'translate', 'marginal', 'marginal']
+        ims = []
+
         x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-
         rx1, rx2 = model.reconstruct((x1, x2))
+        ims.append((x1, rx1))
+        ims.append((x2, rx2))
 
+        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+        _, rx2 = model.reconstruct((x1, None))
+        rx1, _ = model.reconstruct((None, x2))
+        ims.append((x1, rx2))
+        ims.append((x2, rx1))
 
+        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+        rx1, _ = model.reconstruct((x1, None))
+        _, rx2 = model.reconstruct((None, x2))
+        ims.append((x1, rx1))
+        ims.append((x2, rx2))
 
+        for name, tup in zip(names, ims):
+            x, rx = tup
 
+            images = np.empty((n_images, n_x))
+            images[0::2] = x
+            images[1::2] = rx
 
+            images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+
+            current_path = path + "_" + name
+            _image_plot(images, parms, spacing, current_path)
 
     else:
         x = sample(data, n_samples=n, model_type=model_type, dtype='test')
@@ -198,7 +221,7 @@ def reconstruction(model, data, n_rows, n_cols, model_type):
 
         images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
 
-    return images
+        _image_plot(images, parms, spacing, path)
 
 
 
