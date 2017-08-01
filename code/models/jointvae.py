@@ -437,7 +437,16 @@ class JointVAE(vae.VAE):
             x1 = np.reshape(x1, newshape=[-1, h, w, ch])
             x2 = np.reshape(x2, newshape=[-1, h, w, ch])
 
-            if self.n_ch == 3:
+            if self.n_ch == 1:
+                p1 = np.reshape(p1, newshape=[-1, h, w, ch])
+                p1 = p1[:, hp, wp, :]
+                x1[:, hp, wp, :] = np.random.binomial(n=1, p=p1)
+
+                p2 = np.reshape(p2, newshape=[-1, h, w, ch])
+                p2 = p2[:, hp, wp, :]
+                x2[:, hp, wp, :] = np.random.binomial(n=1, p=p2)
+
+            elif self.distribution == 'discrete':
                 p1 = np.reshape(p1, newshape=[-1, h, w, ch, 256])
                 p1 = p1[:, hp, wp, :, :]
                 x1[:, hp, wp, :] = self._categorical_sampling(p1)
@@ -446,14 +455,12 @@ class JointVAE(vae.VAE):
                 p2 = p2[:, hp, wp, :, :]
                 x2[:, hp, wp, :] = self._categorical_sampling(p2)
 
-            elif self.n_ch == 1:
+            elif self.distribution == 'continuous':
                 p1 = np.reshape(p1, newshape=[-1, h, w, ch])
-                p1 = p1[:, hp, wp, :]
-                x1[:, hp, wp, :] = np.random.binomial(n=1, p=p1)
+                x1[:, hp, wp, :] = p1[:, hp, wp, :]
 
                 p2 = np.reshape(p2, newshape=[-1, h, w, ch])
-                p2 = p2[:, hp, wp, :]
-                x2[:, hp, wp, :] = np.random.binomial(n=1, p=p2)
+                x2[:, hp, wp, :] = p2[:, hp, wp, :]
 
             else:
                 raise NotImplementedError

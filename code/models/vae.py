@@ -405,6 +405,8 @@ class VAE(base.Model):
         x = m + s * (tf.log(u) - tf.log(1-u))
         x = tf.minimum(tf.maximum(x, -1), 1)
 
+        x = (x + 1) / 2   # scale to (0,1)
+
         return x
 
 
@@ -419,7 +421,7 @@ class VAE(base.Model):
             rxp = self._categorical_sampling(rx) / 255
 
         elif self.distribution == 'continuous':
-            rxp = rx   # (already sampled within tensorflow)
+            rxp = rx  # (already sampled within tensorflow)
 
         else:
             raise NotImplementedError
