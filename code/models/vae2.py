@@ -207,8 +207,7 @@ class VAE(base.Model):
         """
         with tf.variable_scope(scope):
             # x.shape = [batch_size, n_x]
-            # parms.shape = [batch_size, n_x, n_mix]
-            # n_mix = 5*5*5 for K=5 mixtures
+            # parms.shape = [batch_size, n_x, n_mix], n_mix = 5*5*5 for 5 mixtures
 
             K = self.args['n_mixtures']
             assert K == parms.get_shape()[2].value / 3
@@ -225,8 +224,9 @@ class VAE(base.Model):
             c_x = x - m
             inv_s = tf.exp(-log_s)
 
-            plus = inv_s * (c_x + 0.5)
-            minus = inv_s * (c_x - 0.5)
+            bin_w = 1 / 255
+            plus = inv_s * (c_x + bin_w)
+            minus = inv_s * (c_x - bin_w)
 
             cdf_plus = tf.nn.sigmoid(plus)
             cdf_minus = tf.nn.sigmoid(minus)
@@ -235,13 +235,12 @@ class VAE(base.Model):
             log_pdf0 = plus - tf.nn.softplus(plus)  # case 0
             log_pdf255 = -tf.nn.softplus(minus)     # case 255
 
-            log_pdf = tf.where(x < 0.5, log_pdf0,
-                    tf.where(x > 254.5, log_pdf255, tf.log(tf.maximum(pdf, 1e-12))))
+            log_pdf = tf.where(x < -0.999, log_pdf0,
+                    tf.where(x > 0.999, log_pdf255, tf.log(tf.maximum(pdf, 1e-12))))
 
             log_mixture = nw.logsumexp(log_pdf + log_pi)
 
             return log_mixture
-
 
 
     def _reconstruction(self, logits, labels, scope):
@@ -261,7 +260,7 @@ class VAE(base.Model):
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif self.distribution == 'continuous':
-                    labels = tf.cast(labels * 255, dtype=tf.float32)  # integers [0,255] inclusive
+                    labels = 2 * (labels - 0.5)   # scale to [-1,1]
                     l1 = self._log_mixture_of_logistics(x=labels, parms=logits, scope='mixture_of_logistics')
                 else:
                     raise NotImplementedError

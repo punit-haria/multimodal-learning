@@ -4,7 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'mixture'
+experiment_name = 'mix'
 
 models = [
     vae.VAE
@@ -30,7 +30,7 @@ parms = {
 
     # network parameters
     'n_units': 450,
-    'n_feature_maps': 16,  # 64
+    'n_feature_maps': 64,  # 64
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -45,7 +45,7 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'batch_size': 64,
+    'batch_size': 128,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
     'train_steps': 20000,
@@ -59,7 +59,8 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", False, 4, 1024, "made", False, 6, 0]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, -0.125]
     ]
 
     data = CIFAR()
@@ -69,29 +70,30 @@ if __name__ == "__main__":
     for c in configs:
 
         parms['type'] = c[0]
+        parms['output'] = c[1]
 
-        parms['flow'] = c[1]
-        parms['flow_layers'] = c[2]
-        parms['flow_units'] = c[3]
-        parms['flow_type'] = c[4]
+        parms['flow'] = c[2]
+        parms['flow_layers'] = c[3]
+        parms['flow_units'] = c[4]
+        parms['flow_type'] = c[5]
 
-        parms['autoregressive'] = c[5]
-        parms['n_pixelcnn_layers'] = c[6]
+        parms['autoregressive'] = c[6]
+        parms['n_pixelcnn_layers'] = c[7]
 
-        parms['anneal'] = c[7]
+        parms['anneal'] = c[8]
 
         for name, model in models.items():
 
-            name =  experiment_name + "_cifar_" + c[0]
+            name =  experiment_name + "_cifar_" + parms['type'] + "_" + parms['output']
 
-            if c[1]:
-                name += "_flow_" + str(c[2]) + "_" + str(c[3]) + "_" + c[4]
+            if parms['flow']:
+                name += "_flow_" + str(parms['flow_layers']) + "_" + str(parms['flow_units']) + "_" + parms['flow_type']
 
-            if c[5]:
-                name += "_autoregressive_" + str(c[6])
+            if parms['autoregressive']:
+                name += "_autoregressive_" + str(parms['n_pixelcnn_layers'])
 
-            if c[7] < 0:
-                name += "_anneal_" + str(c[7])
+            if parms['anneal'] < 0:
+                name += "_anneal_" + str(parms['anneal'])
 
             train(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 
