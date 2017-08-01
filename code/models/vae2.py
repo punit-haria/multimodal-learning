@@ -372,6 +372,33 @@ class VAE(base.Model):
         return x
 
 
+    def _sample_mixture(self, parms):
+        """
+        Sample from mixture of logistics.
+        """
+        K = self.args['n_mixtures']
+
+        pi_logits = tf.slice(parms, begin=[0, 0, 2 * K], size=[-1, -1, K])
+
+        samp = tf.random_uniform(pi_logits.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        samp = tf.log(-tf.log(samp))   # scale the samples to (-infty, infty)
+        mix_idx = tf.argmax(pi_logits - samp, axis=2)
+        mix_choice = tf.one_hot(mix_idx, depth=K, axis=-1, dtype=tf.float32)
+
+        m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])  # means
+        m = m * mix_choice
+
+        log_s = mix_choice * tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])  # log scale
+        log_s = log_s * mix_choice
+        log_s = tf.maximum(log_s, -7)
+        s = tf.exp(log_s)
+
+        u = tf.random_uniform(m.get_shape(), minval=1e-5, maxval=1 - 1e-5)
+        rx = m + s * (tf.log(u) - tf.log(1-u))
+
+        return rx
+
+
     def _output_sampling(self, x, x_var, z, z_var):
         """
         x/z: either x or z or both
