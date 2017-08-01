@@ -243,6 +243,22 @@ def conv(x, k, out_ch, stride, init, scope, mask_type=None):
         strides = [1, 2, 2, 1] if stride else [1, 1, 1, 1]
         w_shape = [k, k, in_ch, out_ch]
 
+        '''
+        if True:
+            w = tf.get_variable('w', shape=w_shape, initializer=tf.random_normal_initializer(0,0.1))
+            b = tf.get_variable('b', shape=[out_ch], initializer=tf.constant_initializer(0.1))
+
+            if init:
+                w = w.initialized_value()
+                b = b.initialized_value()
+
+            if mask_type is not None:
+                mask = conv_mask(w_shape, mask_type)
+                w = tf.multiply(w, tf.constant(mask))
+
+            return tf.nn.conv2d(x, w, strides=strides, padding='SAME') + b
+        '''
+
         if init:
             v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
             v = v.initialized_value()
@@ -299,6 +315,22 @@ def deconv(x, k, out_ch, stride, init, scope):
             strides = [1, 1, 1, 1]
 
         w_shape = [k, k, out_ch, in_ch]
+
+        '''
+        if True:
+            w = tf.get_variable('w', shape=w_shape, initializer=tf.random_normal_initializer(0,0.1))
+            b = tf.get_variable('b', shape=[out_ch], initializer=tf.constant_initializer(0.1))
+
+            if init:
+                w = w.initialized_value()
+                b = b.initialized_value()
+
+            d = tf.nn.conv2d_transpose(x, w, output_shape=out_shape, strides=strides, padding='SAME')
+            out_shape[0] = None
+            d.set_shape(out_shape)
+
+            return d + b
+        '''
 
         if init:
             v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
@@ -719,6 +751,18 @@ def linear(x, n_out, init, scope):
     with tf.variable_scope(scope):
 
         n_x = x.get_shape()[1].value
+
+        '''
+        if True:
+            w = tf.get_variable('w', shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.1))
+            b = tf.get_variable('b', shape=[n_out], initializer=tf.constant_initializer(0.1))
+
+            if init:
+                w = w.initialized_value()
+                b = b.initialized_value()
+
+            return tf.matmul(x, w) + b
+        '''
 
         if init:
             v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.05))
