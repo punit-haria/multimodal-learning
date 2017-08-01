@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runcolor.py" afterPath="$PROJECT_DIR$/code/runcolor.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -49,8 +48,8 @@
       <file leaf-file-name="runcolor.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/runcolor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="232">
-              <caret line="52" column="22" lean-forward="true" selection-start-line="52" selection-start-column="22" selection-end-line="52" selection-end-column="22" />
+            <state relative-caret-position="220">
+              <caret line="17" column="41" lean-forward="true" selection-start-line="17" selection-start-column="41" selection-end-line="17" selection-end-column="41" />
               <folding>
                 <element signature="e#0#30#0" expanded="true" />
               </folding>
@@ -316,13 +315,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00097" summary="update">
-      <created>1501243714798</created>
-      <option name="number" value="00097" />
-      <option name="presentableId" value="LOCAL-00097" />
-      <option name="project" value="LOCAL" />
-      <updated>1501243714798</updated>
     </task>
     <task id="LOCAL-00098" summary="update">
       <created>1501248541174</created>
@@ -660,7 +652,14 @@
       <option name="project" value="LOCAL" />
       <updated>1501546088163</updated>
     </task>
-    <option name="localTasksCounter" value="146" />
+    <task id="LOCAL-00146" summary="update">
+      <created>1501546452698</created>
+      <option name="number" value="00146" />
+      <option name="presentableId" value="LOCAL-00146" />
+      <option name="project" value="LOCAL" />
+      <updated>1501546452698</updated>
+    </task>
+    <option name="localTasksCounter" value="147" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -998,8 +997,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/runcolor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="232">
-          <caret line="52" column="22" lean-forward="true" selection-start-line="52" selection-start-column="22" selection-end-line="52" selection-end-column="22" />
+        <state relative-caret-position="220">
+          <caret line="17" column="41" lean-forward="true" selection-start-line="17" selection-start-column="41" selection-end-line="17" selection-end-column="41" />
           <folding>
             <element signature="e#0#30#0" expanded="true" />
           </folding>
