@@ -217,7 +217,7 @@ class JointStratifiedMNIST(MNIST):
 
         # training set case
         elif dtype == 'train':
-            n_min = n_unpaired_samples // 4
+            n_min = 2 * n_unpaired_samples // 5
             n_min = max(1, n_min)
             n_max = n_unpaired_samples - n_min
 
@@ -461,7 +461,7 @@ class ColouredStratifiedMNIST(ColouredMNIST):
 
         # training set case
         elif dtype == 'train':
-            n_min = n_unpaired_samples // 4
+            n_min = 2 * n_unpaired_samples // 5
             n_min = max(1, n_min)
             n_max = n_unpaired_samples - n_min
 

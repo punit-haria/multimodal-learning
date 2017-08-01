@@ -47,7 +47,7 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 
 
 def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
-               n_pixels=300, spacing=0, suffix=None):
+               n_pixels=300, spacing=0, suffix=None, model_type='regular'):
 
     for name in tracker.get_runs():
 
@@ -61,7 +61,7 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
         if suffix is None:
             suffix = str(parms['train_steps'])
 
-        model = initialize(name, _model, parms, data, tracker)
+        model = initialize(name, _model, parms, data, tracker, model_type)
         model.load_state(suffix=suffix)
 
         for synthesis_type in syntheses:
@@ -71,20 +71,20 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
             path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type
 
             if synthesis_type == 'reconstruct':
-                images = reconstruction(model, data, n_rows, n_cols)
+                images = reconstruction(model, data, n_rows, n_cols, model_type)
                 _image_plot(images, parms, spacing, path)
 
             elif synthesis_type == 'fix_latents':
-                images = fix_latents(model, data, n_rows, n_cols)
+                images = fix_latents(model, data, n_rows, n_cols, model_type)
                 _image_plot(images, parms, spacing, path)
 
             elif synthesis_type == 'sample':
-                x, rx = separate_samples(model, data, n_rows, n_cols)
+                x, rx = separate_samples(model, data, n_rows, n_cols, model_type)
                 _image_plot(x, parms, spacing, path+'__test')
                 _image_plot(rx, parms, spacing, path+'__model')
 
             elif synthesis_type == 'latent_activations':
-                latent_activation_plot(model, data, 1000, path)
+                latent_activation_plot(model, data, 1000, path, model_type)
 
             else:
                 raise NotImplementedError
@@ -92,11 +92,54 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
         model.close()
 
 
+def initialize(name, model, parameters, data, tracker, model_type):
+
+    # sample minibatch for weight initialization
+    x = data.sample(parameters['batch_size'], dtype='train')
+    if type(x) in [list, tuple]:
+        x = x[0]
+
+    if model_type == 'joint':
+        paired = parameters['n_paired_samples']
+        unpaired = parameters['n_unpaired_samples']
+        xs = sample(data, n_samples=(paired, unpaired), model_type=model_type, dtype='train')
+
+        mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatches=xs)
+
+    else:
+        n = parameters['batch_size']
+        x = sample(data, n_samples=n, model_type=model_type, dtype='train')
+
+        mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatch=x)
+
+    return mod
+
+
+def sample(data, n_samples, model_type, dtype='test'):
+
+    if model_type == 'joint':
+        if dtype == 'test':
+            x1, x2 = data.sample_stratified(n_paired_samples=n_samples, dtype='test')
+            return x1, x2
+
+        else:
+            paired, unpaired = n_samples
+            x1, x2, x1p, x2p = data.sample_stratified(n_paired_samples=paired, n_unpaired_samples=unpaired,
+                                                      dtype='train')
+            return x1, x2, x1p, x2p
+
+    else:
+        x = data.sample(n_samples, dtype=dtype)
+        if type(x) in [list, tuple]:
+            x = x[0]
+
+        return x
+
 
 def latent_activation_plot(model, data, n_samples, path):
 
     if model.is_flow:
-        print("WARNING: CAN'T PLOT LATENT ACTIVATIONS FOR NORMALIZING FLOW!")
+        print("CAN'T PLOT LATENT ACTIVATIONS FOR NORMALIZING FLOW!")
         return
 
     import seaborn as sns
@@ -126,28 +169,34 @@ def latent_activation_plot(model, data, n_samples, path):
 
 
 
-def reconstruction(model, data, n_rows, n_cols):
+def reconstruction(model, data, n_rows, n_cols, model_type):
+
+    n_x = model.n_x
 
     n_images = n_rows * n_cols
-
     assert n_cols % 2 == 0
-
     n = n_images // 2
 
-    x = data.sample(n, dtype='test')
-    if type(x) in [list, tuple]:
-        x = x[0]
+    if model_type == 'joint':
+        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
 
-    n_x = x.shape[1]
+        rx1, rx2 = model.reconstruct((x1, x2))
 
-    rx = model.reconstruct(x)
 
-    images = np.empty((n_images, n_x))
-    images[0::2] = x
-    images[1::2] = rx
 
-    images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
-    #images = np.transpose(images, axes=[1,0,2])
+
+
+
+    else:
+        x = sample(data, n_samples=n, model_type=model_type, dtype='test')
+
+        rx = model.reconstruct(x)
+
+        images = np.empty((n_images, n_x))
+        images[0::2] = x
+        images[1::2] = rx
+
+        images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
 
     return images
 
@@ -202,6 +251,7 @@ def fix_latents(model, data, n_rows, n_cols):
     return images
 
 
+
 def _image_plot(images, parms, spacing, path):
 
     h = parms['height']
@@ -226,19 +276,6 @@ def _image_plot(images, parms, spacing, path):
 
     plt.savefig(path)
     plt.close('all')
-
-
-def initialize(name, model, parameters, data, tracker):
-
-    # sample minibatch for weight initialization
-    x = data.sample(parameters['batch_size'], dtype='train')
-    if type(x) in [list, tuple]:
-        x = x[0]
-
-    # constructor
-    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatch=x)
-
-    return mod
 
 
 def plot_latent_space(Z, Y, path):
