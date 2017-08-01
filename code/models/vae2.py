@@ -382,21 +382,25 @@ class VAE(base.Model):
 
         samp = tf.random_uniform(pi_logits.get_shape(), minval=1e-5, maxval=1 - 1e-5)
         samp = tf.log(-tf.log(samp))   # scale the samples to (-infty, infty)
-        mix_idx = tf.argmax(pi_logits - samp, axis=2)
+
+        mix_idx = tf.argmax(pi_logits - samp, axis=2)   # sample from categorical distribution
         mix_choice = tf.one_hot(mix_idx, depth=K, axis=-1, dtype=tf.float32)
 
         m = tf.slice(parms, begin=[0, 0, 0], size=[-1, -1, K])  # means
         m = m * mix_choice
+        m = tf.reduce_sum(m, axis=2)
 
-        log_s = mix_choice * tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])  # log scale
+        log_s = tf.slice(parms, begin=[0, 0, K], size=[-1, -1, K])  # log scale
         log_s = log_s * mix_choice
+        log_s = tf.reduce_sum(log_s, axis=2)
         log_s = tf.maximum(log_s, -7)
         s = tf.exp(log_s)
 
         u = tf.random_uniform(m.get_shape(), minval=1e-5, maxval=1 - 1e-5)
-        rx = m + s * (tf.log(u) - tf.log(1-u))
+        x = m + s * (tf.log(u) - tf.log(1-u))
+        x = tf.minimum(tf.maximum(x, -1), 1)
 
-        return rx
+        return x
 
 
     def _output_sampling(self, x, x_var, z, z_var):
