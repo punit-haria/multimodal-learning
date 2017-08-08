@@ -392,11 +392,11 @@ def conditional_pixel_cnn(x, z, n_layers, out_ch, n_feature_maps, init, scope):
 
         c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
 
-        z = nonlinearity(z)
+        z = nonlinearity(z)   # remove this?
 
         for i in range(n_layers):
             cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
-            c = c + cz
+            c = c + cz  # do we need to convolve z??
 
             c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
 
