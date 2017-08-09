@@ -6,10 +6,10 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "mix"
-suffix = "10000"  # None
+experiment_name = "ar_test"
+suffix = None  # None
 
-data = CIFAR()    # MNIST, CIFAR
+data = MNIST()    # MNIST, CIFAR
 
 
 tracker = Results.load(experiment_name)  # performance tracker
