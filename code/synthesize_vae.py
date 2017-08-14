@@ -6,7 +6,7 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "ar_further_tests"
+experiment_name = "ar_conjoined"
 
 train_steps = 50000
 save_steps = 10000

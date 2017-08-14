@@ -4,7 +4,7 @@ from data import MNIST, ColouredMNIST
 from training import train, Results
 
 
-experiment_name = 'ar_further_tests'
+experiment_name = 'ar_conjoined'
 
 
 models = [
@@ -60,7 +60,8 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", "discrete", False, 2, 320, "made", True, 3, -0.125],
+        ["cnn", "discrete", False, 2, 320, "made", True, 2, -0.125],
+        ["cnn", "discrete", False, 2, 320, "made", True, 3, -0.125]
         #["cnn", "discrete", True, 2, 320, "made", False, 3, 0],
         #["cnn", "discrete", True, 2, 320, "made", False, 3, -0.125],
         #["cnn", "discrete", True, 2, 320, "made", False, 3, -0.25],
