@@ -47,8 +47,8 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'n_unpaired_samples': 96,  # 96
-    'n_paired_samples': 32,    # 32
+    'n_unpaired_samples': 192,
+    'n_paired_samples': 64,
 
     'n_paired': 1000,
     'n_conditional_pixels': 0,

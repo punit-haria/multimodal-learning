@@ -4,7 +4,7 @@ from data import MNIST, ColouredMNIST
 from training import train, Results
 
 
-experiment_name = 'ar_test'
+experiment_name = 'ar_further_tests'
 
 
 models = [
@@ -46,10 +46,10 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'batch_size': 256,
+    'batch_size': 128,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 10000,
+    'train_steps': 50000,
     'test_steps': 50,
     'save_steps': 10000
 }
@@ -60,11 +60,11 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0],
-        ["cnn", "discrete", False, 4, 1024, "made", True, 3, 0],
-        ["cnn", "discrete", False, 4, 1024, "made", True, 3, -0.125],
-        ["cnn", "discrete", False, 4, 1024, "made", True, 3, -0.25],
-        ["cnn", "discrete", False, 4, 1024, "made", True, 3, -0.5]
+        ["cnn", "discrete", False, 2, 320, "made", True, 3, -0.125],
+        #["cnn", "discrete", True, 2, 320, "made", False, 3, 0],
+        #["cnn", "discrete", True, 2, 320, "made", False, 3, -0.125],
+        #["cnn", "discrete", True, 2, 320, "made", False, 3, -0.25],
+        #["cnn", "discrete", True, 2, 320, "made", False, 3, -0.5]
     ]
 
     data = MNIST()

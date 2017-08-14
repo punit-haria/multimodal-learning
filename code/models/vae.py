@@ -151,33 +151,38 @@ class VAE(base.Model):
             else:
                 raise NotImplementedError
 
-            if self.nw_type == "fc":
-                if not self.is_autoregressive:
-                    n_x = n_x * n_cats
+            n_ch = n_ch * n_cats
+            n_x = n_x * n_cats
 
-                z = nw.fc_decode(z, n_units=n_units, n_x=n_x, init=init, scope='fc_network')
 
-            elif self.nw_type == "cnn":
-                if not self.is_autoregressive:
-                    n_ch = n_ch * n_cats
+            if not self.is_autoregressive:
+
+                if self.nw_type == "fc":
+
+                    z = nw.fc_decode(z, n_units=n_units, n_x=n_x, init=init, scope='fc_decoder')
+
+                elif self.nw_type == "cnn":
+
+                    if self.dataset == "mnist":
+                        z = nw.deconvolution_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                               init=init, scope='deconv_network')
+                    elif self.dataset == "cifar":
+                        z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                   init=init, scope='deconv_network')
+                    else:
+                        raise NotImplementedError
+
+            else:  # autoregressive decoder
+
+                x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
                 if self.dataset == "mnist":
-                    z = nw.deconvolution_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                           init=init, scope='deconv_network')
-                elif self.dataset == "cifar":
-                    z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
-                                               init=init, scope='deconv_network')
+                    z = nw.deconvolution_mnist_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
+                                                  n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
+
                 else:
                     raise NotImplementedError
 
-            if self.is_autoregressive:
-                x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
-                z = tf.reshape(z, shape=[-1, self.h, self.w, self.n_ch])
-
-                n_ch = self.n_ch * n_cats
-
-                z = nw.conditional_pixel_cnn(x, z, n_layers=n_layers, out_ch=n_ch,
-                                              n_feature_maps=n_fmaps, init=init, scope='pixel_cnn')
 
             if self.n_ch == 1:
                 logits = tf.reshape(z, shape=[-1, self.n_x])

@@ -6,8 +6,12 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "ar_test"
-suffix = None  # None
+experiment_name = "ar_further_tests"
+
+train_steps = 50000
+save_steps = 10000
+
+suffix = None
 
 data = MNIST()    # MNIST, CIFAR
 
@@ -16,5 +20,10 @@ tracker = Results.load(experiment_name)  # performance tracker
 
 syntheses = ['reconstruct', 'sample', 'fix_latents', 'latent_activations']
 
-image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
-           n_rows=8, n_cols=8, n_pixels=0, spacing=0)
+
+for i in range(save_steps, train_steps+save_steps, save_steps):
+
+    suffix = str(i)
+
+    image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
+            n_rows=8, n_cols=8, n_pixels=0, spacing=0)

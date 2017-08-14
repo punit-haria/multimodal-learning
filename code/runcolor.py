@@ -45,7 +45,7 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'batch_size': 128,  # 128
+    'batch_size': 256,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
     'train_steps': 100000,
