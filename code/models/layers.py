@@ -415,15 +415,15 @@ def deconvolution_mnist_ar(x, z, out_ch, n_feature_maps, n_units, n_ar_layers, i
 
         # AR layers:
 
-        #z = nonlinearity(z)
+        z = nonlinearity(z)
 
         c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
 
         for i in range(n_ar_layers):
-            #cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
-            #c = c + cz
+            cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
+            c = c + cz
 
-            c = c + z
+            #c = c + z
             c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
 
         c = nonlinearity(c)

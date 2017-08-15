@@ -176,9 +176,15 @@ class VAE(base.Model):
 
                 x = tf.reshape(x, shape=[-1, self.h, self.w, self.n_ch])
 
+                if self.nw_type == "fc":
+                    raise NotImplementedError
+
                 if self.dataset == "mnist":
                     z = nw.deconvolution_mnist_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
                                                   n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
+
+                elif self.dataset == "cifar":
+                    raise NotImplementedError
 
                 else:
                     raise NotImplementedError

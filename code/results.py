@@ -68,7 +68,7 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
 
             print("Synthesis: ", synthesis_type, flush=True)
 
-            path = '../plots/' + tracker.name + '_' + name.replace(".","-") + '_' + synthesis_type + '_' + suffix
+            path = '../plots/' + name.replace(".","-") + '_' + synthesis_type + '_' + suffix
 
             if synthesis_type == 'reconstruct':
                 reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path)

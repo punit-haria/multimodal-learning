@@ -6,10 +6,10 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "ar_conjoined"
+experiment_name = "global_lossy"
 
-train_steps = 50000
-save_steps = 10000
+train_steps = 100000
+save_steps = 20000
 
 suffix = None
 

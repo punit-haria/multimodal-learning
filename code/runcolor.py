@@ -4,7 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'mix'
+experiment_name = 'basic'
 
 models = [
     vae.VAE
