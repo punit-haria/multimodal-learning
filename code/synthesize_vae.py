@@ -8,8 +8,8 @@ from runcolor import models
 
 experiment_name = "cifar"
 
-train_steps = 100000
-save_steps = 20000
+train_steps = 150000
+save_steps = 30000
 
 suffix = None
 
