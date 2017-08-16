@@ -22,11 +22,11 @@ parms = {
     'output': 'continuous',     # discrete, continuous
 
     # basic parameters
-    'n_z': 100,  # 32, 49, 200
+    'n_z': 200,  # 200
     'height': 32,
     'width': 32,
     'n_channels': 3,
-    'n_mixtures': 5,
+    'n_mixtures': 5,  # 5
 
     # network parameters
     'n_units': 450,
@@ -44,11 +44,11 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.001,
+    'learning_rate': 0.001,  # 0.001
     'batch_size': 256,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
-    'train_steps': 1000,
+    'train_steps': 5000,
     'test_steps': 50,
     'save_steps': 10000
 }
@@ -59,30 +59,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10, 0.0005],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10, 0.0005]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5, 0.001]
     ]
     data = CIFAR()
 

@@ -6,7 +6,7 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "global_lossy"
+experiment_name = "cifar"
 
 train_steps = 100000
 save_steps = 20000
