@@ -44,7 +44,7 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.002,
+    'learning_rate': 0.001,
     'batch_size': 256,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
@@ -56,21 +56,33 @@ parms = {
 
 if __name__ == "__main__":
 
-    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10, 0.001],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10, 0.0005],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10, 0.0005]
     ]
     data = CIFAR()
 
@@ -93,10 +105,12 @@ if __name__ == "__main__":
 
         parms['n_z'] = c[9]
         parms['n_mixtures'] = c[10]
+        parms['learning_rate'] = c[11]
 
         for name, model in models.items():
 
-            name =  experiment_name + '_nz_' +  str(parms['n_z']) + '_nmix_' + str(parms['n_mixtures'])
+            name =  experiment_name + '_nz_' +  str(parms['n_z']) + '_nmix_' + str(parms['n_mixtures']) \
+                    + '_lr_' + str(parms['learning_rate'])
 
             if parms['flow']:
                 name += "_flow_" + str(parms['flow_layers']) + "_" + str(parms['flow_units']) + "_" + parms['flow_type']
