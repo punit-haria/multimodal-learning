@@ -4,7 +4,7 @@ from data import CIFAR
 from training import train, Results
 
 
-experiment_name = 'basic'
+experiment_name = 'cifar'
 
 models = [
     vae.VAE
@@ -44,11 +44,11 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.001,
+    'learning_rate': 0.002,
     'batch_size': 256,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
-    'train_steps': 100000,
+    'train_steps': 1000,
     'test_steps': 50,
     'save_steps': 10000
 }
@@ -56,12 +56,22 @@ parms = {
 
 if __name__ == "__main__":
 
-    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 5],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 5],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 5],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 5],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 50, 10],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 100, 10],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 200, 10],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 6, 0, 500, 10]
     ]
-
     data = CIFAR()
 
     tracker = Results(experiment_name)  # performance tracker
@@ -81,15 +91,18 @@ if __name__ == "__main__":
 
         parms['anneal'] = c[8]
 
+        parms['n_z'] = c[9]
+        parms['n_mixtures'] = c[10]
+
         for name, model in models.items():
 
-            name =  experiment_name + "_cifar_" + parms['type'] + "_" + parms['output']
+            name =  experiment_name + '_nz_' +  str(parms['n_z']) + '_nmix_' + str(parms['n_mixtures'])
 
             if parms['flow']:
                 name += "_flow_" + str(parms['flow_layers']) + "_" + str(parms['flow_units']) + "_" + parms['flow_type']
 
             if parms['autoregressive']:
-                name += "_autoregressive_" + str(parms['n_pixelcnn_layers'])
+                name += "_ar_" + str(parms['n_pixelcnn_layers'])
 
             if parms['anneal'] < 0:
                 name += "_anneal_" + str(parms['anneal'])
