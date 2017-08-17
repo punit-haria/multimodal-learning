@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'joint'
+experiment_name = 'halved_mnist'
 
 
 models = [
@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "fc",              # fc, cnn
-    'data': "mnist",            # halved_mnist, mnist, ???
+    'data': "halved_mnist",            # halved_mnist, mnist
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
@@ -32,7 +32,7 @@ parms = {
 
     # network parameters
     'n_units': 96,
-    'n_feature_maps': 32,  # 32
+    'n_feature_maps': 16,  # 32
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -53,17 +53,18 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 128,
-    'train_steps': 10000,
+    'train_steps': 100,
     'test_steps': 50,
-    'save_steps': 5000
+    'save_steps': 2000
 }
 
 
 if __name__ == "__main__":
 
-    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr, n_units
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr, n_units, n_fmaps
     configs = [
-        ["fc", "discrete", False, 4, 1024, "made", False, 3, 0, 32, 5, 0.001, 96]
+        ["fc", "discrete", False, 4, 1024, "made", False, 3, 0,   32, 5, 0.001, 128, 0],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0,   32, 5, 0.001, 96, 16]
     ]
 
     #data = ColouredStratifiedMNIST(parms['n_paired'])
@@ -89,17 +90,24 @@ if __name__ == "__main__":
         parms['n_mixtures'] = c[10]
         parms['learning_rate'] = c[11]
         parms['n_units'] = c[12]
+        parms['n_feature_maps'] = c[13]
 
 
         for name, model in models.items():
 
-            name =  experiment_name + "_" + parms['data'] + "_" + parms['type']
+            name =  experiment_name + '_nz_' +  str(parms['n_z']) \
+                    + '_lr_' + str(parms['learning_rate']) + '_fmaps_' + str(parms['n_feature_maps']) \
+                    + '_units_' + str(parms['n_units'])
+
+            if parms['output'] == "continuous":
+                name += '_nmix_' + str(parms['n_mixtures'])
+
 
             if parms['flow']:
                 name += "_flow_" + str(parms['flow_layers']) + "_" + str(parms['flow_units']) + "_" + parms['flow_type']
 
             if parms['autoregressive']:
-                name += "_autoregressive_" + str(parms['n_pixelcnn_layers'])
+                name += "_ar_" + str(parms['n_pixelcnn_layers'])
 
             if c[7] < 0:
                 name += "_anneal_" + str(parms['anneal'])
