@@ -66,18 +66,6 @@ class JointVAE(vae.VAE):
         self.tx1 = self._translation_bound(self.rx1_2p, self.x1p, scope='translate_to_x1')
         self.tx2 = self._translation_bound(self.rx2_1p, self.x2p, scope='translate_to_x2')
 
-
-        # variational bound at test time
-        if self.objective == "joint":
-            self.bound = self.lx12
-
-        elif self.objective == "translate":
-            self.bound_t1 = self.tx1  # + lx1p
-            self.bound_t2 = self.tx2  # + lx2p
-        else:
-            raise NotImplementedError
-
-
         # loss function
         self.loss = self._loss(scope='loss')
 
@@ -264,9 +252,6 @@ class JointVAE(vae.VAE):
 
                 bound = (self.tx1 + lx2p) + (self.tx2 + lx1p) + lx1 + lx2
 
-                self.bound_t1 += lx2p
-                self.bound_t2 += lx1p
-
             else:
                 raise NotImplementedError
 
@@ -280,11 +265,11 @@ class JointVAE(vae.VAE):
             tf.summary.scalar('loss_(ignore_test)', self.loss)
 
             if self.objective == "joint":
-                tf.summary.scalar('lower_bound_on_log_p_x_y', self.bound)
+                tf.summary.scalar('lower_bound_on_log_p_x_y', self.lx12)
 
             elif self.objective == "translate":
-                tf.summary.scalar('lower_bound_on_log_p_x_y_t1', self.bound_t1)
-                tf.summary.scalar('lower_bound_on_log_p_x_y_t2', self.bound_t2)
+                tf.summary.scalar('lower_bound_on_log_p_x_y_t1', self.tx1 + self.lx2p)
+                tf.summary.scalar('lower_bound_on_log_p_x_y_t2', self.tx2 + self.lx1p)
 
             else:
                 raise NotImplementedError
