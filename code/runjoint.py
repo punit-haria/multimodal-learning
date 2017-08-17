@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "fc",              # fc, cnn
-    'data': "mnist",            # mnist, ???
+    'data': "mnist",            # halved_mnist, mnist, ???
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
@@ -31,7 +31,7 @@ parms = {
     'n_mixtures': 5,
 
     # network parameters
-    'n_units': 450,
+    'n_units': 96,
     'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
@@ -61,31 +61,35 @@ parms = {
 
 if __name__ == "__main__":
 
-    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal
-
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr, n_units
     configs = [
-        ["cnn", False, 4, 1024, "made", False, 6, 0],
-        ["cnn", True, 4, 1024, "made", False, 6, 0],
-        ["cnn", False, 4, 1024, "made", True, 6, -0.25]
+        ["fc", "discrete", False, 4, 1024, "made", False, 3, 0, 32, 5, 0.001, 96]
     ]
 
-    data = ColouredStratifiedMNIST(parms['n_paired'])
-    #data = JointStratifiedMNIST(parms['n_paired'])
+    #data = ColouredStratifiedMNIST(parms['n_paired'])
+    data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
     for c in configs:
         parms['type'] = c[0]
+        parms['output'] = c[1]
 
-        parms['flow'] = c[1]
-        parms['flow_layers'] = c[2]
-        parms['flow_units'] = c[3]
-        parms['flow_type'] = c[4]
+        parms['flow'] = c[2]
+        parms['flow_layers'] = c[3]
+        parms['flow_units'] = c[4]
+        parms['flow_type'] = c[5]
 
-        parms['autoregressive'] = c[5]
-        parms['n_pixelcnn_layers'] = c[6]
+        parms['autoregressive'] = c[6]
+        parms['n_pixelcnn_layers'] = c[7]
 
-        parms['anneal'] = c[7]
+        parms['anneal'] = c[8]
+
+        parms['n_z'] = c[9]
+        parms['n_mixtures'] = c[10]
+        parms['learning_rate'] = c[11]
+        parms['n_units'] = c[12]
+
 
         for name, model in models.items():
 

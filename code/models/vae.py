@@ -105,6 +105,12 @@ class VAE(base.Model):
                 elif self.dataset == "cifar":
                     mu, sigma, h = nw.convolution_cifar(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                         n_z=self.n_z, extra=extra, init=init, scope='conv_network')
+
+                elif self.dataset == "halved_mnist":
+                    mu, sigma, h = nw.convolution_halved_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps,
+                                                               n_units=n_units, n_z=self.n_z, extra=extra,
+                                                               init=init, scope='conv_network')
+
                 else:
                     raise NotImplementedError
 
@@ -169,6 +175,10 @@ class VAE(base.Model):
                     elif self.dataset == "cifar":
                         z = nw.deconvolution_cifar(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                    init=init, scope='deconv_network')
+
+                    elif self.dataset == "halved_mnist":
+                        z = nw.deconvolution_halved_mnist(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                   init=init, scope='deconv_network')
                     else:
                         raise NotImplementedError
 
@@ -186,6 +196,9 @@ class VAE(base.Model):
                 elif self.dataset == "cifar":
                     z = nw.deconvolution_cifar_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
                                                   n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
+
+                elif self.dataset == "halved_mnist":
+                    raise NotImplementedError
 
                 else:
                     raise NotImplementedError
