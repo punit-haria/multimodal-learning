@@ -13,7 +13,7 @@ save_steps = 30000
 
 suffix = None
 
-data = MNIST()    # MNIST, CIFAR
+data = CIFAR()    # MNIST, CIFAR
 
 
 tracker = Results.load(experiment_name)  # performance tracker

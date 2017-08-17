@@ -50,7 +50,7 @@ def convolution_cifar(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
 
 def deconvolution_cifar(z, n_ch, n_feature_maps, n_units, init, scope):
     """
-    Deconvolution network for use with MNIST dataset.
+    Deconvolution network for use with CIFAR dataset.
     """
     with tf.variable_scope(scope):
 
@@ -377,6 +377,63 @@ def pixel_cnn(x, n_layers, ka, kb, out_ch, n_feature_maps, init, scope):
         c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
 
         return c
+
+
+def deconvolution_cifar_ar(x, z, out_ch, n_feature_maps, n_units, n_ar_layers, init, scope):
+    """
+    Deconvolution network for use with CIFAR dataset.
+    """
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+        n_ch = n_feature_maps
+
+        z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')
+        z = nonlinearity(z)
+
+        h = w = 4
+        dim = h * w * n_ch
+        z = linear(z, n_out=dim, init=init, scope='linear_layer')
+        z = nonlinearity(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_ch])
+
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_ch, out_ch=n_ch,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_3')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_ch, out_ch=n_ch,
+                                  nonlinearity=nonlinearity, stride=True, init=init, scope='res_2')
+        z = nonlinearity(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_ch, out_ch=n_ch, nonlinearity=nonlinearity,
+                                  stride=True, init=init, scope='res_1')
+
+        ka = 3
+        kb = 3
+
+        # AR layers:
+
+        z = nonlinearity(z)
+
+        c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+
+        for i in range(n_ar_layers):
+            cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
+            c = c + cz
+
+            #c = c + z
+            c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
+
+        c = nonlinearity(c)
+
+        c = conv(c, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='final_1x1_a')
+        c = nonlinearity(c)
+        c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
+
+        return c
+
 
 
 def deconvolution_mnist_ar(x, z, out_ch, n_feature_maps, n_units, n_ar_layers, init, scope):
