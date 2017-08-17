@@ -79,7 +79,7 @@ class VAE(base.Model):
             if not init:
                 scope.reuse_variables()
 
-            z_mu, z_sigma, h = self._encoder(x, init=init, scope='x_enc')
+            z_mu, z_sigma, h, _ = self._encoder(x, init=init, scope='x_enc')
             z, log_q = self._sample(z_mu, z_sigma, h, init=init, scope='sampler')
             rx, rx_probs = self._decoder(z, x, init=init, scope='x_dec')
 
@@ -95,26 +95,26 @@ class VAE(base.Model):
 
             mu = sigma = h = None
             if self.nw_type == "fc":
-                mu, sigma, h = nw.fc_encode(x, n_units=n_units, n_z=self.n_z, extra=extra,
+                mu, sigma, h, he = nw.fc_encode(x, n_units=n_units, n_z=self.n_z, extra=extra,
                                             init=init, scope='fc_network')
 
             elif self.nw_type == "cnn":
                 if self.dataset == "mnist":
-                    mu, sigma, h = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                    mu, sigma, h, he = nw.convolution_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                     n_z=self.n_z, extra=extra, init=init, scope='conv_network')
                 elif self.dataset == "cifar":
-                    mu, sigma, h = nw.convolution_cifar(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                    mu, sigma, h, he = nw.convolution_cifar(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                         n_z=self.n_z, extra=extra, init=init, scope='conv_network')
 
                 elif self.dataset == "halved_mnist":
-                    mu, sigma, h = nw.convolution_halved_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps,
+                    mu, sigma, h, he = nw.convolution_halved_mnist(x, n_ch=self.n_ch, n_feature_maps=n_fmaps,
                                                                n_units=n_units, n_z=self.n_z, extra=extra,
                                                                init=init, scope='conv_network')
 
                 else:
                     raise NotImplementedError
 
-            return mu, sigma, h
+            return mu, sigma, h, he
 
 
     def _sample(self, mu0, sigma0, h, init, scope):

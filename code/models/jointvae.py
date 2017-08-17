@@ -82,17 +82,18 @@ class JointVAE(vae.VAE):
             if not init:
                 scope.reuse_variables()
 
+            extra = self.args['flow']
+
             x1, x2, x1p, x2p = xs
 
             # encoders
-            z1p_mu, z1p_sigma, h1p = self._encoder(x1p, init=init, scope='x1_enc')
-            z2p_mu, z2p_sigma, h2p = self._encoder(x2p, init=init, scope='x2_enc')
+            z1p_mu, z1p_sigma, h1p, he1p = self._encoder(x1p, init=init, scope='x1_enc')
+            z2p_mu, z2p_sigma, h2p, he2p = self._encoder(x2p, init=init, scope='x2_enc')
 
-            z12_mu, z12_sigma = self._constrain(z1p_mu, z1p_sigma, z2p_mu, z2p_sigma, scope='x1x2_enc')
-
-            h12 = None
-            if h1p is not None and h2p is not None:
-                h12 = tf.nn.elu(h1p + h2p)
+            # joint encoder
+            z12_mu, z12_sigma, h12 = self._joint_encoder(z1p_mu, z1p_sigma, h1p, z2p_mu, z2p_sigma, h2p,
+                                x1, x2, x1h=he1p, x2h=he2p,
+                                extra=extra, init=init, scope='x1x2_enc')
 
             # sample network
             z12, log_q12 = self._sample(z12_mu, z12_sigma, h12, init=init, scope='sample')
@@ -108,8 +109,8 @@ class JointVAE(vae.VAE):
                 scope.reuse_variables()
 
                 # unpaired encodings
-                z1_mu, z1_sigma, h1 = self._encoder(x1, init=init, scope='x1_enc')
-                z2_mu, z2_sigma, h2 = self._encoder(x2, init=init, scope='x2_enc')
+                z1_mu, z1_sigma, h1, _ = self._encoder(x1, init=init, scope='x1_enc')
+                z2_mu, z2_sigma, h2, _ = self._encoder(x2, init=init, scope='x2_enc')
 
                 # additional samples
                 z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, init=init, scope='sample')
@@ -158,6 +159,43 @@ class JointVAE(vae.VAE):
                 self.rx2_2p, self.rx2_2p_probs = (rx2_2p, rx2_2p_probs)
                 self.rx1_2p, self.rx1_2p_probs = (rx1_2p, rx1_2p_probs)
                 self.rx2_1p, self.rx2_1p_probs = (rx2_1p, rx2_1p_probs)
+
+
+
+    def _joint_encoder(self, mu1, sigma1, h1, mu2, sigma2, h2, x1, x2, x1h, x2h, extra, init, scope):
+
+        with tf.variable_scope(scope):
+
+            jtype = self.args['joint_type']
+
+            n_units = self.args['n_units']
+            n_z = self.n_z
+
+            if jtype == 'constrain':
+                z_mu, z_sigma = self._constrain(mu1, sigma1, mu2, sigma2, scope='constrain')
+
+                h12 = None
+                if h1 is not None and h2 is not None:
+                    h12 = tf.nn.elu(h1 + h2)
+
+            elif jtype == 'small':
+                z_mu, z_sigma, h12 = nw.joint_encode(h1, h2, n_units, n_z, extra, init, scope='small_enc')
+
+            elif jtype == 'large':
+                if self.dataset == 'halved_mnist':
+                    raise NotImplementedError
+
+                elif self.dataset == 'mnist':
+                    raise NotImplementedError
+
+                else:
+                    raise NotImplementedError
+
+            else:
+                raise NotImplementedError
+
+            return z_mu, z_sigma, h12
+
 
 
     def _constrain(self, x1_mu, x1_sigma, x2_mu, x2_sigma, scope):

@@ -45,7 +45,7 @@ def convolution_cifar(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
 
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
-        return mu, sigma, h
+        return mu, sigma, h, x
 
 
 def deconvolution_cifar(z, n_ch, n_feature_maps, n_units, init, scope):
@@ -130,7 +130,7 @@ def convolution_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope)
 
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
-        return mu, sigma, h
+        return mu, sigma, h, x
 
 
 def deconvolution_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
@@ -211,7 +211,7 @@ def convolution_halved_mnist(x, n_ch, n_feature_maps, n_units, n_z, extra, init,
 
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
-        return mu, sigma, h
+        return mu, sigma, h, x
 
 
 def deconvolution_halved_mnist(z, n_ch, n_feature_maps, n_units, init, scope):
@@ -872,6 +872,28 @@ def ar_mult(x, n_out, init, scope):
         return x
 
 
+def joint_encode(h1, h2, n_units, n_z, extra, init, scope):
+
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+
+        h1 = linear(h1, n_units, init=init, scope='layer_h1')
+        h2 = linear(h2, n_units, init=init, scope='layer_h2')
+
+        h12 = nonlinearity(h1 + h2)
+
+        mean = linear(h12, n_z, init=init, scope="mean_layer")
+
+        sigma = linear(h12, n_z, init=init, scope="var_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        h = linear(h12, n_z, init=init, scope="h_layer") if extra else None
+
+        return mean, sigma, h
+
+
+
 def fc_encode(x, n_units, n_z, extra, init, scope):
     """
     2 layer fully-connected encoder, as in AEVB paper.
@@ -892,7 +914,7 @@ def fc_encode(x, n_units, n_z, extra, init, scope):
 
         h = linear(x, n_z, init=init, scope="h_layer") if extra else None
 
-        return mean, sigma, h
+        return mean, sigma, h, x
 
 
 def fc_decode(z, n_units, n_x, init, scope):
