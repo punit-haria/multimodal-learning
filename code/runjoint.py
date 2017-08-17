@@ -116,7 +116,7 @@ if __name__ == "__main__":
             if parms['autoregressive']:
                 name += "_ar_" + str(parms['n_pixelcnn_layers'])
 
-            if c[7] < 0:
+            if parms['anneal'] < 0:
                 name += "_anneal_" + str(parms['anneal'])
 
             train_joint(name=name, model=model, parameters=parms, data=data, tracker=tracker)
