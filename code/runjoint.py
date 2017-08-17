@@ -48,7 +48,7 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.002,
-    'n_unpaired_samples': 192,
+    'n_unpaired_samples': 256,
     'n_paired_samples': 64,
 
     'n_paired': 1000,
@@ -62,10 +62,12 @@ parms = {
 
 if __name__ == "__main__":
 
-    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr, n_units, n_fmaps
+    # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
+    # joint_type, n_z, n_mix, lr, n_units, n_fmaps
+
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 32, 5, 0.001, 96, 16],
-        ["fc", "discrete", False, 4, 1024, "made", False, 3, 0,   32, 5, 0.001, 128, 0]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 32, 5, 0.001, 96, 16],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 32, 5, 0.001, 96, 16]
     ]
 
     #data = ColouredStratifiedMNIST(parms['n_paired'])
@@ -87,11 +89,13 @@ if __name__ == "__main__":
 
         parms['anneal'] = c[8]
 
-        parms['n_z'] = c[9]
-        parms['n_mixtures'] = c[10]
-        parms['learning_rate'] = c[11]
-        parms['n_units'] = c[12]
-        parms['n_feature_maps'] = c[13]
+        parms['joint_type'] = c[9]
+
+        parms['n_z'] = c[10]
+        parms['n_mixtures'] = c[11]
+        parms['learning_rate'] = c[12]
+        parms['n_units'] = c[13]
+        parms['n_feature_maps'] = c[14]
 
 
         for name, model in models.items():
