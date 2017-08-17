@@ -8,8 +8,8 @@ from runjoint import models
 
 experiment_name = "halved_mnist"
 
-train_steps = 150000
-save_steps = 30000
+train_steps = 10000
+save_steps = 2000
 
 #data = ColouredStratifiedMNIST(1000)
 data = JointStratifiedMNIST(1000)
@@ -26,3 +26,4 @@ for i in range(save_steps, train_steps+save_steps, save_steps):
 
     image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
                n_rows=8, n_cols=8, n_pixels=0, spacing=0, model_type='joint')
+

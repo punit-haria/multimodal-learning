@@ -25,9 +25,9 @@ parms = {
 
     # basic parameters
     'n_z': 100,  # 32, 49, 200
-    'height': 28,
+    'height': 14,
     'width': 28,
-    'n_channels': 3,
+    'n_channels': 1,
     'n_mixtures': 5,
 
     # network parameters
@@ -46,14 +46,14 @@ parms = {
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.001,
+    'learning_rate': 0.002,
     'n_unpaired_samples': 192,
     'n_paired_samples': 64,
 
     'n_paired': 1000,
     'n_conditional_pixels': 0,
-    'test_sample_size': 128,
-    'train_steps': 100,
+    'test_sample_size': 1000,
+    'train_steps': 10000,
     'test_steps': 50,
     'save_steps': 2000
 }

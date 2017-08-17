@@ -177,37 +177,69 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
     if model_type == 'joint':
 
-        names = ['joint_x1', 'joint_x2', 'translate_x1', 'translate_x2', 'marginal_x1', 'marginal_x2']
-        ims = []
+        if parms['data'] == 'halved_mnist':
+            names = ['translate_x1', 'translate_x2']
 
-        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-        rx1, rx2 = model.reconstruct((x1, x2))
-        ims.append((x1, rx1))
-        ims.append((x2, rx2))
+            ims = []
 
-        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-        _, rx2 = model.reconstruct((x1, None))
-        rx1, _ = model.reconstruct((None, x2))
-        ims.append((x1, rx2))
-        ims.append((x2, rx1))
+            x1, x2 = sample(data, n_samples=n*2, model_type=model_type, dtype='test')
+            _, rx2 = model.reconstruct((x1, None))
+            rx1, _ = model.reconstruct((None, x2))
 
-        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-        rx1, _ = model.reconstruct((x1, None))
-        _, rx2 = model.reconstruct((None, x2))
-        ims.append((x1, rx1))
-        ims.append((x2, rx2))
+            image_dim = [14, 28, 1]
+            x1 = np.reshape(x1, newshape=[-1]+image_dim)
+            x2 = np.reshape(x2, newshape=[-1]+image_dim)
+            rx1 = np.reshape(rx1, newshape=[-1] + image_dim)
+            rx2 = np.reshape(rx2, newshape=[-1] + image_dim)
 
-        for name, tup in zip(names, ims):
-            x, rx = tup
+            t1 = np.concatenate((x1, rx2), axis=1)
+            t2 = np.concatenate((x2, rx1), axis=1)
 
-            images = np.empty((n_images, n_x))
-            images[0::2] = x
-            images[1::2] = rx
+            t1 = np.reshape(t1, newshape=[n*2, -1])
+            t2 = np.reshape(t2, newshape=[n*2, -1])
 
-            images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+            ims.append(t1)
+            ims.append(t2)
 
-            current_path = path + "_" + name
-            _image_plot(images, parms, spacing, current_path)
+            for name, images in zip(names, ims):
+                images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+
+                current_path = path + "_" + name
+                _image_plot(images, parms, spacing, current_path, h=28, w=28)
+
+
+        else:
+            names = ['joint_x1', 'joint_x2', 'translate_x1', 'translate_x2', 'marginal_x1', 'marginal_x2']
+            ims = []
+
+            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            rx1, rx2 = model.reconstruct((x1, x2))
+            ims.append((x1, rx1))
+            ims.append((x2, rx2))
+
+            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            _, rx2 = model.reconstruct((x1, None))
+            rx1, _ = model.reconstruct((None, x2))
+            ims.append((x1, rx2))
+            ims.append((x2, rx1))
+
+            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            rx1, _ = model.reconstruct((x1, None))
+            _, rx2 = model.reconstruct((None, x2))
+            ims.append((x1, rx1))
+            ims.append((x2, rx2))
+
+            for name, tup in zip(names, ims):
+                x, rx = tup
+
+                images = np.empty((n_images, n_x))
+                images[0::2] = x
+                images[1::2] = rx
+
+                images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+
+                current_path = path + "_" + name
+                _image_plot(images, parms, spacing, current_path)
 
     else:
         x = sample(data, n_samples=n, model_type=model_type, dtype='test')
@@ -231,22 +263,47 @@ def separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, pa
     n = n_rows * n_cols
 
     if model_type == "joint":
-        x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+        if parms['data'] == 'halved_mnist':
+            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
 
-        x1 = np.reshape(x1, newshape=[n_rows, n_cols, n_x])
-        x2 = np.reshape(x2, newshape=[n_rows, n_cols, n_x])
+            image_dim = [14, 28, 1]
+            x1 = np.reshape(x1, newshape=[n_rows, n_cols] + image_dim)
+            x2 = np.reshape(x2, newshape=[n_rows, n_cols] + image_dim)
 
-        _image_plot(x1, parms, spacing, path + '__testset_x1')
-        _image_plot(x2, parms, spacing, path + '__testset_x2')
+            x = np.concatenate((x1, x2), axis=2)
+            x = np.reshape(x, newshape=[n_rows, n_cols, n_x])
 
-        z = model.sample_prior(n)
-        rx1, rx2 = model.decode(z)
+            _image_plot(x, parms, spacing, path + '__testset', h=28, w=28)
 
-        rx1 = np.reshape(rx1, newshape=[n_rows, n_cols, n_x])
-        rx2 = np.reshape(rx2, newshape=[n_rows, n_cols, n_x])
+            z = model.sample_prior(n)
+            rx1, rx2 = model.decode(z)
 
-        _image_plot(rx1, parms, spacing, path + '__model_x1')
-        _image_plot(rx2, parms, spacing, path + '__model_x2')
+            rx1 = np.reshape(rx1, newshape=[n_rows, n_cols] + image_dim)
+            rx2 = np.reshape(rx2, newshape=[n_rows, n_cols] + image_dim)
+
+            rx = np.concatenate((rx1, rx2), axis=2)
+            rx = np.reshape(rx, newshape=[n_rows, n_cols, n_x])
+
+            _image_plot(rx, parms, spacing, path + '__model', h=28, w=28)
+
+        else:
+
+            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+
+            x1 = np.reshape(x1, newshape=[n_rows, n_cols, n_x])
+            x2 = np.reshape(x2, newshape=[n_rows, n_cols, n_x])
+
+            _image_plot(x1, parms, spacing, path + '__testset_x1')
+            _image_plot(x2, parms, spacing, path + '__testset_x2')
+
+            z = model.sample_prior(n)
+            rx1, rx2 = model.decode(z)
+
+            rx1 = np.reshape(rx1, newshape=[n_rows, n_cols, n_x])
+            rx2 = np.reshape(rx2, newshape=[n_rows, n_cols, n_x])
+
+            _image_plot(rx1, parms, spacing, path + '__model_x1')
+            _image_plot(rx2, parms, spacing, path + '__model_x2')
 
     else:
         x = sample(data, n_samples=n, model_type=model_type, dtype='test')
@@ -291,10 +348,12 @@ def fix_latents(model, data, n_rows, n_cols):
 
 
 
-def _image_plot(images, parms, spacing, path):
+def _image_plot(images, parms, spacing, path, h=None, w=None):
 
-    h = parms['height']
-    w = parms['width']
+    if h is None:
+        h = parms['height']
+    if w is None:
+        w = parms['width']
     n_ch = parms['n_channels']
     image_dim = [h, w, n_ch]
 
