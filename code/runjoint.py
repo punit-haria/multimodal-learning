@@ -54,7 +54,7 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 2000,
+    'train_steps': 250,
     'test_steps': 50,
     'save_steps': 5000
 }
@@ -100,8 +100,10 @@ if __name__ == "__main__":
 
         for name, model in models.items():
 
-            name =  experiment_name + '_' + parms['type'] + '_nz_' +  str(parms['n_z']) \
-                    + '_lr_' + str(parms['learning_rate']) + '_fmaps_' + str(parms['n_feature_maps']) \
+            name =  experiment_name + '_' + parms['type'] + '_' + parms['joint_type'] \
+                    + '_nz_' +  str(parms['n_z']) \
+                    + '_lr_' + str(parms['learning_rate']) \
+                    + '_fmaps_' + str(parms['n_feature_maps']) \
                     + '_units_' + str(parms['n_units'])
 
             if parms['output'] == "continuous":
