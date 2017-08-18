@@ -16,24 +16,24 @@ models = {x.__name__: x for x in models}
 # parameters
 parms = {
     # options
-    'type': "fc",              # fc, cnn
-    'data': "halved_mnist",            # halved_mnist, mnist, sketchy
+    'type': "cnn",              # fc, cnn
+    'data': "mnist",            # halved_mnist, mnist
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
     'objective': 'joint',    # joint, translate
-    'joint_type': 'constrain',   # constrain, small, large
+    'joint_type': 'small',   # constrain, small, large
 
     # basic parameters
-    'n_z': 100,  # 32, 49, 200
-    'height': 14,
+    'n_z': 200,  # 32, 49, 200
+    'height': 28,
     'width': 28,
-    'n_channels': 1,
+    'n_channels': 3,
     'n_mixtures': 5,
 
     # network parameters
     'n_units': 96,
-    'n_feature_maps': 16,  # 32
+    'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -41,13 +41,13 @@ parms = {
     'flow_type': "made",  # cnn, made
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 3,
+    'n_pixelcnn_layers': 2,
 
     # loss function parameters
-    'anneal': 0,  # 0, -0.0625, -0.125, -0.25
+    'anneal': -0.25,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
-    'learning_rate': 0.002,
+    'learning_rate': 0.001,
     'n_unpaired_samples': 256,
     'n_paired_samples': 64,
 

@@ -542,7 +542,7 @@ class Sketches(object):
 
                     photo = ndimage.imread(photo_path)
                     photo = imresize(photo, size=0.25, interp='cubic')
-                    photo = np.reshape(photo, newshape=[-1])
+                    photo = np.reshape(photo, newshape=[1, -1])
 
                     sketches = [p for p in sketch_files if f.replace('.jpg','')+'-' in p]
 
@@ -553,7 +553,7 @@ class Sketches(object):
 
                         sketch = ndimage.imread(sketch_path)
                         sketch = imresize(sketch, size=0.25, interp='cubic')
-                        sketch = np.reshape(sketch, newshape=[-1])
+                        sketch = np.reshape(sketch, newshape=[1, -1])
 
                         x1.append(photo)
                         x2.append(sketch)
@@ -571,8 +571,11 @@ class Sketches(object):
             y = y.codes
 
             assert len(x1) == len(x2)
-            x1 = np.concatenate(x1)
-            x2 = np.concatenate(x2)
+            x1 = np.concatenate(x1, axis=0)
+            x2 = np.concatenate(x2, axis=0)
+
+            print("x1 shape: ", x1.shape, flush=True)
+            print("x2 shape: ", x2.shape, flush=True)
 
             self.x1 = x1[train]
             self.x2 = x2[train]
@@ -737,11 +740,11 @@ class DayNight(object):
 
                 day = ndimage.imread(day_path)
                 day = imresize(day, size=(44,64), interp='cubic')
-                day = np.reshape(day, newshape=[-1])
+                day = np.reshape(day, newshape=[1, -1])
 
                 night = ndimage.imread(night_path)
                 night = imresize(night, size=(44,64), interp='cubic')
-                night = np.reshape(night, newshape=[-1])
+                night = np.reshape(night, newshape=[1, -1])
 
                 x1.append(day)
                 x2.append(night)
@@ -758,8 +761,8 @@ class DayNight(object):
             y = y.codes
 
             assert len(x1) == len(x2)
-            x1 = np.concatenate(x1)
-            x2 = np.concatenate(x2)
+            x1 = np.concatenate(x1, axis=0)
+            x2 = np.concatenate(x2, axis=0)
 
             self.x1p = x1[train]
             self.x2p = x2[train]
