@@ -8,8 +8,8 @@ from runjoint import models
 
 experiment_name = "halved_mnist"
 
-train_steps = 10000
-save_steps = 10000
+train_steps = 150000
+save_steps = 50000
 
 #data = ColouredStratifiedMNIST(1000)
 data = JointStratifiedMNIST(1000)

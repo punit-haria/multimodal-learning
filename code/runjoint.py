@@ -54,9 +54,9 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 10000,
+    'train_steps': 150000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 50000
 }
 
 
@@ -66,8 +66,10 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 32, 5, 0.002, 96, 16, 'joint'],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 32, 5, 0.002, 96, 16, 'joint']
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 64, 5, 0.002, 128, 16, 'joint'],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 64, 5, 0.002, 128, 16, 'joint'],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 64, 5, 0.002, 128, 16, 'translate'],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 64, 5, 0.002, 128, 16, 'translate']
     ]
 
     #data = ColouredStratifiedMNIST(parms['n_paired'])

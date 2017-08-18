@@ -6,10 +6,10 @@ from results import image_plot
 from runcolor import models
 
 
-experiment_name = "cifar"
+experiment_name = "global_lossy_cifar"
 
-train_steps = 150000
-save_steps = 30000
+train_steps = 10000
+save_steps = 10000
 
 suffix = None
 
