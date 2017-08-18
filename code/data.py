@@ -642,9 +642,70 @@ class Sketches(object):
 class DayNight(object):
 
     def __init__(self, n_paired):
+        amos_path = '../data/amos/'
+        dnim_path = '../data/dnim/Image/'
+        dnim_stamps_path = '../data/dnim/time_stamp/'
 
-        pass
-    
+        data_path = '../data/dnim.npz'
+
+        dnim_stamps = [p for p in os.listdir(dnim_stamps_path)
+                       if os.path.isfile(os.path.join(dnim_stamps_path, p))]
+
+        df = []
+
+        for i, st in enumerate(dnim_stamps):
+            path = dnim_stamps_path + st
+
+            tst = pd.read_csv(path, sep=' ', header=None, names=['f_name', 'date', 'h', 'm'])
+
+            tst['camera'] = [st.replace('.txt','')] * len(tst)
+
+            # train/test indicator
+            is_train = [1] * len(tst) if i < 11 else [0] * len(tst)
+            tst['is_train'] = pd.Series(is_train)
+
+            df.append(tst)
+
+        df = pd.concat(df, ignore_index=True)
+
+        night = [23,0,1,2,3]
+        day = [9,10,11,12,13,14,15]
+
+        pairs = []
+        names = ['camera', 'is_train', 'day_file', 'night_file']
+
+        for _, rowd in df.iterrows():
+            cam = rowd['camera']
+            d = rowd['h']
+
+            if d in day:
+                for _, rown in df[df['camera'] == cam].iterrows():
+
+                    assert cam == rown['camera']
+
+                    n = rown['h']
+                    if n in night:
+                        pairs.append([cam, rowd['is_train'], rowd['f_name'], rown['f_name']])
+
+        pairs = pd.DataFrame(pairs, columns=names)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
