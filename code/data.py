@@ -3,8 +3,11 @@ Classes and methods to load datasets.
 """
 import numpy as np
 import struct
+from scipy.misc import imresize
 from scipy import ndimage
+import os
 import os.path
+import pandas as pd
 
 
 def sample(data, batch_size):
@@ -482,6 +485,128 @@ class ColouredStratifiedMNIST(ColouredMNIST):
                 return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
             else:
                 return x1, x2, x1p, x2p
+
+
+
+
+class Sketches(object):
+
+    def __init__(self, n_paired):
+
+        _raw_photo_path = '../data/sketchy/256x256/photo/tx_000100000000/'
+        _raw_sketch_path = '../data/sketchy/256x256/sketch/tx_000100000000/'
+
+        _data_path = '../data/sketch.npz'
+
+        if os.path.isfile(_data_path):  # load processed data
+
+            print("Loading data...", flush=True)
+
+            data = np.load(_data_path)
+            self.x1 = data['arr_0']
+            self.x2 = data['arr_1']
+            self.ytr = data['arr_2']
+            self.x1_test = data['arr_3']
+            self.x2_test = data['arr_4']
+            self.yte = data['arr_5']
+
+            print("Data loaded.", flush=True)
+
+        else: # process data and load
+            x1 = []
+            x2 = []
+            y = []
+            train = []
+            test = []
+
+            print("Processing data..", flush=True)
+
+            categories = [p for p in os.listdir(_raw_photo_path)
+                         if os.path.isdir(os.path.join(_raw_photo_path, p))]
+
+            i = 0
+
+            for cat in categories:
+                print("At category: ", cat, flush=True)
+
+                cat_photo_path = _raw_photo_path + cat + '/'
+                cat_sketch_path = _raw_sketch_path + cat + '/'
+
+                photo_files = [p for p in os.listdir(cat_photo_path)
+                               if os.path.isfile(os.path.join(cat_photo_path, p))]
+
+                sketch_files = [p for p in os.listdir(cat_sketch_path)
+                                if os.path.isfile(os.path.join(cat_sketch_path, p))]
+
+                for f in photo_files:
+                    photo_path = cat_photo_path + f
+
+                    photo = ndimage.imread(photo_path)
+                    photo = imresize(photo, size=0.25, interp='cubic')
+                    photo = np.reshape(photo, newshape=[-1])
+
+                    sketches = [p for p in sketch_files if f.replace('.jpg','')+'-' in p]
+
+                    is_train = np.random.binomial(n=1, p=0.85)  # sort into train/test sets
+
+                    for sk in sketches:
+                        sketch_path = cat_sketch_path + sk
+
+                        sketch = ndimage.imread(sketch_path)
+                        sketch = imresize(sketch, size=0.25, interp='cubic')
+                        sketch = np.reshape(sketch, newshape=[-1])
+
+                        x1.append(photo)
+                        x2.append(sketch)
+                        y.append(cat)
+
+                        if is_train == 1:
+                            train.append(i)
+                        else:
+                            test.append(i)
+
+                        i += 1
+
+            y = pd.Series(y)
+            y = pd.Categorical(y)
+            y = y.codes
+
+            self.x1 = x1[train]
+            self.x2 = x2[train]
+            self.ytr = y[train]
+            self.x1_test = x1[test]
+            self.x2_test = x2[test]
+            self.yte = y[test]
+
+            print("Saving data...", flush=True)
+            np.savez(_data_path, self.x1, self.x2, self.ytr, self.x1_test, self.x2_test, self.yte)
+            print("Saved.", flush=True)
+
+
+        # construct pairings
+        _n = len(self.x1)
+        self.x1_and_x2 = set(np.random.randint(_n, size=n_paired))
+        _remain = set(np.arange(_n)) - set(self.x1_and_x2)
+        _x_size = int(len(_remain) / 2)
+        self.x1_only = set(np.random.choice(list(_remain), size=_x_size, replace=False))
+        self.x2_only = set(np.array(list(_remain - set(self.x1_only))))
+
+        self.x1_and_x2 = np.array(list(self.x1_and_x2))
+        self.x1_only = np.array(list(self.x1_only))
+        self.x2_only = np.array(list(self.x2_only))
+
+        # separate out datasets
+        self.x1 = self.x1[self.x1_only]
+        self.y1 = self.ytr[self.x1_only]
+        self.x2 = self.x2[self.x2_only]
+        self.y2 = self.ytr[self.x2_only]
+        self.x1p = self.x1[self.x1_and_x2]
+        self.x2p = self.x2[self.x1_and_x2]
+        self.yp = self.ytr[self.x1_and_x2]
+
+
+
+
 
 
 
