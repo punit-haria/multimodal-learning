@@ -872,7 +872,8 @@ def ar_mult(x, n_out, init, scope):
         return x
 
 
-def joint_encode(h1, h2, n_units, n_z, extra, init, scope):
+
+def joint_fc_encode(h1, h2, n_units, n_z, extra, init, scope):
 
     with tf.variable_scope(scope):
 

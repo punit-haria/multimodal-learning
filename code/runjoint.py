@@ -54,9 +54,9 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 250,
+    'train_steps': 10000,
     'test_steps': 50,
-    'save_steps': 5000
+    'save_steps': 10000
 }
 
 
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 32, 5, 0.001, 96, 16],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 32, 5, 0.001, 96, 16]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 32, 5, 0.002, 96, 16, 'joint'],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 32, 5, 0.002, 96, 16, 'joint']
     ]
 
     #data = ColouredStratifiedMNIST(parms['n_paired'])
@@ -97,6 +97,8 @@ if __name__ == "__main__":
         parms['n_units'] = c[13]
         parms['n_feature_maps'] = c[14]
 
+        parms['objective'] = c[15]
+
 
         for name, model in models.items():
 
@@ -104,7 +106,8 @@ if __name__ == "__main__":
                     + '_nz_' +  str(parms['n_z']) \
                     + '_lr_' + str(parms['learning_rate']) \
                     + '_fmaps_' + str(parms['n_feature_maps']) \
-                    + '_units_' + str(parms['n_units'])
+                    + '_units_' + str(parms['n_units']) \
+                    + '_obj_' + parms['objective']
 
             if parms['output'] == "continuous":
                 name += '_nmix_' + str(parms['n_mixtures'])

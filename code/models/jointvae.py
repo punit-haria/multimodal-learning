@@ -179,7 +179,7 @@ class JointVAE(vae.VAE):
                     h12 = tf.nn.elu(h1 + h2)
 
             elif jtype == 'small':
-                z_mu, z_sigma, h12 = nw.joint_encode(h1, h2, n_units, n_z, extra, init, scope='small_enc')
+                z_mu, z_sigma, h12 = nw.joint_fc_encode(x1h, x2h, n_units, n_z, extra, init, scope='small_enc')
 
             elif jtype == 'large':
                 if self.dataset == 'halved_mnist':
@@ -331,12 +331,20 @@ class JointVAE(vae.VAE):
         x1, x2, x1_pairs, x2_pairs = xs
 
         feed = {self.x1: x1, self.x2: x2, self.x1p: x1_pairs, self.x2p: x2_pairs}
-        outputs = [self.summary, self.step, self.bound, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2]
+        outputs = [self.summary, self.step, self.loss, self.lx1, self.lx2, self.lx12, self.tx1, self.tx2, self.lx1p, self.lx2p]
 
-        summary, _, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
+        summary, _, loss, lx1, lx2, lx12, tx1, tx2, lx1p, lx2p = self.sess.run(outputs, feed_dict=feed)
 
-        terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
-                 'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        if self.objective == 'joint':
+            bound = lx12
+            terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
+                     'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        else:  # translate
+            bound_t1 = tx1 + lx2p
+            bound_t2 = tx2 + lx1p
+            terms = {'lower_bound_on_log_p_x_y_t1': bound_t1, 'lower_bound_on_log_p_x_y_t2': bound_t2, 'loss': loss,
+                     'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+
         self._track(terms, prefix='train_')
         self.tr_writer.add_summary(summary, self.n_steps)
 
@@ -350,12 +358,20 @@ class JointVAE(vae.VAE):
         x1, x2 = xs
 
         feed = {self.x1: x1, self.x2: x2, self.x1p: x1, self.x2p: x2}
-        outputs = [self.summary, self.bound, self.loss, self.lx1p, self.lx2p, self.lx12, self.tx1, self.tx2]
+        outputs = [self.summary, self.loss, self.lx1p, self.lx2p, self.lx12, self.tx1, self.tx2, self.lx1p, self.lx2p]
 
-        summary, bound, loss, lx1, lx2, lx12, tx1, tx2 = self.sess.run(outputs, feed_dict=feed)
+        summary, loss, lx1, lx2, lx12, tx1, tx2, lx1p, lx2p = self.sess.run(outputs, feed_dict=feed)
 
-        terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
-                 'lx1p': lx1, 'lx2p': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        if self.objective == 'joint':
+            bound = lx12
+            terms = {'lower_bound_on_log_p_x_y': bound, 'loss': loss,
+                     'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+        else:  # translate
+            bound_t1 = tx1 + lx2p
+            bound_t2 = tx2 + lx1p
+            terms = {'lower_bound_on_log_p_x_y_t1': bound_t1, 'lower_bound_on_log_p_x_y_t2': bound_t2, 'loss': loss,
+                     'lx1': lx1, 'lx2': lx2, 'lx12': lx12, 'tx1': tx1, 'tx2': tx2}
+
         self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
 
