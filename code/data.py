@@ -599,10 +599,10 @@ class Sketches(object):
         self.x2_only = np.array(list(self.x2_only))
 
         # separate out datasets
-        self.x1 = self.x1[self.x1_only]
-        self.y1 = self.ytr[self.x1_only]
-        self.x2 = self.x2[self.x2_only]
-        self.y2 = self.ytr[self.x2_only]
+        self.x1u = self.x1[self.x1_only]
+        self.y1u = self.ytr[self.x1_only]
+        self.x2u = self.x2[self.x2_only]
+        self.y2u = self.ytr[self.x2_only]
         self.x1p = self.x1[self.x1_and_x2]
         self.x2p = self.x2[self.x1_and_x2]
         self.yp = self.ytr[self.x1_and_x2]
@@ -629,8 +629,8 @@ class Sketches(object):
             n_x2 = n_unpaired_samples - n_x1
 
             _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
-            _, (x1, y1) = sample([self.x1, self.y1], n_x1)
-            _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+            _, (x1, y1) = sample([self.x1u, self.y1u], n_x1)
+            _, (x2, y2) = sample([self.x2u, self.y2u], n_x2)
 
             if include_labels:
                 return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
