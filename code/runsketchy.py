@@ -56,7 +56,7 @@ parms = {
     'test_sample_size': 1000,
     'train_steps': 1000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 1000
 }
 
 
@@ -67,6 +67,7 @@ if __name__ == "__main__":
 
     configs = [
         ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.002, 128, 32, 'joint'],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.002, 128, 32, 'translate']
     ]
 
     data = Sketches(parms['n_paired'])
