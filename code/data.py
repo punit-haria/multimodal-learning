@@ -18,7 +18,6 @@ def sample(data, batch_size):
     batch_size: sample size
     """
     if not isinstance(data, list):
-        n = len(data)
         idx = np.random.randint(len(data), size=batch_size)
         return idx, data[idx],
     else:
@@ -571,6 +570,10 @@ class Sketches(object):
             y = pd.Categorical(y)
             y = y.codes
 
+            assert len(x1) == len(x2)
+            x1 = np.concatenate(x1)
+            x2 = np.concatenate(x2)
+
             self.x1 = x1[train]
             self.x2 = x2[train]
             self.ytr = y[train]
@@ -605,8 +608,34 @@ class Sketches(object):
         self.yp = self.ytr[self.x1_and_x2]
 
 
+    def sample_stratified(self, n_paired_samples, n_unpaired_samples=250, dtype='train', include_labels=False):
+        # test set case
+        if dtype == 'test':
 
+            _, (x1, x2, y) = sample([self.x1_test, self.x2_test, self.yte], n_paired_samples)
 
+            if include_labels:
+                return (x1, y), (x2, y)
+            else:
+                return x1, x2
+
+        # training set case
+        elif dtype == 'train':
+            n_min = 2 * n_unpaired_samples // 5
+            n_min = max(1, n_min)
+            n_max = n_unpaired_samples - n_min
+
+            n_x1 = np.random.randint(low=n_min, high=n_max + 1)
+            n_x2 = n_unpaired_samples - n_x1
+
+            _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
+            _, (x1, y1) = sample([self.x1, self.y1], n_x1)
+            _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+
+            if include_labels:
+                return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
+            else:
+                return x1, x2, x1p, x2p
 
 
 
