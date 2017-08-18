@@ -491,6 +491,7 @@ def deconvolution_cifar_ar(x, z, out_ch, n_feature_maps, n_units, n_ar_layers, i
 
         ka = 3
         kb = 3
+        n_ch = 16
 
         # AR layers:
 
