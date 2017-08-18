@@ -641,71 +641,214 @@ class Sketches(object):
 
 class DayNight(object):
 
-    def __init__(self, n_paired):
-        amos_path = '../data/amos/'
-        dnim_path = '../data/dnim/Image/'
-        dnim_stamps_path = '../data/dnim/time_stamp/'
+    def __init__(self,):
 
         data_path = '../data/dnim.npz'
 
-        dnim_stamps = [p for p in os.listdir(dnim_stamps_path)
-                       if os.path.isfile(os.path.join(dnim_stamps_path, p))]
+        if os.path.isfile(data_path):  # load processed data
 
-        df = []
+            print("Loading data...", flush=True)
 
-        for i, st in enumerate(dnim_stamps):
-            path = dnim_stamps_path + st
+            np.savez(data_path, self.x1p, self.x2p, self.yp, self.x1, self.x2, self.y1, self.y2,
+                     self.x1_test, self.x2_test, self.y_test)
 
-            tst = pd.read_csv(path, sep=' ', header=None, names=['f_name', 'date', 'h', 'm'])
+            data = np.load(data_path)
+            self.x1p = data['arr_0']
+            self.x2p = data['arr_1']
+            self.yp = data['arr_2']
+            self.x1 = data['arr_3']
+            self.x2 = data['arr_4']
+            self.y1 = data['arr_5']
+            self.y2 = data['arr_6']
+            self.x1_test = data['arr_7']
+            self.x2_test = data['arr_8']
+            self.y_test = data['arr_9']
 
-            tst['camera'] = [st.replace('.txt','')] * len(tst)
+            print("Data loaded.", flush=True)
 
-            # train/test indicator
-            is_train = [1] * len(tst) if i < 11 else [0] * len(tst)
-            tst['is_train'] = pd.Series(is_train)
+        else: # process data and load
 
-            df.append(tst)
+            dnim_path = '../data/dnim/Image/'
+            dnim_stamps_path = '../data/dnim/time_stamp/'
 
-        df = pd.concat(df, ignore_index=True)
+            dnim_stamps = [p for p in os.listdir(dnim_stamps_path)
+                           if os.path.isfile(os.path.join(dnim_stamps_path, p))]
 
-        night = [23,0,1,2,3]
-        day = [9,10,11,12,13,14,15]
+            df = []
 
-        pairs = []
-        names = ['camera', 'is_train', 'day_file', 'night_file']
+            for i, st in enumerate(dnim_stamps):
+                path = dnim_stamps_path + st
 
-        for _, rowd in df.iterrows():
-            cam = rowd['camera']
-            d = rowd['h']
+                tst = pd.read_csv(path, sep=' ', header=None, names=['f_name', 'date', 'h', 'm'])
 
-            if d in day:
-                for _, rown in df[df['camera'] == cam].iterrows():
+                tst['camera'] = [st.replace('.txt','')] * len(tst)
 
-                    assert cam == rown['camera']
+                # train/test indicator
+                is_train = [1] * len(tst) if i < 11 else [0] * len(tst)
+                tst['is_train'] = pd.Series(is_train)
 
-                    n = rown['h']
-                    if n in night:
-                        pairs.append([cam, rowd['is_train'], rowd['f_name'], rown['f_name']])
+                df.append(tst)
 
-        pairs = pd.DataFrame(pairs, columns=names)
+            df = pd.concat(df, ignore_index=True)
+
+            night = [23,0,1,2,3]
+            day = [9,10,11,12,13,14,15]
+
+            pairs = []
+            names = ['camera', 'is_train', 'day_file', 'night_file']
+
+            for _, rowd in df.iterrows():
+                cam = rowd['camera']
+                d = rowd['h']
+
+                if d in day:
+                    for _, rown in df[df['camera'] == cam].iterrows():
+
+                        assert cam == rown['camera']
+
+                        n = rown['h']
+                        if n in night:
+                            pairs.append([cam, rowd['is_train'], rowd['f_name'], rown['f_name']])
+
+            pairs = pd.DataFrame(pairs, columns=names)
+
+            x1 = []
+            x2 = []
+            y = []
+            train = []
+            test = []
+
+            i = 0
+            for _, row in pairs.iterrows():
+
+                cam = row['camera']
+
+                day_path = dnim_path + cam + '/' + row['day_file']
+                night_path = dnim_path + cam + '/' + row['night_file']
+
+                day = ndimage.imread(day_path)
+                day = imresize(day, size=(44,64), interp='cubic')
+                day = np.reshape(day, newshape=[-1])
+
+                night = ndimage.imread(night_path)
+                night = imresize(night, size=(44,64), interp='cubic')
+                night = np.reshape(night, newshape=[-1])
+
+                x1.append(day)
+                x2.append(night)
+                y.append(cam)
+
+                if row['is_train'] == 1:
+                    train.append(i)
+                else:
+                    test.append(i)
+                i += 1
+
+            y = pd.Series(y)
+            y = pd.Categorical(y)
+            y = y.codes
+
+            assert len(x1) == len(x2)
+            x1 = np.concatenate(x1)
+            x2 = np.concatenate(x2)
+
+            self.x1p = x1[train]
+            self.x2p = x2[train]
+            self.yp = y[train]
+            self.x1_test = x1[test]
+            self.x2_test = x2[test]
+            self.y_test = y[test]
+
+            # add unsupervised data (amos)
+
+            amos_path = '../data/amos/'
+
+            amos_cams = [p for p in os.listdir(amos_path)
+                         if os.path.isdir(os.path.join(amos_path, p))]
+
+            x1 = []
+            x2 = []
+            y1 = []
+            y2 = []
+
+            night = [23, 0, 1, 2, 3]
+            day = [9, 10, 11, 12, 13, 14, 15]
+
+            for cam in amos_cams:
+                cam_path = amos_path + cam + '/2016.08/'
+
+                ims = [p for p in os.listdir(cam_path)
+                           if os.path.isfile(os.path.join(cam_path, p))]
+
+                for f in ims:
+                    loc = f.index('_')
+                    hour = int(f[loc+1:loc+3])
+
+                    f_path = cam_path + f
+
+                    if hour in day:
+
+                        image = ndimage.imread(f_path)
+                        image = imresize(image, size=(44, 64), interp='cubic')
+                        image = np.reshape(image, newshape=[-1])
+
+                        x1.append(image)
+                        y1.append(cam)
+
+                    elif hour in night:
+
+                        image = ndimage.imread(f_path)
+                        image = imresize(image, size=(44, 64), interp='cubic')
+                        image = np.reshape(image, newshape=[-1])
+
+                        x2.append(image)
+                        y2.append(cam)
+
+            y1 = pd.Series(y1)
+            y1 = pd.Categorical(y1)
+            self.y1 = y1.codes
+
+            y2 = pd.Series(y2)
+            y2 = pd.Categorical(y2)
+            self.y2 = y2.codes
+
+            self.x1 = np.concatenate(x1)
+            self.x2 = np.concatenate(x2)
+
+            print("Saving data...", flush=True)
+            np.savez(data_path, self.x1p, self.x2p, self.yp, self.x1, self.x2, self.y1, self.y2,
+                     self.x1_test, self.x2_test, self.y_test)
+            print("Saved.", flush=True)
 
 
+    def sample_stratified(self, n_paired_samples, n_unpaired_samples=250, dtype='train', include_labels=False):
+        # test set case
+        if dtype == 'test':
 
+            _, (x1, x2, y) = sample([self.x1_test, self.x2_test, self.y_test], n_paired_samples)
 
+            if include_labels:
+                return (x1, y), (x2, y)
+            else:
+                return x1, x2
 
+        # training set case
+        elif dtype == 'train':
+            n_min = 2 * n_unpaired_samples // 5
+            n_min = max(1, n_min)
+            n_max = n_unpaired_samples - n_min
 
+            n_x1 = np.random.randint(low=n_min, high=n_max + 1)
+            n_x2 = n_unpaired_samples - n_x1
 
+            _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
+            _, (x1, y1) = sample([self.x1, self.y1], n_x1)
+            _, (x2, y2) = sample([self.x2, self.y2], n_x2)
 
-
-
-
-
-
-
-
-
-
-
+            if include_labels:
+                return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
+            else:
+                return x1, x2, x1p, x2p
 
 
 

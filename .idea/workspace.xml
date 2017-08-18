@@ -57,7 +57,7 @@
       <file leaf-file-name="runcolor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/runcolor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="422">
+            <state relative-caret-position="375">
               <caret line="53" column="1" lean-forward="true" selection-start-line="53" selection-start-column="1" selection-end-line="53" selection-end-column="1" />
               <folding />
             </state>
@@ -87,8 +87,8 @@
       <file leaf-file-name="synthesize_joint.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="285">
-              <caret line="19" column="0" lean-forward="false" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
+            <state relative-caret-position="435">
+              <caret line="29" column="0" lean-forward="true" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
               <folding>
                 <element signature="e#0#62#0" expanded="true" />
               </folding>
@@ -99,8 +99,8 @@
       <file leaf-file-name="data.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="521">
-              <caret line="689" column="50" lean-forward="true" selection-start-line="689" selection-start-column="50" selection-end-line="689" selection-end-column="50" />
+            <state relative-caret-position="304">
+              <caret line="653" column="0" lean-forward="true" selection-start-line="653" selection-start-column="0" selection-end-line="653" selection-end-column="0" />
               <folding>
                 <element signature="e#46#64#0" expanded="true" />
               </folding>
@@ -369,13 +369,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00153" summary="update">
-      <created>1501586876874</created>
-      <option name="number" value="00153" />
-      <option name="presentableId" value="LOCAL-00153" />
-      <option name="project" value="LOCAL" />
-      <updated>1501586876874</updated>
     </task>
     <task id="LOCAL-00154" summary="update">
       <created>1501590238439</created>
@@ -713,7 +706,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503080120739</updated>
     </task>
-    <option name="localTasksCounter" value="202" />
+    <task id="LOCAL-00202" summary="update">
+      <created>1503085260542</created>
+      <option name="number" value="00202" />
+      <option name="presentableId" value="LOCAL-00202" />
+      <option name="project" value="LOCAL" />
+      <updated>1503085260542</updated>
+    </task>
+    <option name="localTasksCounter" value="203" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -945,30 +945,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/runcolor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="422">
-          <caret line="53" column="1" lean-forward="true" selection-start-line="53" selection-start-column="1" selection-end-line="53" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/amos.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="435">
           <caret line="36" column="39" lean-forward="true" selection-start-line="36" selection-start-column="39" selection-end-line="36" selection-end-column="39" />
           <folding>
             <element signature="e#125#134#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="19" column="0" lean-forward="false" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#62#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -981,10 +963,28 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/code/runcolor.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="53" column="1" lean-forward="true" selection-start-line="53" selection-start-column="1" selection-end-line="53" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="435">
+          <caret line="29" column="0" lean-forward="true" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#62#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/code/data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="521">
-          <caret line="689" column="50" lean-forward="true" selection-start-line="689" selection-start-column="50" selection-end-line="689" selection-end-column="50" />
+        <state relative-caret-position="304">
+          <caret line="653" column="0" lean-forward="true" selection-start-line="653" selection-start-column="0" selection-end-line="653" selection-end-column="0" />
           <folding>
             <element signature="e#46#64#0" expanded="true" />
           </folding>
