@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "fc",              # fc, cnn
-    'data': "halved_mnist",            # halved_mnist, mnist
+    'data': "halved_mnist",            # halved_mnist, mnist, sketchy
     'autoregressive': False,
     'flow': False,
     'output': 'continuous',     # discrete, continuous
