@@ -47,7 +47,7 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 
 
 def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
-               n_pixels=300, spacing=0, suffix=None, model_type='regular'):
+               n_pixels=300, spacing=0, suffix=None, model_type='regular', count=1):
 
     for name in tracker.get_runs():
 
@@ -70,27 +70,31 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
 
             path = '../plots/' + name.replace(".","-") + '_' + synthesis_type + '_' + suffix
 
-            if synthesis_type == 'reconstruct':
-                reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path)
+            for cc in range(count):
 
-            elif synthesis_type == 'fix_latents':
-                if model_type == "joint":
-                    print("WARNING: Not implemented for joint model.")
+                path_ext = path + '_'+str(cc)
+
+                if synthesis_type == 'reconstruct':
+                    reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+
+                elif synthesis_type == 'fix_latents':
+                    if model_type == "joint":
+                        print("WARNING: Not implemented for joint model.")
+                    else:
+                        images = fix_latents(model, data, n_rows, n_cols)
+                        _image_plot(images, parms, spacing, path_ext)
+
+                elif synthesis_type == 'sample':
+                    separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+
+                elif synthesis_type == 'latent_activations':
+                    if model_type == "joint":
+                        print("WARNING: Not implemented for joint model.")
+                    else:
+                        latent_activation_plot(model, data, 1000, path_ext)
+
                 else:
-                    images = fix_latents(model, data, n_rows, n_cols)
-                    _image_plot(images, parms, spacing, path)
-
-            elif synthesis_type == 'sample':
-                separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path)
-
-            elif synthesis_type == 'latent_activations':
-                if model_type == "joint":
-                    print("WARNING: Not implemented for joint model.")
-                else:
-                    latent_activation_plot(model, data, 1000, path)
-
-            else:
-                raise NotImplementedError
+                    raise NotImplementedError
 
         model.close()
 

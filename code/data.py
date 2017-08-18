@@ -671,6 +671,8 @@ class DayNight(object):
             dnim_path = '../data/dnim/Image/'
             dnim_stamps_path = '../data/dnim/time_stamp/'
 
+            print("Processing data..", flush=True)
+
             dnim_stamps = [p for p in os.listdir(dnim_stamps_path)
                            if os.path.isfile(os.path.join(dnim_stamps_path, p))]
 
@@ -697,6 +699,8 @@ class DayNight(object):
             pairs = []
             names = ['camera', 'is_train', 'day_file', 'night_file']
 
+            print("Constructing pairings...", flush=True)
+
             for _, rowd in df.iterrows():
                 cam = rowd['camera']
                 d = rowd['h']
@@ -718,8 +722,13 @@ class DayNight(object):
             train = []
             test = []
 
+            print("Processing DNIM images...", flush=True)
+
             i = 0
             for _, row in pairs.iterrows():
+
+                if i % 1000 == 0:
+                    print("At row: ", i, flush=True)
 
                 cam = row['camera']
 
@@ -774,8 +783,12 @@ class DayNight(object):
             night = [23, 0, 1, 2, 3]
             day = [9, 10, 11, 12, 13, 14, 15]
 
+            print("Processing AMOS data...", flush=True)
+
             for cam in amos_cams:
                 cam_path = amos_path + cam + '/2016.08/'
+
+                print("At camera: ", cam, flush=True)
 
                 ims = [p for p in os.listdir(cam_path)
                            if os.path.isfile(os.path.join(cam_path, p))]
