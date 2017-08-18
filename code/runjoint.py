@@ -63,7 +63,7 @@ parms = {
 if __name__ == "__main__":
 
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
-    # joint_type, n_z, n_mix, lr, n_units, n_fmaps
+    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
 
     configs = [
         ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 32, 5, 0.002, 96, 16, 'joint'],

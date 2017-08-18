@@ -3,10 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/jointvae.py" afterPath="$PROJECT_DIR$/code/models/jointvae.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/layers.py" afterPath="$PROJECT_DIR$/code/models/layers.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runjoint.py" afterPath="$PROJECT_DIR$/code/runjoint.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_joint.py" afterPath="$PROJECT_DIR$/code/synthesize_joint.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -60,8 +57,8 @@
       <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/runjoint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="710">
-              <caret line="101" column="0" lean-forward="true" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
+            <state relative-caret-position="-148">
+              <caret line="72" column="54" lean-forward="true" selection-start-line="72" selection-start-column="54" selection-end-line="72" selection-end-column="54" />
               <folding />
             </state>
           </provider>
@@ -336,13 +333,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00143" summary="update">
-      <created>1501538011993</created>
-      <option name="number" value="00143" />
-      <option name="presentableId" value="LOCAL-00143" />
-      <option name="project" value="LOCAL" />
-      <updated>1501538011993</updated>
     </task>
     <task id="LOCAL-00144" summary="update">
       <created>1501540255808</created>
@@ -680,7 +670,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503012341213</updated>
     </task>
-    <option name="localTasksCounter" value="192" />
+    <task id="LOCAL-00192" summary="update">
+      <created>1503014866220</created>
+      <option name="number" value="00192" />
+      <option name="presentableId" value="LOCAL-00192" />
+      <option name="project" value="LOCAL" />
+      <updated>1503014866220</updated>
+    </task>
+    <option name="localTasksCounter" value="193" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -1005,8 +1002,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/runjoint.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="710">
-          <caret line="101" column="0" lean-forward="true" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
+        <state relative-caret-position="-148">
+          <caret line="72" column="54" lean-forward="true" selection-start-line="72" selection-start-column="54" selection-end-line="72" selection-end-column="54" />
           <folding />
         </state>
       </provider>
