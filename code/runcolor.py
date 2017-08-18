@@ -38,19 +38,19 @@ parms = {
     'flow_type': "cnn",  # cnn, made
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 3,
+    'n_pixelcnn_layers': 2,
 
     # loss function parameters
-    'anneal': 0,  # 0, -0.0625, -0.125, -0.25
+    'anneal': -0.5,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.001,  # 0.001
     'batch_size': 256,
     'n_conditional_pixels': 0,
     'test_sample_size': 500,
-    'train_steps': 10000,
+    'train_steps': 150000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 30000
 }
 
 
@@ -59,16 +59,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, 0, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.125, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.25, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.5, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -2, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 4, 0, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 4, -0.125, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 4, -0.25, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 4, -0.5, 200, 5, 0.001],
-        ["cnn", "continuous", False, 4, 1024, "made", True, 4, -2, 200, 5, 0.001]
+        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.5, 200, 5, 0.001]
     ]
     data = CIFAR()
 

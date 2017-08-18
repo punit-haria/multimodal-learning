@@ -639,6 +639,16 @@ class Sketches(object):
 
 
 
+class DayNight(object):
+
+    def __init__(self, n_paired):
+
+        pass
+    
+
+
+
+
 
 class CIFAR(object):
 
