@@ -54,9 +54,9 @@ parms = {
     'n_paired': 10000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 1000,
+    'train_steps': 10000,
     'test_steps': 50,
-    'save_steps': 1000
+    'save_steps': 2000
 }
 
 
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.0001, 128, 32, 'joint'],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.0001, 128, 32, 'translate']
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'joint'],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'translate']
     ]
 
     data = Sketches(parms['n_paired'])

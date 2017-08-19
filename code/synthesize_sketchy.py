@@ -8,8 +8,8 @@ from runjoint import models
 
 experiment_name = "sketchy"
 
-train_steps = 1000
-save_steps = 1000
+train_steps = 10000
+save_steps = 2000
 
 data = Sketches(1000)
 
