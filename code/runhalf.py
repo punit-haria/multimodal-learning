@@ -45,6 +45,7 @@ parms = {
 
     # loss function parameters
     'anneal': -0.25,  # 0, -0.0625, -0.125, -0.25
+    'joint_anneal': 0.5,
 
     # train/test parameters
     'learning_rate': 0.001,
@@ -63,7 +64,7 @@ parms = {
 if __name__ == "__main__":
 
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
-    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective,  temp_weight
+    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [                         # maybe reduce learning rate to 0.001????
         ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.5],
@@ -77,7 +78,6 @@ if __name__ == "__main__":
     tracker = Results(experiment_name)  # performance tracker
 
     for c in configs:
-        parms['tw'] = c[16]
 
         parms['type'] = c[0]
         parms['output'] = c[1]
@@ -102,6 +102,8 @@ if __name__ == "__main__":
 
         parms['objective'] = c[15]
 
+        parms['joint_anneal'] = c[16]
+
 
         for name, model in models.items():
 
@@ -125,7 +127,8 @@ if __name__ == "__main__":
             if parms['anneal'] < 0:
                 name += "_anneal_" + str(parms['anneal'])
 
-            name += "_weight_" + str(parms['tw'])  ############ remove later!
+            if parms['joint_anneal'] < 1:
+                name += "_jointanneal_" + str(parms['joint_anneal'])
 
             train_joint(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 
