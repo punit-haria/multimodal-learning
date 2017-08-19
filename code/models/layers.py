@@ -695,6 +695,7 @@ def deconvolution_cifar_ar(x, z, out_ch, n_feature_maps, n_units, n_ar_layers, i
 
         c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
 
+        i = 0
         cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
         c = c + cz
 

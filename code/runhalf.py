@@ -45,7 +45,7 @@ parms = {
 
     # loss function parameters
     'anneal': -0.25,  # 0, -0.0625, -0.125, -0.25
-    'joint_anneal': 0.5,
+    'joint_anneal': 0.3,   # 0.1, 0.3, 0.5
 
     # train/test parameters
     'learning_rate': 0.001,
@@ -66,11 +66,8 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
-    configs = [                         # maybe reduce learning rate to 0.001????
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.5],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 1],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.3],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.1]
+    configs = [
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.001, 128, 16, 'joint', 0.3]
     ]
 
     data = JointStratifiedMNIST(parms['n_paired'])
