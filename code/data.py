@@ -592,8 +592,8 @@ class Sketches(object):
                         sketch = imresize(sketch, size=0.25, interp='cubic')
                         sketch = np.reshape(sketch, newshape=[1, -1])
 
-                        x1.append(photo / 255)
-                        x2.append(sketch / 255)
+                        x1.append(photo)
+                        x2.append(sketch)
                         y.append(cat)
 
                         if is_train == 1:
@@ -654,6 +654,9 @@ class Sketches(object):
 
             _, (x1, x2, y) = sample([self.x1_test, self.x2_test, self.yte], n_paired_samples)
 
+            x1 = x1 / 255
+            x2 = x2 / 255
+
             if include_labels:
                 return (x1, y), (x2, y)
             else:
@@ -671,6 +674,11 @@ class Sketches(object):
             _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
             _, (x1, y1) = sample([self.x1u, self.y1u], n_x1)
             _, (x2, y2) = sample([self.x2u, self.y2u], n_x2)
+
+            x1 = x1 / 255
+            x2 = x2 / 255
+            x1p = x1p / 255
+            x2p = x2p / 255
 
             if include_labels:
                 return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
@@ -783,8 +791,8 @@ class DayNight(object):
                 night = imresize(night, size=(44,64), interp='cubic')
                 night = np.reshape(night, newshape=[1, -1])
 
-                x1.append(day / 255)
-                x2.append(night / 255)
+                x1.append(day)
+                x2.append(night)
                 y.append(cam)
 
                 if row['is_train'] == 1:
@@ -848,7 +856,7 @@ class DayNight(object):
                             image = imresize(image, size=(44, 64), interp='cubic')
                             image = np.reshape(image, newshape=[-1])
 
-                            x1.append(image / 255)
+                            x1.append(image)
                             y1.append(cam)
 
                         elif hour in night:
@@ -857,7 +865,7 @@ class DayNight(object):
                             image = imresize(image, size=(44, 64), interp='cubic')
                             image = np.reshape(image, newshape=[-1])
 
-                            x2.append(image / 255)
+                            x2.append(image)
                             y2.append(cam)
 
                     except:
@@ -889,6 +897,9 @@ class DayNight(object):
 
             _, (x1, x2, y) = sample([self.x1_test, self.x2_test, self.y_test], n_paired_samples)
 
+            x1 = x1 / 255
+            x2 = x2 / 255
+
             if include_labels:
                 return (x1, y), (x2, y)
             else:
@@ -906,6 +917,11 @@ class DayNight(object):
             _, (x1p, x2p, yp) = sample([self.x1p, self.x2p, self.yp], n_paired_samples)
             _, (x1, y1) = sample([self.x1, self.y1], n_x1)
             _, (x2, y2) = sample([self.x2, self.y2], n_x2)
+
+            x1 = x1 / 255
+            x2 = x2 / 255
+            x1p = x1p / 255
+            x2p = x2p / 255
 
             if include_labels:
                 return (x1, y1), (x2, y2), (x1p, yp), (x2p, yp)
