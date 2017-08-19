@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'halved_mnist'
+experiment_name = 'colored_mnist'
 
 
 models = [
@@ -56,7 +56,7 @@ parms = {
     'test_sample_size': 1000,
     'train_steps': 150000,
     'test_steps': 50,
-    'save_steps': 50000
+    'save_steps': 30000
 }
 
 
@@ -66,14 +66,12 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 64, 5, 0.002, 128, 16, 'joint'],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 64, 5, 0.002, 128, 16, 'joint'],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'constrain', 64, 5, 0.002, 128, 16, 'translate'],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 3, 0, 'small', 64, 5, 0.002, 128, 16, 'translate']
+        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 200, 5, 0.001, 96, 32, 'joint'],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 200, 5, 0.001, 96, 32, 'translate']
     ]
 
-    #data = ColouredStratifiedMNIST(parms['n_paired'])
-    data = JointStratifiedMNIST(parms['n_paired'])
+    data = ColouredStratifiedMNIST(parms['n_paired'])
+    #data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
