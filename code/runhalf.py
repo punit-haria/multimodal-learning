@@ -1,5 +1,5 @@
 from models import jointvae
-from data import JointStratifiedMNIST, ColouredStratifiedMNIST
+from data import JointStratifiedMNIST
 
 from training import train_joint, Results
 
@@ -66,16 +66,17 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective,  temp_weight
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 2],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.8],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.5],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.3]
     ]
 
-    data = ColouredStratifiedMNIST(parms['n_paired'])
-    #data = JointStratifiedMNIST(parms['n_paired'])
+    data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
     for c in configs:
-        parms['temp_weight'] = c[16]
+        parms['tw'] = c[16]
 
         parms['type'] = c[0]
         parms['output'] = c[1]

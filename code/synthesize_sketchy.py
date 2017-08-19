@@ -11,7 +11,7 @@ experiment_name = "sketchy"
 train_steps = 10000
 save_steps = 2000
 
-data = Sketches(1000)
+data = Sketches(10000)
 
 tracker = Results.load(experiment_name)
 
