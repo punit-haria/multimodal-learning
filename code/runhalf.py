@@ -1,10 +1,10 @@
 from models import jointvae
-from data import Sketches
+from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 
 from training import train_joint, Results
 
 
-experiment_name = 'sketchy'
+experiment_name = 'halved_mnist'
 
 
 models = [
@@ -17,23 +17,23 @@ models = {x.__name__: x for x in models}
 parms = {
     # options
     'type': "cnn",              # fc, cnn
-    'data': "sketchy",
+    'data': "halved_mnist",      # halved_mnist, mnist
     'autoregressive': False,
     'flow': False,
-    'output': 'continuous',     # discrete, continuous
+    'output': 'discrete',     # discrete, continuous
     'objective': 'joint',    # joint, translate
-    'joint_type': 'constrain',   # constrain, small, large
+    'joint_type': 'small',   # constrain, small, large
 
     # basic parameters
-    'n_z': 200,  # 32, 49, 200
-    'height': 64,
-    'width': 64,
-    'n_channels': 3,
-    'n_mixtures': 3,
+    'n_z': 64,  # 32, 49, 200
+    'height': 14,
+    'width': 28,
+    'n_channels': 1,
+    'n_mixtures': 5,
 
     # network parameters
-    'n_units': 128,
-    'n_feature_maps': 32,  # 32
+    'n_units': 96,
+    'n_feature_maps': 16,
 
     # normalizing flow parameters
     'flow_units': 320,
@@ -41,41 +41,42 @@ parms = {
     'flow_type': "made",  # cnn, made
 
     # autoregressive model parameters
-    'n_pixelcnn_layers': 3,
+    'n_pixelcnn_layers': 2,
 
     # loss function parameters
-    'anneal': 0,  # 0, -0.0625, -0.125, -0.25
+    'anneal': -0.25,  # 0, -0.0625, -0.125, -0.25
 
     # train/test parameters
     'learning_rate': 0.001,
     'n_unpaired_samples': 256,
     'n_paired_samples': 64,
 
-    'n_paired': 10000,
+    'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 100,
+    'train_steps': 150000,
     'test_steps': 50,
-    'save_steps': 2000
+    'save_steps': 30000
 }
 
 
 if __name__ == "__main__":
 
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
-    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
+    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective,  temp_weight
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'joint'],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'translate']
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 2],
     ]
 
-    data = Sketches(parms['n_paired'])
-
+    data = ColouredStratifiedMNIST(parms['n_paired'])
+    #data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
     for c in configs:
+        parms['temp_weight'] = c[16]
+
         parms['type'] = c[0]
         parms['output'] = c[1]
 

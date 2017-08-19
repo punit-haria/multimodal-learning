@@ -264,6 +264,8 @@ class JointVAE(vae.VAE):
         with tf.variable_scope(scope):
             alpha = self.args['anneal']
 
+            temp_weight = self.args['temp_weight']
+
             # marginal x1
             lx1pen = self._freebits(self.lx1pen, self.logq1, self.logp1, alpha)
             lx1 = self.lx1rec + lx1pen
