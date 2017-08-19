@@ -8,7 +8,7 @@ from runcolor import models
 
 experiment_name = "global_lossy_cifar"
 
-train_steps = 10000
+train_steps = 5000
 save_steps = 5000
 
 suffix = None
