@@ -57,7 +57,7 @@ parms = {
     'test_sample_size': 1000,
     'train_steps': 60000,
     'test_steps': 50,
-    'save_steps': 50000
+    'save_steps': 30000
 }
 
 

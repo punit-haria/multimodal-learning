@@ -263,6 +263,7 @@ class JointVAE(vae.VAE):
 
         with tf.variable_scope(scope):
             alpha = self.args['anneal']
+            ja = self.args['joint_anneal']
 
             # marginal x1
             lx1pen = self._freebits(self.lx1pen, self.logq1, self.logp1, alpha)
@@ -277,9 +278,7 @@ class JointVAE(vae.VAE):
                 lx12pen = self._freebits(self.lx12pen, self.logq12, self.logp12, alpha)
                 lx12 = self.lx12rec1 + self.lx12rec2 + lx12pen
 
-                tw = self.args['tw']
-
-                bound = tw*lx12 + lx1 + lx2
+                bound = ja*lx12 + lx1 + lx2
 
             elif self.objective == "translate":
                 # marginal x1p
