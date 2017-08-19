@@ -802,23 +802,27 @@ class DayNight(object):
 
                     f_path = cam_path + f
 
-                    if hour in day:
+                    try:
+                        if hour in day:
 
-                        image = ndimage.imread(f_path)
-                        image = imresize(image, size=(44, 64), interp='cubic')
-                        image = np.reshape(image, newshape=[-1])
+                            image = ndimage.imread(f_path)
+                            image = imresize(image, size=(44, 64), interp='cubic')
+                            image = np.reshape(image, newshape=[-1])
 
-                        x1.append(image / 255)
-                        y1.append(cam)
+                            x1.append(image / 255)
+                            y1.append(cam)
 
-                    elif hour in night:
+                        elif hour in night:
 
-                        image = ndimage.imread(f_path)
-                        image = imresize(image, size=(44, 64), interp='cubic')
-                        image = np.reshape(image, newshape=[-1])
+                            image = ndimage.imread(f_path)
+                            image = imresize(image, size=(44, 64), interp='cubic')
+                            image = np.reshape(image, newshape=[-1])
 
-                        x2.append(image / 255)
-                        y2.append(cam)
+                            x2.append(image / 255)
+                            y2.append(cam)
+
+                    except:
+                        print("Error at: ", f_path, flush=True)
 
             y1 = pd.Series(y1)
             y1 = pd.Categorical(y1)
