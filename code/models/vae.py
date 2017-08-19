@@ -211,6 +211,7 @@ class VAE(base.Model):
                                                   n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
 
                 elif self.dataset == "cifar":
+                    x = 2 * (x - 0.5)  # scale to [-1,1]
                     z = nw.deconvolution_cifar_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
                                                   n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
 
