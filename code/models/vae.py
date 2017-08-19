@@ -115,6 +115,10 @@ class VAE(base.Model):
                     mu, sigma, h, he = nw.convolution_sketchy(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                             n_z=self.n_z, extra=extra, init=init, scope='conv_network')
 
+                elif self.dataset == 'daynight':
+                    mu, sigma, h, he = nw.convolution_daynight(x, n_ch=self.n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                            n_z=self.n_z, extra=extra, init=init, scope='conv_network')
+
                 else:
                     raise NotImplementedError
 
@@ -186,6 +190,10 @@ class VAE(base.Model):
 
                     elif self.dataset == 'sketchy':
                         z = nw.deconvolution_sketchy(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
+                                                   init=init, scope='deconv_network')
+
+                    elif self.dataset == 'daynight':
+                        z = nw.deconvolution_daynight(z, n_ch=n_ch, n_feature_maps=n_fmaps, n_units=n_units,
                                                    init=init, scope='deconv_network')
 
                     else:
