@@ -45,6 +45,7 @@ parms = {
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25
+    'joint_anneal': 0.3,   # 0.1, 0.3, 0.5
 
     # train/test parameters
     'learning_rate': 0.001,
@@ -63,11 +64,11 @@ parms = {
 if __name__ == "__main__":
 
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
-    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
+    # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'joint'],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'translate']
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'translate', 0.3]
     ]
 
     data = DayNight()
@@ -99,6 +100,8 @@ if __name__ == "__main__":
 
         parms['objective'] = c[15]
 
+        parms['joint_anneal'] = c[16]
+
 
         for name, model in models.items():
 
@@ -121,6 +124,9 @@ if __name__ == "__main__":
 
             if parms['anneal'] < 0:
                 name += "_anneal_" + str(parms['anneal'])
+
+            if parms['joint_anneal'] < 1:
+                name += "_jointanneal_" + str(parms['joint_anneal'])
 
             train_joint(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 
