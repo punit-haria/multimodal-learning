@@ -788,6 +788,8 @@ class DayNight(object):
 
             print("Processing AMOS data...", flush=True)
 
+            n_fails = 0
+
             for cam in amos_cams:
                 cam_path = amos_path + cam + '/2016.08/'
 
@@ -823,6 +825,9 @@ class DayNight(object):
 
                     except:
                         print("Error at: ", f_path, flush=True)
+                        n_fails += 1
+
+            print("Number of Failures: ", n_fails, flush=True)
 
             y1 = pd.Series(y1)
             y1 = pd.Categorical(y1)
