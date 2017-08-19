@@ -65,10 +65,10 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective,  temp_weight
 
-    configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.8],
+    configs = [                         # maybe reduce learning rate to 0.001????
         ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.5],
         ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.3]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.8]
     ]
 
     data = JointStratifiedMNIST(parms['n_paired'])
