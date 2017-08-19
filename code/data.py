@@ -555,8 +555,8 @@ class Sketches(object):
                         sketch = imresize(sketch, size=0.25, interp='cubic')
                         sketch = np.reshape(sketch, newshape=[1, -1])
 
-                        x1.append(photo)
-                        x2.append(sketch)
+                        x1.append(photo / 255)
+                        x2.append(sketch / 255)
                         y.append(cat)
 
                         if is_train == 1:
@@ -746,8 +746,8 @@ class DayNight(object):
                 night = imresize(night, size=(44,64), interp='cubic')
                 night = np.reshape(night, newshape=[1, -1])
 
-                x1.append(day)
-                x2.append(night)
+                x1.append(day / 255)
+                x2.append(night / 255)
                 y.append(cam)
 
                 if row['is_train'] == 1:
@@ -808,7 +808,7 @@ class DayNight(object):
                         image = imresize(image, size=(44, 64), interp='cubic')
                         image = np.reshape(image, newshape=[-1])
 
-                        x1.append(image)
+                        x1.append(image / 255)
                         y1.append(cam)
 
                     elif hour in night:
@@ -817,7 +817,7 @@ class DayNight(object):
                         image = imresize(image, size=(44, 64), interp='cubic')
                         image = np.reshape(image, newshape=[-1])
 
-                        x2.append(image)
+                        x2.append(image / 255)
                         y2.append(cam)
 
             y1 = pd.Series(y1)

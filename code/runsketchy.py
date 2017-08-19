@@ -66,8 +66,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.002, 128, 32, 'joint'],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.002, 128, 32, 'translate']
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.0001, 128, 32, 'joint'],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.0001, 128, 32, 'translate']
     ]
 
     data = Sketches(parms['n_paired'])
