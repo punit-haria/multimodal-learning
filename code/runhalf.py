@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'halved_mnist'
+experiment_name = 'halved_mnist_no_weighing'
 
 
 models = [
@@ -54,9 +54,9 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 150000,
+    'train_steps': 30000,
     'test_steps': 50,
-    'save_steps': 30000
+    'save_steps': 50000
 }
 
 
@@ -66,9 +66,7 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective,  temp_weight
 
     configs = [                         # maybe reduce learning rate to 0.001????
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.5],
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.3]
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 0.8]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.002, 128, 16, 'joint', 1]  # 0.5
     ]
 
     data = JointStratifiedMNIST(parms['n_paired'])
