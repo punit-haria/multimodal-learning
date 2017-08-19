@@ -26,4 +26,4 @@ for i in range(save_steps, train_steps+save_steps, save_steps):
     suffix = str(i)
 
     image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
-            n_rows=8, n_cols=8, n_pixels=0, spacing=0)
+            n_rows=8, n_cols=8, n_pixels=0, spacing=0, count=3)
