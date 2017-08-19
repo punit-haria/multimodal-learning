@@ -55,7 +55,7 @@ parms = {
     'n_paired': 1000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
-    'train_steps': 60000,
+    'train_steps': 150000,
     'test_steps': 50,
     'save_steps': 30000
 }
