@@ -426,7 +426,7 @@ class ColouredStratifiedMNIST(ColouredMNIST):
     A small paired dataset consists of a one-to-one mapping between colours in X and colours in Y of the same
     MNIST digit.
     """
-    def __init__(self, n_paired):
+    def __init__(self, n_paired, censor=False):
         """
         n_paired: number of paired examples to create
         """
@@ -444,6 +444,43 @@ class ColouredStratifiedMNIST(ColouredMNIST):
         self.x1p = self.M1[self.x1_and_x2]
         self.x2p = self.M2[self.x1_and_x2]
         self.yp = self.ytr[self.x1_and_x2]
+
+
+        if censor:
+
+            numbers_train = [0,1,2,3,4,5,6,7]
+            numbers_test = [8,9]
+
+            idx = []
+            for i, ix in enumerate(self.y1):
+                if ix in numbers_train:
+                    idx.append(i)
+            self.y1 = self.y1[idx]
+            self.x1 = self.x1[idx]
+
+            idx = []
+            for i, ix in enumerate(self.y2):
+                if ix in numbers_train:
+                    idx.append(i)
+            self.y2 = self.y2[idx]
+            self.x2 = self.x2[idx]
+
+            idx = []
+            for i, ix in enumerate(self.yp):
+                if ix in numbers_train:
+                    idx.append(i)
+            self.yp = self.yp[idx]
+            self.x1p = self.x1p[idx]
+            self.x2p = self.x2p[idx]
+
+            idx = []
+            for i, ix in enumerate(self.yte):
+                if ix in numbers_test:
+                    idx.append(i)
+            self.yte = self.yte[idx]
+            self.M1_test = self.M1_test[idx]
+            self.M2_test = self.M2_test[idx]
+
 
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=250, dtype='train', include_labels=False):
