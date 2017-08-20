@@ -854,7 +854,7 @@ class DayNight(object):
 
                             image = ndimage.imread(f_path)
                             image = imresize(image, size=(44, 64), interp='cubic')
-                            image = np.reshape(image, newshape=[-1])
+                            image = np.reshape(image, newshape=[1, -1])
 
                             x1.append(image)
                             y1.append(cam)
@@ -863,7 +863,7 @@ class DayNight(object):
 
                             image = ndimage.imread(f_path)
                             image = imresize(image, size=(44, 64), interp='cubic')
-                            image = np.reshape(image, newshape=[-1])
+                            image = np.reshape(image, newshape=[1, -1])
 
                             x2.append(image)
                             y2.append(cam)

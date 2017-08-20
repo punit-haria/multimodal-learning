@@ -25,14 +25,14 @@ parms = {
     'joint_type': 'small',   # constrain, small, large
 
     # basic parameters
-    'n_z': 200,  # 32, 49, 200
+    'n_z': 192,  # 32, 49, 200
     'height': 44,
     'width': 64,
     'n_channels': 3,
-    'n_mixtures': 5,
+    'n_mixtures': 3,
 
     # network parameters
-    'n_units': 128,
+    'n_units': 256,
     'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
@@ -54,10 +54,10 @@ parms = {
 
     'n_paired': 10000,
     'n_conditional_pixels': 0,
-    'test_sample_size': 1000,
-    'train_steps': 10000,
+    'test_sample_size': 256,
+    'train_steps': 100000,
     'test_steps': 50,
-    'save_steps': 2000
+    'save_steps': 10000
 }
 
 
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 5, 0.001, 128, 32, 'translate', 0.3]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'joint', 0.3]
+        #["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'translate', 0.3]
     ]
 
     data = DayNight()
