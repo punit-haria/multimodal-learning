@@ -25,14 +25,14 @@ parms = {
     'joint_type': 'constrain',   # constrain, small, large
 
     # basic parameters
-    'n_z': 200,  # 32, 49, 200
+    'n_z': 192,  # 32, 49, 200
     'height': 64,
     'width': 64,
     'n_channels': 3,
     'n_mixtures': 3,
 
     # network parameters
-    'n_units': 128,
+    'n_units': 256,
     'n_feature_maps': 32,  # 32
 
     # normalizing flow parameters
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 3, 0.001, 450, 32, 'joint', 0.3]
-        #["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 200, 3, 0.001, 450, 32, 'translate', 0.3]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'joint', 0.3]
+        #["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'translate', 0.3]
     ]
 
     data = Sketches(parms['n_paired'])
