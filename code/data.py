@@ -843,6 +843,8 @@ class DayNight(object):
                 ims = [p for p in os.listdir(cam_path)
                            if os.path.isfile(os.path.join(cam_path, p))]
 
+                print(len(ims))
+
                 for f in ims:
                     loc = f.index('_')
                     hour = int(f[loc+1:loc+3])
@@ -872,6 +874,7 @@ class DayNight(object):
                         print("Error at: ", f_path, flush=True)
                         n_fails += 1
 
+
             print("Number of Failures: ", n_fails, flush=True)
 
             y1 = pd.Series(y1)
@@ -882,8 +885,15 @@ class DayNight(object):
             y2 = pd.Categorical(y2)
             self.y2 = y2.codes
 
-            self.x1 = np.concatenate(x1)
-            self.x2 = np.concatenate(x2)
+            self.x1 = np.concatenate(x1, axis=0)
+            self.x2 = np.concatenate(x2, axis=0)
+
+
+            print("Unpaired x1: ", self.x1.shape, flush=True)
+            print("Unpaired x2: ", self.x2.shape, flush=True)
+
+            print("Paired x1: ", self.x1p.shape, flush=True)
+            print("Paired x2: ", self.x2p.shape, flush=True)
 
             print("Saving data...", flush=True)
             np.savez(data_path, self.x1p, self.x2p, self.yp, self.x1, self.x2, self.y1, self.y2,
