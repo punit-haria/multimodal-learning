@@ -1,4 +1,4 @@
-from data import ColouredStratifiedMNIST, JointStratifiedMNIST
+from data import ColouredStratifiedMNIST
 from training import Results
 from results import image_plot
 
@@ -11,8 +11,7 @@ experiment_name = "colored_mnist"
 train_steps = 150000
 save_steps = 30000
 
-data = ColouredStratifiedMNIST(1000)
-#data = JointStratifiedMNIST(1000)
+data = ColouredStratifiedMNIST(5000)
 
 tracker = Results.load(experiment_name)
 

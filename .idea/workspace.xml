@@ -3,8 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runhalf.py" afterPath="$PROJECT_DIR$/code/runhalf.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_half.py" afterPath="$PROJECT_DIR$/code/synthesize_half.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/layers.py" afterPath="$PROJECT_DIR$/code/models/layers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runcolor.py" afterPath="$PROJECT_DIR$/code/runcolor.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runjoint.py" afterPath="$PROJECT_DIR$/code/runjoint.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_joint.py" afterPath="$PROJECT_DIR$/code/synthesize_joint.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -45,11 +47,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="layers.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="layers.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/models/layers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="362">
-              <caret line="699" column="18" lean-forward="true" selection-start-line="699" selection-start-column="18" selection-end-line="699" selection-end-column="18" />
+            <state relative-caret-position="293">
+              <caret line="691" column="17" lean-forward="true" selection-start-line="691" selection-start-column="17" selection-end-line="691" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -58,42 +60,30 @@
       <file leaf-file-name="runcolor.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/runcolor.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="351">
-              <caret line="61" column="61" lean-forward="false" selection-start-line="61" selection-start-column="61" selection-end-line="61" selection-end-column="61" />
+            <state relative-caret-position="346">
+              <caret line="56" column="26" lean-forward="true" selection-start-line="56" selection-start-column="26" selection-end-line="56" selection-end-column="26" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="synthesize_vae.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/synthesize_vae.py">
+      <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/runjoint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="12" column="0" lean-forward="true" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
+            <state relative-caret-position="433">
+              <caret line="74" column="0" lean-forward="true" selection-start-line="74" selection-start-column="0" selection-end-line="74" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="runhalf.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/runhalf.py">
+      <file leaf-file-name="synthesize_joint.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="498">
-              <caret line="73" column="0" lean-forward="true" selection-start-line="73" selection-start-column="0" selection-end-line="73" selection-end-column="0" />
+            <state relative-caret-position="195">
+              <caret line="13" column="36" lean-forward="true" selection-start-line="13" selection-start-column="36" selection-end-line="13" selection-end-column="36" />
               <folding>
-                <element signature="e#0#27#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="synthesize_half.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/code/synthesize_half.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="390">
-              <caret line="26" column="85" lean-forward="false" selection-start-line="26" selection-start-column="85" selection-end-line="26" selection-end-column="85" />
-              <folding>
-                <element signature="e#0#37#0" expanded="true" />
+                <element signature="e#0#40#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -186,19 +176,19 @@
         <option value="$PROJECT_DIR$/code/day_night.py" />
         <option value="$PROJECT_DIR$/code/results.py" />
         <option value="$PROJECT_DIR$/code/synthesize_daynight.py" />
-        <option value="$PROJECT_DIR$/code/synthesize_joint.py" />
         <option value="$PROJECT_DIR$/code/data.py" />
         <option value="$PROJECT_DIR$/code/synthesize_sketchy.py" />
         <option value="$PROJECT_DIR$/code/models/jointvae.py" />
         <option value="$PROJECT_DIR$/code/models/vae.py" />
         <option value="$PROJECT_DIR$/code/synthesize_vae.py" />
-        <option value="$PROJECT_DIR$/code/models/layers.py" />
-        <option value="$PROJECT_DIR$/code/runcolor.py" />
         <option value="$PROJECT_DIR$/code/rundaynight.py" />
         <option value="$PROJECT_DIR$/code/runsketchy.py" />
-        <option value="$PROJECT_DIR$/code/runjoint.py" />
         <option value="$PROJECT_DIR$/code/runhalf.py" />
         <option value="$PROJECT_DIR$/code/synthesize_half.py" />
+        <option value="$PROJECT_DIR$/code/synthesize_joint.py" />
+        <option value="$PROJECT_DIR$/code/runjoint.py" />
+        <option value="$PROJECT_DIR$/code/runcolor.py" />
+        <option value="$PROJECT_DIR$/code/models/layers.py" />
       </list>
     </option>
   </component>
@@ -364,13 +354,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00180" summary="update">
-      <created>1502920386025</created>
-      <option name="number" value="00180" />
-      <option name="presentableId" value="LOCAL-00180" />
-      <option name="project" value="LOCAL" />
-      <updated>1502920386025</updated>
     </task>
     <task id="LOCAL-00181" summary="update">
       <created>1502997252351</created>
@@ -708,7 +691,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503186116973</updated>
     </task>
-    <option name="localTasksCounter" value="229" />
+    <task id="LOCAL-00229" summary="update">
+      <created>1503186499834</created>
+      <option name="number" value="00229" />
+      <option name="presentableId" value="LOCAL-00229" />
+      <option name="project" value="LOCAL" />
+      <updated>1503186499834</updated>
+    </task>
+    <option name="localTasksCounter" value="230" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -724,13 +714,13 @@
     <frame x="0" y="23" width="1280" height="773" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22132471" sideWeight="0.4919708" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.22132471" sideWeight="0.4919708" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32892805" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32890856" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.18820679" sideWeight="0.49435028" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18820679" sideWeight="0.49435028" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.15640195" sideWeight="0.5080292" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -779,7 +769,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="1" />
+      <option name="time" value="3" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -945,26 +935,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="15" column="0" lean-forward="true" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="188">
           <caret line="213" column="21" lean-forward="false" selection-start-line="213" selection-start-column="21" selection-end-line="213" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/models/layers.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="362">
-          <caret line="699" column="18" lean-forward="true" selection-start-line="699" selection-start-column="18" selection-end-line="699" selection-end-column="18" />
           <folding />
         </state>
       </provider>
@@ -976,22 +950,6 @@
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/runcolor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="351">
-          <caret line="61" column="61" lean-forward="false" selection-start-line="61" selection-start-column="61" selection-end-line="61" selection-end-column="61" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/runjoint.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="208">
-          <caret line="108" column="51" lean-forward="true" selection-start-line="108" selection-start-column="51" selection-end-line="108" selection-end-column="51" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1011,6 +969,36 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/code/synthesize_half.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="390">
+          <caret line="26" column="85" lean-forward="false" selection-start-line="26" selection-start-column="85" selection-end-line="26" selection-end-column="85" />
+          <folding>
+            <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="13" column="36" lean-forward="true" selection-start-line="13" selection-start-column="36" selection-end-line="13" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/runhalf.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1130">
+          <caret line="116" column="0" lean-forward="true" selection-start-line="116" selection-start-column="0" selection-end-line="116" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/code/synthesize_vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
@@ -1019,23 +1007,27 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/runhalf.py">
+    <entry file="file://$PROJECT_DIR$/code/runjoint.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="498">
-          <caret line="73" column="0" lean-forward="true" selection-start-line="73" selection-start-column="0" selection-end-line="73" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="433">
+          <caret line="74" column="0" lean-forward="true" selection-start-line="74" selection-start-column="0" selection-end-line="74" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/synthesize_half.py">
+    <entry file="file://$PROJECT_DIR$/code/runcolor.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="26" column="85" lean-forward="false" selection-start-line="26" selection-start-column="85" selection-end-line="26" selection-end-column="85" />
-          <folding>
-            <element signature="e#0#37#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="346">
+          <caret line="56" column="26" lean-forward="true" selection-start-line="56" selection-start-column="26" selection-end-line="56" selection-end-column="26" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/models/layers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="293">
+          <caret line="691" column="17" lean-forward="true" selection-start-line="691" selection-start-column="17" selection-end-line="691" selection-end-column="17" />
+          <folding />
         </state>
       </provider>
     </entry>

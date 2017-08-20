@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal, n_z, n_mix, lr
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.25, 200, 3, 0.001]
+        ["cnn", "continuous", False, 4, 1024, "made", True, 2, -0.5, 200, 5, 0.001]
     ]
     data = CIFAR()
 

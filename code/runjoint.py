@@ -52,7 +52,7 @@ parms = {
     'n_unpaired_samples': 256,
     'n_paired_samples': 64,
 
-    'n_paired': 1000,
+    'n_paired': 5000,
     'n_conditional_pixels': 0,
     'test_sample_size': 1000,
     'train_steps': 150000,
@@ -66,13 +66,12 @@ if __name__ == "__main__":
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
-    configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 200, 5, 0.001, 96, 32, 'joint', 0.3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 200, 5, 0.001, 96, 32, 'translate', 0.3]
+    configs = [  # n_mixtures????
+        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 64, 5, 0.001, 128, 32, 'translate', 0.3]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])
-    #data = JointStratifiedMNIST(parms['n_paired'])
 
     tracker = Results(experiment_name)  # performance tracker
 
