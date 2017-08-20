@@ -63,7 +63,8 @@ def deconvolution_daynight(z, n_ch, n_feature_maps, n_units, init, scope):
         z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')
         z = nonlinearity(z)
 
-        h = w = 4
+        h = 2
+        w = 4
         dim = h * w * n_feature_maps
         z = linear(z, n_out=dim, init=init, scope='linear_layer')
         z = nonlinearity(z)
