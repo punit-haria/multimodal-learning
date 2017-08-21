@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'colored_mnist'
+experiment_name = 'colored_mnist_discrete'
 
 
 models = [
@@ -54,10 +54,10 @@ parms = {
 
     'n_paired': 5000,
     'n_conditional_pixels': 0,
-    'test_sample_size': 1000,
-    'train_steps': 150000,
+    'test_sample_size': 256,
+    'train_steps': 100000,
     'test_steps': 50,
-    'save_steps': 30000
+    'save_steps': 20000
 }
 
 
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "continuous", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])

@@ -697,9 +697,6 @@ class DayNight(object):
 
             print("Loading data...", flush=True)
 
-            np.savez(data_path, self.x1p, self.x2p, self.yp, self.x1, self.x2, self.y1, self.y2,
-                     self.x1_test, self.x2_test, self.y_test)
-
             data = np.load(data_path)
             self.x1p = data['arr_0']
             self.x2p = data['arr_1']

@@ -6,10 +6,10 @@ from results import image_plot
 from runjoint import models
 
 
-experiment_name = "sketchy"
+experiment_name = "sketchy_translate"
 
-train_steps = 100000
-save_steps = 10000
+train_steps = 75000
+save_steps = 15000
 
 data = Sketches(10000)
 

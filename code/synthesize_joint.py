@@ -6,10 +6,10 @@ from results import image_plot
 from runjoint import models
 
 
-experiment_name = "colored_mnist"
+experiment_name = "colored_mnist_discrete"
 
-train_steps = 150000
-save_steps = 30000
+train_steps = 100000
+save_steps = 20000
 
 data = ColouredStratifiedMNIST(5000)
 
