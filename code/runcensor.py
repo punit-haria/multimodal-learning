@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'cm_large_exp'
+experiment_name = 'censor'
 
 
 models = [
@@ -52,12 +52,12 @@ parms = {
     'n_unpaired_samples': 256,
     'n_paired_samples': 64,
 
-    'n_paired': 5000,
+    'n_paired': 2000,
     'n_conditional_pixels': 0,
     'test_sample_size': 256,
-    'train_steps': 5000,
+    'train_steps': 50000,
     'test_steps': 50,
-    'save_steps': 5000
+    'save_steps': 10000
 }
 
 
@@ -67,9 +67,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "continuous", False, 4, 1024, "made", True, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "continuous", True, 3, 128, "made", False, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "continuous", True, 3, 128, "made", True, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3]
+        ["cnn", "continuous", False, 4, 1024, "made", False, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "continuous", False, 3, 128, "made", False, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])
