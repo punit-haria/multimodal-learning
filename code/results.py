@@ -80,6 +80,12 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
                 elif synthesis_type == 'fix_latents':
                     fix_latents(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
 
+                elif synthesis_type == 'repeated_synth':
+                    if model_type == "joint":
+                        repeat_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+                    else:
+                        print("WARNING: Not implemented for regular model.")
+
                 elif synthesis_type == 'sample':
                     separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
 
@@ -416,6 +422,74 @@ def fix_latents(model, data, parms, spacing, n_rows, n_cols, model_type, path):
                     images[i,j,:] = rxs[j-1][i]
 
         _image_plot(images, parms, spacing, path)
+
+
+def repeat_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path):
+
+    if model_type == "joint":
+        if parms['data'] == 'halved_mnist':
+            print("WARNING: Not implemented for halved MNIST dataset.")
+
+        else:
+            n_vary = n_cols - 1
+            x1, x2 = sample(data, n_samples=n_rows, model_type=model_type, dtype='test')
+
+            rx2s = []
+            for i in range(n_vary):
+                _, rx2 = model.reconstruct((x1, None))
+                rx2s.append(rx2)
+
+            rx1s = []
+            for i in range(n_vary):
+                rx1, _ = model.reconstruct((None, x2))
+                rx1s.append(rx1)
+
+            rxs = []
+            for i in range(n_vary):
+                rx1, rx2 = model.reconstruct((x1, x2))
+                rxs.append((rx1,rx2))
+
+            n_x = x1.shape[1]
+            n_x2 = x2.shape[1]
+            assert n_x == n_x2
+
+            ims1 = np.empty((n_rows, n_cols, n_x))
+            ims2 = np.empty((n_rows, n_cols, n_x))
+            ims = np.empty((n_rows, n_cols, n_x*2))
+
+            h = parms['height']
+            w = parms['width']
+            n_ch = parms['n_channels']
+
+            x1_im = np.reshape(x1, newshape=[n_rows, h, w, n_ch])
+            x2_im = np.reshape(x2, newshape=[n_rows, h, w, n_ch])
+            xj = np.concatenate((x1_im, x2_im), axis=2)
+            xj = np.reshape(xj, newshape=[n_rows, n_x * 2])
+
+            for j in range(n_cols):
+
+                rx1_im = np.reshape(rxs[j-1][0], newshape=[n_rows, h, w, n_ch])
+                rx2_im = np.reshape(rxs[j-1][1], newshape=[n_rows, h, w, n_ch])
+                rxj = np.concatenate((rx1_im, rx2_im), axis=2)
+                rxj = np.reshape(rxj, newshape=[n_rows, n_x * 2])
+
+                for i in range(n_rows):
+                    if j == 0:
+                        ims1[i, j, :] = x1[i]
+                        ims2[i, j, :] = x2[i]
+                        ims[i, j, :] = xj[i]
+
+                    else:
+                        ims1[i, j, :] = rx2s[j - 1][i]
+                        ims2[i, j, :] = rx1s[j - 1][i]
+                        ims[i, j, :] = rxj[i]
+
+            names = ['joint', 'translate_x1', 'translate_x2']
+
+            _image_plot(ims1, parms, spacing, path+'_translate_x1')
+            _image_plot(ims2, parms, spacing, path+'_translate_x2')
+            _image_plot(ims, parms, spacing, path+'_joint', h=h, w=w*2)
+
 
 
 

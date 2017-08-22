@@ -17,7 +17,7 @@ tracker = Results.load(experiment_name)
 
 syntheses = ['reconstruct', 'sample']
 
-
+# repeated_synth, fixed_latents
 
 for i in range(save_steps, train_steps+save_steps, save_steps):
 
