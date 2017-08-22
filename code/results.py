@@ -78,11 +78,7 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
                     reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
 
                 elif synthesis_type == 'fix_latents':
-                    if model_type == "joint":
-                        print("WARNING: Not implemented for joint model.")
-                    else:
-                        images = fix_latents(model, data, n_rows, n_cols)
-                        _image_plot(images, parms, spacing, path_ext)
+                    fix_latents(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
 
                 elif synthesis_type == 'sample':
                     separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
@@ -324,33 +320,102 @@ def separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, pa
         _image_plot(rx, parms, spacing, path + '__model')
 
 
-def fix_latents(model, data, n_rows, n_cols):
+def fix_latents(model, data, parms, spacing, n_rows, n_cols, model_type, path):
 
-    n_vary = n_cols - 1
+    if model_type == "joint":
 
-    x = data.sample(n_rows, dtype='test')
-    if type(x) in [list, tuple]:
-        x = x[0]
+        if parms['data'] == 'halved_mnist':
+            print("WARNING: Not implemented for halved MNIST dataset.")
 
-    n_x = x.shape[1]
+        else:
+            n_vary = n_cols - 1
+            x1, x2 = sample(data, n_samples=n_rows, model_type=model_type, dtype='test')
 
-    z = model.encode(x, mean=False)
+            z1 = model.encode((x1, None), mean=False)
+            rx2s = []
+            for i in range(n_vary):
+                _, rx2 = model.decode(z1)
+                rx2s.append(rx2)
 
-    rxs = []
-    for i in range(n_vary):
-        rx = model.decode(z)
-        rxs.append(rx)
+            z2 = model.encode((None, x2), mean=False)
+            rx1s = []
+            for i in range(n_vary):
+                rx1, _ = model.decode(z2)
+                rx1s.append(rx1)
 
-    images = np.empty((n_rows, n_cols, n_x))
+            z = model.encode((x1, x2), mean=False)
+            rxs = []
+            for i in range(n_vary):
+                rx1, rx2 = model.decode(z)
+                rxs.append((rx1,rx2))
 
-    for i in range(n_rows):
-        for j in range(n_cols):
-            if j == 0:
-                images[i,j,:] = x[i]
-            else:
-                images[i,j,:] = rxs[j-1][i]
+            n_x = x1.shape[1]
+            n_x2 = x2.shape[1]
+            assert n_x == n_x2
 
-    return images
+            ims1 = np.empty((n_rows, n_cols, n_x))
+            ims2 = np.empty((n_rows, n_cols, n_x))
+            ims = np.empty((n_rows, n_cols, n_x*2))
+
+            h = parms['height']
+            w = parms['width']
+            n_ch = parms['n_channels']
+
+            x1_im = np.reshape(x1, newshape=[n_rows, h, w, n_ch])
+            x2_im = np.reshape(x2, newshape=[n_rows, h, w, n_ch])
+            xj = np.concatenate((x1_im, x2_im), axis=2)
+            xj = np.reshape(xj, newshape=[n_rows, n_x * 2])
+
+            for j in range(n_cols):
+
+                rx1_im = np.reshape(rxs[j-1][0], newshape=[n_rows, h, w, n_ch])
+                rx2_im = np.reshape(rxs[j-1][1], newshape=[n_rows, h, w, n_ch])
+                rxj = np.concatenate((rx1_im, rx2_im), axis=2)
+                rxj = np.reshape(rxj, newshape=[n_rows, n_x * 2])
+
+                for i in range(n_rows):
+                    if j == 0:
+                        ims1[i, j, :] = x1[i]
+                        ims2[i, j, :] = x2[i]
+                        ims[i, j, :] = xj[i]
+
+                    else:
+                        ims1[i, j, :] = rx2s[j - 1][i]
+                        ims2[i, j, :] = rx1s[j - 1][i]
+                        ims[i, j, :] = rxj[i]
+
+            names = ['joint', 'translate_x1', 'translate_x2']
+
+            _image_plot(ims1, parms, spacing, path+'_translate_x1')
+            _image_plot(ims2, parms, spacing, path+'_translate_x2')
+            _image_plot(ims, parms, spacing, path+'_joint', h=h, w=w*2)
+
+    else:
+        n_vary = n_cols - 1
+
+        x = data.sample(n_rows, dtype='test')
+        if type(x) in [list, tuple]:
+            x = x[0]
+
+        n_x = x.shape[1]
+
+        z = model.encode(x, mean=False)
+
+        rxs = []
+        for i in range(n_vary):
+            rx = model.decode(z)
+            rxs.append(rx)
+
+        images = np.empty((n_rows, n_cols, n_x))
+
+        for i in range(n_rows):
+            for j in range(n_cols):
+                if j == 0:
+                    images[i,j,:] = x[i]
+                else:
+                    images[i,j,:] = rxs[j-1][i]
+
+        _image_plot(images, parms, spacing, path)
 
 
 

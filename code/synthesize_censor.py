@@ -11,7 +11,7 @@ experiment_name = "censor"
 train_steps = 50000
 save_steps = 10000
 
-data = ColouredStratifiedMNIST(2000)
+data = ColouredStratifiedMNIST(2000, censor=True)
 
 tracker = Results.load(experiment_name)
 

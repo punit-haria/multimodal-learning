@@ -71,7 +71,7 @@ if __name__ == "__main__":
         ["cnn", "continuous", False, 3, 128, "made", False, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3]
     ]
 
-    data = ColouredStratifiedMNIST(parms['n_paired'])
+    data = ColouredStratifiedMNIST(parms['n_paired'], censor=True)
 
     tracker = Results(experiment_name)  # performance tracker
 
