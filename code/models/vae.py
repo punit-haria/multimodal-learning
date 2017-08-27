@@ -215,6 +215,10 @@ class VAE(base.Model):
                     z = nw.deconvolution_cifar_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
                                                   n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
 
+                elif self.dataset == "sketchy":
+                    z = nw.deconvolution_sketchy_ar(x, z, out_ch=n_ch, n_feature_maps=n_fmaps,
+                                                    n_units=n_units, n_ar_layers=n_layers, init=init, scope='ar_decoder')
+
                 elif self.dataset == "halved_mnist":
                     raise NotImplementedError
 
@@ -406,7 +410,7 @@ class VAE(base.Model):
             elif self.distribution == 'discrete':
                 probs = np.reshape(probs, newshape=[-1, h, w, ch, 256])
                 probs = probs[:, hp, wp, :, :]
-                x[:, hp, wp, :] = self._categorical_sampling(probs)
+                x[:, hp, wp, :] = self._categorical_sampling(probs) / 255
 
             elif self.distribution == 'continuous':
                 samples = np.reshape(probs, newshape=[-1, h, w, ch])

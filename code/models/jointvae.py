@@ -480,11 +480,11 @@ class JointVAE(vae.VAE):
             elif self.distribution == 'discrete':
                 p1 = np.reshape(p1, newshape=[-1, h, w, ch, 256])
                 p1 = p1[:, hp, wp, :, :]
-                x1[:, hp, wp, :] = self._categorical_sampling(p1)
+                x1[:, hp, wp, :] = self._categorical_sampling(p1) / 255
 
                 p2 = np.reshape(p2, newshape=[-1, h, w, ch, 256])
                 p2 = p2[:, hp, wp, :, :]
-                x2[:, hp, wp, :] = self._categorical_sampling(p2)
+                x2[:, hp, wp, :] = self._categorical_sampling(p2) / 255
 
             elif self.distribution == 'continuous':
                 p1 = np.reshape(p1, newshape=[-1, h, w, ch])

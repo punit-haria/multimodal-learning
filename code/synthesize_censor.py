@@ -15,7 +15,7 @@ data = ColouredStratifiedMNIST(2000, censor=True)
 
 tracker = Results.load(experiment_name)
 
-syntheses = ['reconstruct', 'sample']
+syntheses = ['fix_latents', 'repeated_synth', 'reconstruct', 'sample']
 
 
 

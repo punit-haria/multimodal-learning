@@ -4,7 +4,7 @@ from data import Sketches
 from training import train_joint, Results
 
 
-experiment_name = 'sketchy_translate'
+experiment_name = 'sketchy_ar'
 
 
 models = [
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        #["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'joint', 0.3]
-        ["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'translate', 0.3]
+        ["cnn", "continuous", False, 4, 1024, "made", True, 1, -0.25, 'small', 192, 3, 0.001, 256, 32, 'joint', 0.3]
+        #["cnn", "continuous", False, 4, 1024, "made", False, 3, 0, 'small', 192, 3, 0.001, 256, 32, 'translate', 0.3]
     ]
 
     data = Sketches(parms['n_paired'])
