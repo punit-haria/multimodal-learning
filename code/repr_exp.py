@@ -75,7 +75,7 @@ for name in tracker.get_runs():
     mod.load_state(suffix=suffix)
 
 
-    mean = True   ##########
+    mean = False   ##########
 
     print("Converting training data..")
     z1 = convert(mod, data.x1, left=True, bs=None, mean=mean)
@@ -99,14 +99,14 @@ for name in tracker.get_runs():
     print("Training with z1...", flush=True)
     mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(z1, y1)
-    print("Same-side score: ", mlp.score(z1_test, yte))             # 0.9688
-    print("Cross score: ", mlp.score(z2_test, yte))                 # 0.9221
+    print("Same-side score: ", mlp.score(z1_test, yte))             # 0.9688,   sampled=
+    print("Cross score: ", mlp.score(z2_test, yte))                 # 0.9221,   sampled=
 
     print("Training with z2...", flush=True)
     mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(z2, y2)
-    print("Same-side score: ", mlp.score(z2_test, yte))             # 0.9677
-    print("Cross score: ", mlp.score(z1_test, yte))                 # 0.9167
+    print("Same-side score: ", mlp.score(z2_test, yte))             # 0.9677,   sampled=
+    print("Cross score: ", mlp.score(z1_test, yte))                 # 0.9167,   sampled=
 
 
     # Raw tests:
