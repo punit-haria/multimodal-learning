@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.neural_network import MLPClassifier
 
 
-experiment_name = "final_discrete_color"
+experiment_name = "discrete_colored_final"
 runs = ['discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_jointanneal_0.3']
 
 
@@ -65,9 +65,13 @@ for name in tracker.get_runs():
     uprd = parms['n_unpaired_samples']
     xs = sample(data, n_samples=(prd, uprd), dtype='train')
 
+    print("Initializing model...")
     mod = _model(arguments=parms, name=name, tracker=tracker, init_minibatches=xs)
 
+    print("Loading model state...")
     mod.load_state(suffix=suffix)
+
+
 
     # training data
     print("Converting training data..")
