@@ -79,7 +79,8 @@ for name in tracker.get_runs():
     print("Converting training data..")
     z1 = convert(mod, data.x1, left=True, bs=None, mean=mean)
     z2 = convert(mod, data.x2, left=False, bs=None, mean=mean)
-    ytr = data.y1
+    y1 = data.y1
+    y2 = data.y2
 
     print("Converting test data..")
     z1_test = convert(mod, data.M1_test, left=True, bs=None, mean=mean)
@@ -91,19 +92,18 @@ for name in tracker.get_runs():
     alpha = 0.1
     max_iter = 50
     tol = 1e-3
-    learning_rate_init = 0.0001
 
     # Representation tests:
 
     print("Training with z1...", flush=True)
     mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
-    mlp.fit(z1, ytr)
+    mlp.fit(z1, y1)
     print("Same-side score: ", mlp.score(z1_test, yte))             # 0.9688
     print("Cross score: ", mlp.score(z2_test, yte))                 # 0.9221
 
     print("Training with z2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol, learning_rate_init=learning_rate_init)
-    mlp.fit(z2, ytr)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
+    mlp.fit(z2, y2)
     print("Same-side score: ", mlp.score(z2_test, yte))             # 0.092
     print("Cross score: ", mlp.score(z1_test, yte))                 # 0.0895
 
@@ -118,13 +118,13 @@ for name in tracker.get_runs():
 
     print("Training with x1...", flush=True)
     mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
-    mlp.fit(x1, ytr)
+    mlp.fit(x1, y1)
     print("Same-side score: ", mlp.score(x1_test, yte))             # 0.9505
     print("Cross score: ", mlp.score(x2_test, yte))                 # 0.4774
 
     print("Training with x2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol, learning_rate_init=learning_rate_init)
-    mlp.fit(x2, ytr)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
+    mlp.fit(x2, y2)
     print("Same-side score: ", mlp.score(x2_test, yte))             # 0.1026
     print("Cross score: ", mlp.score(x1_test, yte))                 # 0.0817
 
