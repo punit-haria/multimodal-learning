@@ -57,9 +57,6 @@ for name in tracker.get_runs():
     if name not in runs:
         continue
 
-    assert len(data.x1) == len(data.y1)
-    assert len(data.x2) == len(data.y2)
-
 
     trial = tracker.get(name)
     _model = models[trial.model_name]
