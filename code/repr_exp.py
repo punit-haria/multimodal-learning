@@ -74,47 +74,52 @@ for name in tracker.get_runs():
     mod.load_state(suffix=suffix)
 
 
+    mean = True
 
-    # training data
     print("Converting training data..")
-    z = convert(mod, data.x1, left=True, bs=None, mean=True)  # 1000
-    y = data.y1
+    z1 = convert(mod, data.x1, left=True, bs=None, mean=mean)
+    z2 = convert(mod, data.x2, left=True, bs=None, mean=mean)
+    ytr = data.y1
 
-    mlp = MLPClassifier()
-    mlp.fit(z, y)
-
-
-    # cross test data
     print("Converting test data..")
-    zte = convert(mod, data.M2_test, left=False, bs=None, mean=True)
+    z1_test = convert(mod, data.M1_test, left=True, bs=None, mean=mean)
+    z2_test = convert(mod, data.M2_test, left=False, bs=None, mean=mean)
     yte = data.yte
 
-    cross_score = mlp.score(zte, yte)
+    # Representation tests:
 
-
-    # same test data
-    print("Converting test data..")
-    zte = convert(mod, data.M1_test, left=True, bs=None, mean=True)
-    yte = data.yte
-
-    same_score = mlp.score(zte, yte)
-
-
-    print("Cross score: ", cross_score)   #  0.7458
-
-    print("Same score: ", same_score)    # 0.9661
-
-
+    print("Training with z1...")
     mlp = MLPClassifier()
-    x1 = np.reshape(data.x1, newshape=[-1, 784*3])
-    mlp.fit(x1, data.y1)
+    mlp.fit(z1, ytr)
+    print("Same-side score: ", mlp.score(z1_test, yte))
+    print("Cross score: ", mlp.score(z2_test, yte))
 
-    xte = np.reshape(data.M1_test, newshape=[-1, 784*3])
-    raw_score = mlp.score(xte, data.yte)
+    print("Training with z2...")
+    mlp = MLPClassifier()
+    mlp.fit(z2, ytr)
+    print("Same-side score: ", mlp.score(z2_test, yte))
+    print("Cross score: ", mlp.score(z1_test, yte))
 
-    print("Raw score: ", raw_score)  # raw baseline: 0.9478
-    # cross raw baseline: 0.5037
 
+    # Raw tests:
+
+    x1 = np.reshape(data.x1, newshape=[-1, 784 * 3])
+    x2 = np.reshape(data.x1, newshape=[-1, 784 * 3])
+
+    x1_test = np.reshape(data.x1, newshape=[-1, 784 * 3])
+    x2_test = np.reshape(data.x1, newshape=[-1, 784 * 3])
+
+    print("Training with x1...")
+    mlp = MLPClassifier()
+    mlp.fit(x1, ytr)
+    print("Same-side score: ", mlp.score(x1_test, yte))
+    print("Cross score: ", mlp.score(x2_test, yte))
+
+    print("Training with x2...")
+    mlp = MLPClassifier()
+    mlp.fit(x2, ytr)
+    print("Same-side score: ", mlp.score(x2_test, yte))
+    print("Cross score: ", mlp.score(x1_test, yte))
 
 
 
