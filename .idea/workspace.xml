@@ -3,14 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="7fb622d3-2f00-46ce-9792-a199d840b0f5" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/jointvae.py" afterPath="$PROJECT_DIR$/code/models/jointvae.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/layers.py" afterPath="$PROJECT_DIR$/code/models/layers.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/models/vae.py" afterPath="$PROJECT_DIR$/code/models/vae.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runjoint.py" afterPath="$PROJECT_DIR$/code/runjoint.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/runsketchy.py" afterPath="$PROJECT_DIR$/code/runsketchy.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_censor.py" afterPath="$PROJECT_DIR$/code/synthesize_censor.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_joint.py" afterPath="$PROJECT_DIR$/code/synthesize_joint.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/code/synthesize_sketchy.py" afterPath="$PROJECT_DIR$/code/synthesize_sketchy.py" />
     </list>
     <ignored path="thesis.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -49,7 +43,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="jointvae.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="jointvae.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/models/jointvae.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="393">
@@ -71,11 +65,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="runjoint.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/runjoint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="515">
-              <caret line="83" column="28" lean-forward="true" selection-start-line="83" selection-start-column="28" selection-end-line="83" selection-end-column="28" />
+            <state relative-caret-position="367">
+              <caret line="62" column="0" lean-forward="true" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -84,19 +78,11 @@
       <file leaf-file-name="synthesize_joint.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="345">
-              <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="results.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/code/results.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1103">
-              <caret line="265" column="4" lean-forward="false" selection-start-line="265" selection-start-column="4" selection-end-line="265" selection-end-column="4" />
-              <folding />
+            <state relative-caret-position="135">
+              <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+              <folding>
+                <element signature="e#0#40#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -194,13 +180,13 @@
         <option value="$PROJECT_DIR$/code/runcensor.py" />
         <option value="$PROJECT_DIR$/code/results.py" />
         <option value="$PROJECT_DIR$/code/synthesize_censor.py" />
-        <option value="$PROJECT_DIR$/code/runjoint.py" />
-        <option value="$PROJECT_DIR$/code/synthesize_joint.py" />
         <option value="$PROJECT_DIR$/code/runsketchy.py" />
         <option value="$PROJECT_DIR$/code/synthesize_sketchy.py" />
         <option value="$PROJECT_DIR$/code/models/layers.py" />
         <option value="$PROJECT_DIR$/code/models/vae.py" />
         <option value="$PROJECT_DIR$/code/models/jointvae.py" />
+        <option value="$PROJECT_DIR$/code/synthesize_joint.py" />
+        <option value="$PROJECT_DIR$/code/runjoint.py" />
       </list>
     </option>
   </component>
@@ -366,13 +352,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00194" summary="update">
-      <created>1503017445066</created>
-      <option name="number" value="00194" />
-      <option name="presentableId" value="LOCAL-00194" />
-      <option name="project" value="LOCAL" />
-      <updated>1503017445066</updated>
     </task>
     <task id="LOCAL-00195" summary="update">
       <created>1503019025773</created>
@@ -710,7 +689,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503416752390</updated>
     </task>
-    <option name="localTasksCounter" value="243" />
+    <task id="LOCAL-00243" summary="update">
+      <created>1503871349827</created>
+      <option name="number" value="00243" />
+      <option name="presentableId" value="LOCAL-00243" />
+      <option name="project" value="LOCAL" />
+      <updated>1503871349827</updated>
+    </task>
+    <option name="localTasksCounter" value="244" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -871,14 +857,6 @@
     <entry file="file://$PROJECT_DIR$/code/old/experiment_coloured_mnist.py" />
     <entry file="file://$PROJECT_DIR$/code/old/experiment_mnist.py" />
     <entry file="file://$PROJECT_DIR$/code/models/vae2.py" />
-    <entry file="file://$PROJECT_DIR$/code/training.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="112">
-          <caret line="37" column="0" lean-forward="true" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/amos.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="435">
@@ -1009,30 +987,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/code/runjoint.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="515">
-          <caret line="83" column="28" lean-forward="true" selection-start-line="83" selection-start-column="28" selection-end-line="83" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/results.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1103">
-          <caret line="265" column="4" lean-forward="false" selection-start-line="265" selection-start-column="4" selection-end-line="265" selection-end-column="4" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/code/models/vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="199">
@@ -1048,6 +1002,40 @@
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/training.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1652">
+          <caret line="37" column="0" lean-forward="true" selection-start-line="37" selection-start-column="0" selection-end-line="37" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/results.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="57" column="32" lean-forward="true" selection-start-line="57" selection-start-column="32" selection-end-line="57" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/synthesize_joint.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" column="0" lean-forward="true" selection-start-line="9" selection-start-column="0" selection-end-line="9" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/code/runjoint.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="367">
+          <caret line="62" column="0" lean-forward="true" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>

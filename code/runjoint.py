@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'discrete_colored_final'
+experiment_name = 'heavy_ar_colored'
 
 
 models = [
@@ -55,9 +55,9 @@ parms = {
     'n_paired': 2000,
     'n_conditional_pixels': 0,
     'test_sample_size': 256,
-    'train_steps': 60000,
+    'train_steps': 10000,
     'test_steps': 50,
-    'save_steps': 10000
+    'save_steps': 2000
 }
 
 
@@ -67,13 +67,9 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 1, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", True, 2, 384, "made", False, 1, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-
-        ["cnn", "discrete", False, 4, 1024, "made", False, 1, 0, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3],
-
-        ["cnn", "discrete", False, 4, 1024, "made", True, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", False, 4, 1024, "made", True, 1, -0.25, 'small', 64, 3, 0.001, 128, 32, 'translate', 0.3]
+        ["cnn", "discrete", False, 4, 1024, "made", True, 2, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "discrete", False, 4, 1024, "made", True, 3, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
+        ["cnn", "discrete", False, 4, 1024, "made", True, 4, -0.25, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])
