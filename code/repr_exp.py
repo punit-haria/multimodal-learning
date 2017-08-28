@@ -78,7 +78,7 @@ for name in tracker.get_runs():
 
     print("Converting training data..")
     z1 = convert(mod, data.x1, left=True, bs=None, mean=mean)
-    z2 = convert(mod, data.x2, left=True, bs=None, mean=mean)
+    z2 = convert(mod, data.x2, left=False, bs=None, mean=mean)
     ytr = data.y1
 
     print("Converting test data..")
@@ -104,10 +104,10 @@ for name in tracker.get_runs():
     # Raw tests:
 
     x1 = np.reshape(data.x1, newshape=[-1, 784 * 3])
-    x2 = np.reshape(data.x1, newshape=[-1, 784 * 3])
+    x2 = np.reshape(data.x2, newshape=[-1, 784 * 3])
 
-    x1_test = np.reshape(data.x1, newshape=[-1, 784 * 3])
-    x2_test = np.reshape(data.x1, newshape=[-1, 784 * 3])
+    x1_test = np.reshape(data.M1_test, newshape=[-1, 784 * 3])
+    x2_test = np.reshape(data.M2_test, newshape=[-1, 784 * 3])
 
     print("Training with x1...")
     mlp = MLPClassifier()
