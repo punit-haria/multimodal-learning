@@ -90,17 +90,18 @@ for name in tracker.get_runs():
 
     alpha = 0.1
     max_iter = 50
+    tol = 1e-3
 
     # Representation tests:
 
     print("Training with z1...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(z1, ytr)
     print("Same-side score: ", mlp.score(z1_test, yte))             # 0.9663
     print("Cross score: ", mlp.score(z2_test, yte))                 # 0.7048
 
     print("Training with z2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(z2, ytr)
     print("Same-side score: ", mlp.score(z2_test, yte))             # 0.0959
     print("Cross score: ", mlp.score(z1_test, yte))                 # 0.1184
@@ -115,13 +116,13 @@ for name in tracker.get_runs():
     x2_test = np.reshape(data.M2_test, newshape=[-1, 784 * 3])
 
     print("Training with x1...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(x1, ytr)
     print("Same-side score: ", mlp.score(x1_test, yte))             # 0.9531
     print("Cross score: ", mlp.score(x2_test, yte))                 # 0.5165
 
     print("Training with x2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(x2, ytr)
     print("Same-side score: ", mlp.score(x2_test, yte))             # 0.0878
     print("Cross score: ", mlp.score(x1_test, yte))                 # 0.0855
