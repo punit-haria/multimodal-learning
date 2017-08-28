@@ -67,8 +67,8 @@
       <file leaf-file-name="repr_exp.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/code/repr_exp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="114" column="55" lean-forward="true" selection-start-line="114" selection-start-column="55" selection-end-line="114" selection-end-column="55" />
+            <state relative-caret-position="256">
+              <caret line="102" column="0" lean-forward="true" selection-start-line="102" selection-start-column="0" selection-end-line="102" selection-end-column="0" />
               <folding>
                 <element signature="e#0#62#0" expanded="true" />
               </folding>
@@ -103,7 +103,7 @@
       <file leaf-file-name="data.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/code/data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-465">
+            <state relative-caret-position="-649">
               <caret line="447" column="0" lean-forward="true" selection-start-line="447" selection-start-column="0" selection-end-line="447" selection-end-column="0" />
               <folding />
             </state>
@@ -385,13 +385,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1499940220594</updated>
-    </task>
-    <task id="LOCAL-00200" summary="update">
-      <created>1503074316358</created>
-      <option name="number" value="00200" />
-      <option name="presentableId" value="LOCAL-00200" />
-      <option name="project" value="LOCAL" />
-      <updated>1503074316358</updated>
     </task>
     <task id="LOCAL-00201" summary="update">
       <created>1503080120736</created>
@@ -729,7 +722,14 @@
       <option name="project" value="LOCAL" />
       <updated>1503957673061</updated>
     </task>
-    <option name="localTasksCounter" value="249" />
+    <task id="LOCAL-00249" summary="update">
+      <created>1503958485222</created>
+      <option name="number" value="00249" />
+      <option name="presentableId" value="LOCAL-00249" />
+      <option name="project" value="LOCAL" />
+      <updated>1503958485223</updated>
+    </task>
+    <option name="localTasksCounter" value="250" />
     <servers />
   </component>
   <component name="TodoView" selected-index="4">
@@ -1067,7 +1067,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-465">
+        <state relative-caret-position="-649">
           <caret line="447" column="0" lean-forward="true" selection-start-line="447" selection-start-column="0" selection-end-line="447" selection-end-column="0" />
           <folding />
         </state>
@@ -1075,8 +1075,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/code/repr_exp.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="114" column="55" lean-forward="true" selection-start-line="114" selection-start-column="55" selection-end-line="114" selection-end-column="55" />
+        <state relative-caret-position="256">
+          <caret line="102" column="0" lean-forward="true" selection-start-line="102" selection-start-column="0" selection-end-line="102" selection-end-column="0" />
           <folding>
             <element signature="e#0#62#0" expanded="true" />
           </folding>

@@ -88,17 +88,17 @@ for name in tracker.get_runs():
 
     # Representation tests:
 
-    print("Training with z1...")
+    print("Training with z1...", flush=True)
     mlp = MLPClassifier()
     mlp.fit(z1, ytr)
-    print("Same-side score: ", mlp.score(z1_test, yte))
-    print("Cross score: ", mlp.score(z2_test, yte))
+    print("Same-side score: ", mlp.score(z1_test, yte))             # 0.9663
+    print("Cross score: ", mlp.score(z2_test, yte))                 # 0.7048
 
-    print("Training with z2...")
+    print("Training with z2...", flush=True)
     mlp = MLPClassifier()
     mlp.fit(z2, ytr)
-    print("Same-side score: ", mlp.score(z2_test, yte))
-    print("Cross score: ", mlp.score(z1_test, yte))
+    print("Same-side score: ", mlp.score(z2_test, yte))             # 0.0959
+    print("Cross score: ", mlp.score(z1_test, yte))                 # 0.1184
 
 
     # Raw tests:
@@ -109,17 +109,17 @@ for name in tracker.get_runs():
     x1_test = np.reshape(data.M1_test, newshape=[-1, 784 * 3])
     x2_test = np.reshape(data.M2_test, newshape=[-1, 784 * 3])
 
-    print("Training with x1...")
+    print("Training with x1...", flush=True)
     mlp = MLPClassifier()
     mlp.fit(x1, ytr)
-    print("Same-side score: ", mlp.score(x1_test, yte))
-    print("Cross score: ", mlp.score(x2_test, yte))
+    print("Same-side score: ", mlp.score(x1_test, yte))             # 0.9531
+    print("Cross score: ", mlp.score(x2_test, yte))                 # 0.5165
 
-    print("Training with x2...")
+    print("Training with x2...", flush=True)
     mlp = MLPClassifier()
     mlp.fit(x2, ytr)
-    print("Same-side score: ", mlp.score(x2_test, yte))
-    print("Cross score: ", mlp.score(x1_test, yte))
+    print("Same-side score: ", mlp.score(x2_test, yte))             # 0.0878
+    print("Cross score: ", mlp.score(x1_test, yte))                 # 0.0855
 
 
 
