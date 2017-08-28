@@ -91,6 +91,7 @@ for name in tracker.get_runs():
     alpha = 0.1
     max_iter = 50
     tol = 1e-3
+    learning_rate_init = 0.0001
 
     # Representation tests:
 
@@ -101,7 +102,7 @@ for name in tracker.get_runs():
     print("Cross score: ", mlp.score(z2_test, yte))                 # 0.9221
 
     print("Training with z2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol, learning_rate_init=learning_rate_init)
     mlp.fit(z2, ytr)
     print("Same-side score: ", mlp.score(z2_test, yte))             # 0.092
     print("Cross score: ", mlp.score(z1_test, yte))                 # 0.0895
@@ -122,11 +123,10 @@ for name in tracker.get_runs():
     print("Cross score: ", mlp.score(x2_test, yte))                 # 0.4774
 
     print("Training with x2...", flush=True)
-    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
+    mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol, learning_rate_init=learning_rate_init)
     mlp.fit(x2, ytr)
     print("Same-side score: ", mlp.score(x2_test, yte))             # 0.1026
     print("Cross score: ", mlp.score(x1_test, yte))                 # 0.0817
-
 
 
 
