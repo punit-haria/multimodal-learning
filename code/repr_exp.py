@@ -31,6 +31,8 @@ def sample(data, n_samples, dtype='test'):
 
 def convert(model, x, left, bs, mean):
 
+    x = np.reshape(x, newshape=[-1, 784*3])
+
     n = len(data.x1)
     if bs is None:
         bs =  n
@@ -98,10 +100,20 @@ for name in tracker.get_runs():
     same_score = mlp.score(zte, yte)
 
 
-    print("Cross score: ", cross_score)
+    print("Cross score: ", cross_score)   #  0.7458
 
-    print("Same score: ", same_score)
+    print("Same score: ", same_score)    # 0.9661
 
+
+    mlp = MLPClassifier()
+    x1 = np.reshape(data.x1, newshape=[-1, 784*3])
+    mlp.fit(x1, data.y1)
+
+    xte = np.reshape(data.M1_test, newshape=[-1, 784*3])
+    raw_score = mlp.score(xte, data.yte)
+
+    print("Raw score: ", raw_score)  # raw baseline: 0.9478
+    # cross raw baseline: 0.5037
 
 
 
