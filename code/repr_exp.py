@@ -33,7 +33,7 @@ def convert(model, x, left, bs, mean):
 
     x = np.reshape(x, newshape=[-1, 784*3])
 
-    n = len(data.x1)
+    n = len(x)
     if bs is None:
         bs =  n
 
