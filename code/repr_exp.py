@@ -57,6 +57,10 @@ for name in tracker.get_runs():
     if name not in runs:
         continue
 
+    assert len(data.x1) == len(data.y1)
+    assert len(data.x2) == len(data.y2)
+
+
     trial = tracker.get(name)
     _model = models[trial.model_name]
     parms = trial.parameters
@@ -67,10 +71,10 @@ for name in tracker.get_runs():
     uprd = parms['n_unpaired_samples']
     xs = sample(data, n_samples=(prd, uprd), dtype='train')
 
-    print("Initializing model...")
+    print("Initializing model...", flush=True)
     mod = _model(arguments=parms, name=name, tracker=tracker, init_minibatches=xs)
 
-    print("Loading model state...")
+    print("Loading model state...", flush=True)
     mod.load_state(suffix=suffix)
 
 
