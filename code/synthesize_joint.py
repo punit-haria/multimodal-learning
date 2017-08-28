@@ -6,7 +6,7 @@ from results import image_plot
 from runjoint import models
 
 
-experiment_name = "heavy_ar_colored"
+experiment_name = "extensive_normalizing_flows"
 
 train_steps = 10000
 save_steps = 2000
