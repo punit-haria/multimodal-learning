@@ -127,7 +127,7 @@ for name in tracker.get_runs():
     mlp = MLPClassifier(alpha=alpha, max_iter=max_iter, tol=tol)
     mlp.fit(x2, y2)
     print("Same-side score: ", mlp.score(x2_test, yte))             # 0.9386
-    print("Cross score: ", mlp.score(x1_test, yte))                 # 0.5926
+    print("Cross score: ", mlp.score(x1_test, yte))                 # 0.5763
 
 
 

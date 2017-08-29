@@ -6,10 +6,10 @@ from results import image_plot
 from runjoint import models
 
 
-experiment_name = "censor"
+experiment_name = "censor_discrete"
 
-train_steps = 50000
-save_steps = 10000
+train_steps = 20000
+save_steps = 5000
 
 data = ColouredStratifiedMNIST(2000, censor=True)
 
@@ -24,5 +24,5 @@ for i in range(save_steps, train_steps+save_steps, save_steps):
     suffix = str(i)
 
     image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
-               n_rows=8, n_cols=8, n_pixels=0, spacing=0, model_type='joint', count=6)
+               n_rows=8, n_cols=8, n_pixels=0, spacing=0, model_type='joint', count=4)
 
