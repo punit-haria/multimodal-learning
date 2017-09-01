@@ -190,15 +190,17 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             ims = []
 
             x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-            _, rx2 = model.reconstruct((x1, None))
-            rx1, _ = model.reconstruct((None, x2))
+            rx1_1, rx2_1 = model.reconstruct((x1, None))
+            rx1_2, rx2_2 = model.reconstruct((None, x2))
             rx1f, rx2f = model.reconstruct((x1, x2))
 
             image_dim = [14, 28, 1]
             x1 = np.reshape(x1, newshape=[-1]+image_dim)
             x2 = np.reshape(x2, newshape=[-1]+image_dim)
-            rx1 = np.reshape(rx1, newshape=[-1] + image_dim)
-            rx2 = np.reshape(rx2, newshape=[-1] + image_dim)
+            rx1_1 = np.reshape(rx1_1, newshape=[-1] + image_dim)
+            rx2_1 = np.reshape(rx2_1, newshape=[-1] + image_dim)
+            rx1_2 = np.reshape(rx1_2, newshape=[-1] + image_dim)
+            rx2_2 = np.reshape(rx2_2, newshape=[-1] + image_dim)
             rx1f = np.reshape(rx1f, newshape=[-1] + image_dim)
             rx2f = np.reshape(rx2f, newshape=[-1] + image_dim)
 
@@ -210,8 +212,8 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             x2_full = np.reshape(x2_full, newshape=[n, -1])
             x = np.reshape(x, newshape=[n, -1])
 
-            t1 = np.concatenate((x1, rx2), axis=1)
-            t2 = np.concatenate((rx1, x2), axis=1)
+            t1 = np.concatenate((rx1_1, rx2_1), axis=1)
+            t2 = np.concatenate((rx1_2, rx2_2), axis=1)
             tf = np.concatenate((rx1f, rx2f), axis=1)
 
             t1 = np.reshape(t1, newshape=[n, -1])

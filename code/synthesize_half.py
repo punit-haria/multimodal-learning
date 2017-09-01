@@ -15,7 +15,7 @@ data = JointStratifiedMNIST(1000)
 
 tracker = Results.load(experiment_name)
 
-syntheses = ['reconstruct', 'sample']
+syntheses = ['reconstruct']#, 'sample']
 
 
 
