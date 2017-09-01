@@ -189,7 +189,26 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
             ims = []
 
-            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            #x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+
+            x1, x2 = data.sample_stratified(n_paired_samples=500, dtype='test')
+
+            ns = 52*2
+            s1 = np.sum(x1, axis=1)
+            s2 = np.sum(x2, axis=1)
+            s = s1 + s2
+            s = s.astype(float)
+            s[s < ns] = 0
+            s[s > 0] = 1
+            s = np.nonzero(s)
+
+            print("s: ", len(s), flush=True)
+            assert len(s) > n
+
+            s = s[0:n]
+            x1 = x1[s]
+            x2 = x2[s]
+
             rx1_1, rx2_1 = model.reconstruct((x1, None))
             rx1_2, rx2_2 = model.reconstruct((None, x2))
             rx1f, rx2f = model.reconstruct((x1, x2))
