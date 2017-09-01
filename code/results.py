@@ -193,14 +193,14 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
             x1, x2 = data.sample_stratified(n_paired_samples=500, dtype='test')
 
-            ns = 52*2
+            ns = 55*2
             s1 = np.sum(x1, axis=1)
             s2 = np.sum(x2, axis=1)
             s = s1 + s2
-            s = s.astype(float)
             s[s < ns] = 0
             s[s > 0] = 1
             s = np.nonzero(s)
+            s = s[0]
 
             print("s: ", len(s), flush=True)
             assert len(s) > n
