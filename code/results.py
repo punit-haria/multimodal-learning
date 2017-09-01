@@ -202,8 +202,8 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             rx1f = np.reshape(rx1f, newshape=[-1] + image_dim)
             rx2f = np.reshape(rx2f, newshape=[-1] + image_dim)
 
-            x1_full = np.concatenate((x1, x2*0), axis=1)
-            x2_full = np.concatenate((x1*0, x2), axis=1)
+            x1_full = np.concatenate((x1, x2*0 + 0.5), axis=1)
+            x2_full = np.concatenate((x1*0 + 0.5, x2), axis=1)
             x = np.concatenate((x1, x2), axis=1)
 
             x1_full = np.reshape(x1_full, newshape=[n, -1])
