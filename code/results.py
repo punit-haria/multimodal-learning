@@ -211,8 +211,8 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             x1_mask[x1_mask == 1] = 0.8
             x2_mask[x2_mask == 1] = 0.8
 
-            x1_full = np.concatenate((x1, x2*0 + 0.5), axis=1)
-            x2_full = np.concatenate((x1*0 + 0.5, x2), axis=1)
+            x1_full = np.concatenate((x1, x2_mask), axis=1)
+            x2_full = np.concatenate((x1_mask, x2), axis=1)
             x = np.concatenate((x1, x2), axis=1)
 
             x1_full = np.reshape(x1_full, newshape=[n, -1])
