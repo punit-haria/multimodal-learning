@@ -206,6 +206,10 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             x2_full = np.concatenate((x1*0, x2), axis=1)
             x = np.concatenate((x1, x2), axis=1)
 
+            x1_full = np.reshape(x1_full, newshape=[n, -1])
+            x2_full = np.reshape(x2_full, newshape=[n, -1])
+            x = np.reshape(x, newshape=[n, -1])
+
             t1 = np.concatenate((x1, rx2), axis=1)
             t2 = np.concatenate((rx1, x2), axis=1)
             tf = np.concatenate((rx1f, rx2f), axis=1)
@@ -218,7 +222,14 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             ims.append((x2_full, t2))
             ims.append((x, tf))
 
-            for name, images in zip(names, ims):
+            for name, tup in zip(names, ims):
+
+                x, rx = tup
+
+                images = np.empty((n_images, n_x*2))
+                images[0::2] = x
+                images[1::2] = rx
+
                 images = np.reshape(images, newshape=[n_rows, n_cols, n_x*2])
 
                 current_path = path + "_" + name
