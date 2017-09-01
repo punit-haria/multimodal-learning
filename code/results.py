@@ -204,8 +204,8 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             rx1f = np.reshape(rx1f, newshape=[-1] + image_dim)
             rx2f = np.reshape(rx2f, newshape=[-1] + image_dim)
 
-            x1_mask = np.copy(x1)
-            x2_mask = np.copy(x2)
+            x1_mask = np.copy(x1.astype(float))
+            x2_mask = np.copy(x2.astype(float))
             x1_mask[x1_mask == 0] = 0.5
             x2_mask[x2_mask == 0] = 0.5
             x1_mask[x1_mask == 1] = 0.8
