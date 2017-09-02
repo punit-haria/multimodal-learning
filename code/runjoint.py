@@ -4,7 +4,7 @@ from data import JointStratifiedMNIST, ColouredStratifiedMNIST
 from training import train_joint, Results
 
 
-experiment_name = 'extensive_normalizing_flows'
+experiment_name = 'discrete_colored_final'
 
 
 models = [

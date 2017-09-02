@@ -51,6 +51,10 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
 
     for name in tracker.get_runs():
 
+        if name != 'discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_jointanneal_0.3':
+            continue
+
+
         print("Plotting ", name, flush=True)
 
         trial = tracker.get(name)
