@@ -247,13 +247,14 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
 
 
         else:
-            names = ['joint_x1', 'joint_x2', 'translate_x1', 'translate_x2', 'marginal_x1', 'marginal_x2']
+            #names = ['joint_x1', 'joint_x2', 'translate_x1', 'translate_x2', 'marginal_x1', 'marginal_x2']
+            names = ['translate_x1', 'translate_x2']
             ims = []
 
-            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-            rx1, rx2 = model.reconstruct((x1, x2))
-            ims.append((x1, rx1))
-            ims.append((x2, rx2))
+            #x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            #rx1, rx2 = model.reconstruct((x1, x2))
+            #ims.append((x1, rx1))
+            #ims.append((x2, rx2))
 
             x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
             _, rx2 = model.reconstruct((x1, None))
@@ -261,11 +262,11 @@ def reconstruction(model, data, parms, spacing, n_rows, n_cols, model_type, path
             ims.append((x1, rx2))
             ims.append((x2, rx1))
 
-            x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-            rx1, _ = model.reconstruct((x1, None))
-            _, rx2 = model.reconstruct((None, x2))
-            ims.append((x1, rx1))
-            ims.append((x2, rx2))
+            #x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+            #rx1, _ = model.reconstruct((x1, None))
+            #_, rx2 = model.reconstruct((None, x2))
+            #ims.append((x1, rx1))
+            #ims.append((x2, rx2))
 
             for name, tup in zip(names, ims):
                 x, rx = tup
@@ -335,7 +336,7 @@ def separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, pa
             _image_plot(x1, parms, spacing, path + '__testset_x1')
             _image_plot(x2, parms, spacing, path + '__testset_x2')
 
-            z = model.sample_prior(n/2)
+            z = model.sample_prior(n//2)
             rx1, rx2 = model.decode(z)
 
             images = np.empty((n, n_x))
