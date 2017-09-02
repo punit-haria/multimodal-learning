@@ -51,10 +51,6 @@ def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
 
     for name in tracker.get_runs():
 
-        if name != 'discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_jointanneal_0.3':
-            continue
-
-
         print("Plotting ", name, flush=True)
 
         trial = tracker.get(name)
@@ -339,14 +335,22 @@ def separate_samples(model, data, parms, spacing, n_rows, n_cols, model_type, pa
             _image_plot(x1, parms, spacing, path + '__testset_x1')
             _image_plot(x2, parms, spacing, path + '__testset_x2')
 
-            z = model.sample_prior(n)
+            z = model.sample_prior(n/2)
             rx1, rx2 = model.decode(z)
 
-            rx1 = np.reshape(rx1, newshape=[n_rows, n_cols, n_x])
-            rx2 = np.reshape(rx2, newshape=[n_rows, n_cols, n_x])
+            images = np.empty((n, n_x))
+            images[0::2] = rx1
+            images[1::2] = rx2
 
-            _image_plot(rx1, parms, spacing, path + '__model_x1')
-            _image_plot(rx2, parms, spacing, path + '__model_x2')
+            images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+
+            _image_plot(images, parms, spacing, path + '__model')
+
+            #rx1 = np.reshape(rx1, newshape=[n_rows, n_cols, n_x])
+            #rx2 = np.reshape(rx2, newshape=[n_rows, n_cols, n_x])
+
+            #_image_plot(rx1, parms, spacing, path + '__model_x1')
+            #_image_plot(rx2, parms, spacing, path + '__model_x2')
 
     else:
         x = sample(data, n_samples=n, model_type=model_type, dtype='test')

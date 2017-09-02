@@ -6,18 +6,18 @@ from results import image_plot
 from runjoint import models
 
 
-experiment_name = "sketchy_ar"
+experiment_name = "sketchy"
 
-train_steps = 75000
-save_steps = 15000
+train_steps = 100000
+save_steps = 50000
 
 data = Sketches(10000)
 
 tracker = Results.load(experiment_name)
 
 
-syntheses = ['reconstruct', 'sample', 'repeated_synth', 'fix_latents']
-
+#syntheses = ['reconstruct', 'sample', 'repeated_synth', 'fix_latents']
+syntheses = ['reconstruct']
 
 
 for i in range(save_steps, train_steps+save_steps, save_steps):
