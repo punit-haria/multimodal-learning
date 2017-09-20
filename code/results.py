@@ -9,6 +9,12 @@ import numpy as np
 cm_choice = cm.Greys  # Greys_r
 plt.style.use('ggplot')
 
+'''
+
+Helper methods and classes for synthesizing images under various conditions. 
+
+'''
+
 
 
 def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=True,

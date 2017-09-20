@@ -1,5 +1,11 @@
 import pickle
 
+'''
+
+Helper methods and classes for training networks. 
+
+'''
+
 
 def train(name, model, parameters, data, tracker):
 

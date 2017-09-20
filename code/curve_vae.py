@@ -8,16 +8,19 @@ import matplotlib.cm as cm
 cm_choice = cm.Greys  # Greys_r
 plt.style.use('ggplot')
 
+'''
+
+This script generates training and test curve plots for a given experiment.
+ 
+'''
+
+
 
 experiment_name = "discrete_colored_final"
 
 tracker = Results.load(experiment_name)
 
-
-
-
 curve_name='test_lower_bound_on_log_p_x_y'
-
 
 
 legend='lower right'
@@ -28,14 +31,11 @@ ylab=r'$\log \ p(x,y) \ \geq$'
 
 names = tracker.get_runs()
 
-
-
 allowed_names = {
     'discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_jointanneal_0.3': 'CNN-VAE',
     'discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_ar_1_anneal_-0.25_jointanneal_0.3':
     'AR-CNN-VAE'
 }
-
 
 
 plt.figure(figsize=(12, 9))

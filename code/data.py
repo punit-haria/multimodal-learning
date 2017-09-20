@@ -9,6 +9,12 @@ import os
 import os.path
 import pandas as pd
 
+'''
+
+Contains helper methods and classes for loading each dataset.
+ 
+'''
+
 
 def sample(data, batch_size):
     """

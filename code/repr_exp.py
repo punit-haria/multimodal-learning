@@ -5,6 +5,12 @@ import numpy as np
 
 from sklearn.neural_network import MLPClassifier
 
+'''
+
+Experiments to compare learned representations for a given model. 
+
+'''
+
 
 experiment_name = "discrete_colored_final"
 runs = ['discrete_colored_final_cnn_small_nz_64_lr_0.001_fmaps_32_units_128_obj_joint_jointanneal_0.3']
