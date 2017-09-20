@@ -1,6 +1,7 @@
 code/.idea/*
 .idea/*
 old_code/*
+code/old/*
 data/*
 logs/*
 models/*
