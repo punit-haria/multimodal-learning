@@ -67,11 +67,7 @@ if __name__ == "__main__":
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
 
     configs = [
-        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", True, 2, 320, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", True, 2, 320, "made", False, 2, -0.125, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", True, 1, 320, "cnn", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3],
-        ["cnn", "discrete", True, 1, 320, "cnn", False, 2, -0.125, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3]
+        ["cnn", "discrete", False, 4, 1024, "made", False, 2, 0, 'small', 64, 3, 0.001, 128, 32, 'joint', 0.3]
     ]
 
     data = ColouredStratifiedMNIST(parms['n_paired'])
