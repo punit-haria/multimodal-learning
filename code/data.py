@@ -1057,6 +1057,7 @@ class MSCOCO(object):
             self._val_vocab = data['val_vocab']
             self._val_imcapt = data['val_imcapt']
             self._val_images = data['val_images']
+            self._max_seq_len = data['max_seq_len']
 
             print("Data loaded.", flush=True)
 
@@ -1157,6 +1158,7 @@ class MSCOCO(object):
             tosave['val_vocab'] = self._val_vocab
             tosave['val_imcapt'] = self._val_imcapt
             tosave['val_images'] = self._val_images
+            tosave['max_seq_len'] = self._max_seq_len
 
             print("Saving data...", flush=True)
             with open(_data_path, 'wb') as ff:
@@ -1164,8 +1166,8 @@ class MSCOCO(object):
             print("Saved.", flush=True)
 
         # lists of image ids
-        self.image_ids = self._images.keys()
-        self.val_image_ids = self._val_images.keys()
+        self.image_ids = list(self._images.keys())
+        self.val_image_ids = list(self._val_images.keys())
 
         # construct pairings
         _n = len(self.image_ids)
@@ -1184,7 +1186,6 @@ class MSCOCO(object):
         """
         Generate samples in matrix form based on already sampled images.
         """
-
         if train:
             imcapt = self._imcapt
             captions = self._captions
@@ -1199,7 +1200,7 @@ class MSCOCO(object):
         x_image = []
         for i in image_ids:
             capts = imcapt[i]
-            capt_id = np.random.choice(capts, size=1)
+            capt_id = int(np.random.choice(list(capts), size=1))
             caption = captions[capt_id]
 
             # add padding to each caption
