@@ -45,9 +45,9 @@ class MultiModalVAE(base.Model):
 
         # input placeholders
         self.xi = tf.placeholder(tf.float32, [None, self.nxi], name='xi')
-        self.xc = tf.placeholder(tf.float32, [None, self.nxc], name='xc')
+        self.xc = tf.placeholder(tf.int32, [None, self.nxc], name='xc')
         self.xpi = tf.placeholder(tf.float32, [None, self.nxi], name='xpi')
-        self.xpc = tf.placeholder(tf.float32, [None, self.nxc], name='xpc')
+        self.xpc = tf.placeholder(tf.int32, [None, self.nxc], name='xpc')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         xi_init = tf.constant(self.xi_init, tf.float32)
@@ -65,17 +65,17 @@ class MultiModalVAE(base.Model):
 
         # marginal bounds
 
-        self.lx1, self.lx1rec, self.lx1pen, self.logq1, self.logp1 = self._marginal_bound(self.rx1_1, self.x1,
-                                        self.z1_mu, self.z1_sigma, self.log_q1, self.z1, scope='marg_x1')
+        self.lx1, self.lx1rec, self.lx1pen, self.logq1, self.logp1 = self._marginal_bound(self.rxi_i, self.xi,
+                                        self.mu_i, self.sigma_i, dtype='image', scope='marg_xi')
 
-        self.lx2, self.lx2rec, self.lx2pen, self.logq2, self.logp2 = self._marginal_bound(self.rx2_2, self.x2,
-                                        self.z2_mu, self.z2_sigma, self.log_q2, self.z2, scope='marg_x2')
+        self.lx2, self.lx2rec, self.lx2pen, self.logq2, self.logp2 = self._marginal_bound(self.rxc_c, self.xc,
+                                        self.mu_c, self.sigma_c, dtype='caption', scope='marg_xc')
 
-        self.lx1p, self.lx1prec, self.lx1ppen, self.logq1p, self.logp1p = self._marginal_bound(self.rx1_1p, self.x1p,
-                             self.z1p_mu, self.z1p_sigma, self.log_q1p, self.z1p, scope='marg_x1p')
+        self.lx1p, self.lx1prec, self.lx1ppen, self.logq1p, self.logp1p = self._marginal_bound(self.rxi_pi, self.xpi,
+                             self.mu_pi, self.sigma_pi, dtype='image', scope='marg_xpi')
 
-        self.lx2p, self.lx2prec, self.lx2ppen, self.logq2p, self.logp2p = self._marginal_bound(self.rx2_2p, self.x2p,
-                             self.z2p_mu, self.z2p_sigma, self.log_q2p, self.z2p, scope='marg_x2p')
+        self.lx2p, self.lx2prec, self.lx2ppen, self.logq2p, self.logp2p = self._marginal_bound(self.rxc_pc, self.xpc,
+                             self.mu_pc, self.sigma_pc, dtype='caption', scope='marg_xpc')
 
 
         # joint bound
@@ -234,3 +234,54 @@ class MultiModalVAE(base.Model):
             z_mu, z_sigma = nw.joint_coco_encode(xhi, xhc, self.n_units, self.n_z, init, scope=scope)
 
             return z_mu, z_sigma
+
+
+    def _reconstruction(self, logits, labels, dtype, scope):
+
+        with tf.variable_scope(scope):
+
+            if dtype == 'image':
+
+                labels = tf.cast(labels * 255, dtype=tf.int32)  # integers [0,255] inclusive
+                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                l1 = tf.reduce_sum(l1, axis=1)
+                l1 = tf.reduce_mean(l1, axis=0)
+
+                return l1
+
+            elif dtype == 'caption':
+
+                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                l1 = tf.reduce_sum(l1, axis=1)
+                l1 = tf.reduce_mean(l1, axis=0)
+
+                return l1
+
+            else:
+                raise NotImplementedError
+
+
+    def _penalty(self, mu, sigma, scope):
+
+        with tf.variable_scope(scope):
+
+            log_p = -0.5*(tf.square(mu) + tf.square(sigma)) #- 0.5*np.log(2*np.pi)
+            log_q = -0.5*(1 + 2*tf.log(sigma)) #- 0.5*np.log(2*np.pi)
+
+            penalty = 0.5 * tf.reduce_sum(1 + 2*tf.log(sigma) - tf.square(mu) - tf.square(sigma), axis=1)
+            penalty = tf.reduce_mean(penalty, axis=0)
+
+            return penalty, log_q, log_p
+
+
+    def _marginal_bound(self, logits, labels, mu, sigma, dtype, scope):
+
+        with tf.variable_scope(scope):
+
+            l1 = self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
+            l2, log_q, log_p = self._penalty(mu=mu, sigma=sigma, scope='penalty')
+            bound = l1 + l2
+
+            return bound, l1, l2, log_q, log_p
