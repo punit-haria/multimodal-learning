@@ -1073,7 +1073,7 @@ class MSCOCO(object):
                 with open(ann_p) as ff:
                     ann = json.load(ff)
 
-                # create caption dictionary
+                print("Creating caption dictionary..", flush=True)
                 captions = dict()   # key,value ---> caption_id, word sequence
                 for k in ann['annotations']:
                     capt = k['caption']
@@ -1088,28 +1088,33 @@ class MSCOCO(object):
 
                     captions[k['id']] = capt
 
-                # compute maximum sequence length
-                self._max_seq_len = max(max([len(_v) for _,_v in captions.items()]), self._max_seq_len)
 
-                # create vocabulary
+                self._max_seq_len = max(max([len(_v) for _,_v in captions.items()]), self._max_seq_len)
+                print("Max sequence length: ", self._max_seq_len, flush=True)
+
+
+                print("Creating vocabulary..", flush=True)
                 vocab = dict()  # key,value ---> word, word_id
                 vocab[0] = self._padding  # add padding term to vocabulary
                 words = {w for _, _v in captions.items() for w in _v}
                 for i,w in enumerate(words):
                     assert w != self._padding
-                    vocab[i+1] = w
+                    vocab[w] = i+1
 
-                # convert captions dictionary to contain sequences of vocab ids (instead of actual words)
+
+                print("Converting captions to ids (from vocab)..", flush=True)
                 for _k,_v in captions.items():
                     for i in range(len(_v)):
                         _v[i] = vocab[_v[i]]
 
-                # image captions
+
+                print("Creating image-caption mapping..", flush=True)
                 im_capt = defaultdict(set)    # key,value ---> image_id, set of caption ids
                 for k in ann['annotations']:
                     im_capt[k['image_id']].add(k['id'])
 
-                # image dictionary
+
+                print("Creating image dictionary..", flush=True)
                 images = dict()     # key,value ---> image_id, image array
                 for k in ann['images']:
                     file_path = im_p + k['file_name']
@@ -1118,7 +1123,15 @@ class MSCOCO(object):
                         image = ndimage.imread(file_path)
                         image = imresize(image, size=(48,64), interp='cubic')
 
+                        if image.shape == (48,64):
+                            image = np.expand_dims(image, axis=2)
+                            image = np.concatenate((image,image,image), axis=2)
+
                         assert image.shape == (48,64,3)
+                        assert image.min() >= 0
+                        assert image.max() <= 255
+                        assert image.max() > 1
+
                         image = np.reshape(image, newshape=[1, -1])
 
                         images[k['id']] = image
