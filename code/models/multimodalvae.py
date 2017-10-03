@@ -452,3 +452,5 @@ class MultiModalVAE(base.Model):
 
         self._track(terms, prefix='test_')
         self.te_writer.add_summary(summary, self.n_steps)
+
+
