@@ -21,6 +21,8 @@ class MultiModalVAE(base.Model):
         self.vocab_size = self.args['vocab_size']           # vocabulary size
         self.n_units = self.args['n_units']                 # number of hidden units in FC layers
         self.n_fmaps = self.args['n_feature_maps']          # number of feature maps in Conv. layers
+        self.alpha = self.args['anneal']                    # freebits parameter
+        self.joint_anneal = self.args['joint_anneal']       # joint annealing parameter
 
         # image dimensions
         self.h, self.w, self.nch = (48, 64, 3)
@@ -304,3 +306,82 @@ class MultiModalVAE(base.Model):
 
         with tf.variable_scope(scope):
             return self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
+
+
+    def _freebits(self, l2, log_q, log_p, alpha):
+        """
+        Compute freebits penalty if alpha < 0, otherwise return original penalty l2.
+        """
+        if alpha < 0:
+            l2 = tf.reduce_mean(-log_q + log_p, axis=0)
+            l2 = tf.minimum(l2, alpha)
+            l2 = tf.reduce_sum(l2)
+
+        return l2
+
+
+    def _loss(self, scope):
+
+        with tf.variable_scope(scope):
+
+            # marginal x1
+            lxipen = self._freebits(self.lxipen, self.logqi, self.logpi, self.alpha)
+            lxi = self.lxirec + lxipen
+
+            # marginal x2
+            lxcpen = self._freebits(self.lxcpen, self.logqc, self.logpc, self.alpha)
+            lxc = self.lxcrec + lxcpen
+
+            if self.objective == "joint":
+                # joint xi and xc
+                lxjpen = self._freebits(self.lxjpen, self.logqj, self.logpj, self.alpha)
+                lxj = self.lxjreci + self.lxjrecc + lxjpen
+
+                bound = (self.joint_anneal * lxj) + lxi + lxc
+
+            elif self.objective == "translate":
+                # marginal x1p
+                lxpipen = self._freebits(self.lxpipen,  self.logqpi, self.logppi, self.alpha)
+                lxpi = self.lxpirec + lxpipen
+
+                # marginal x2p
+                lxpcpen = self._freebits(self.lxpcpen, self.logqpc, self.logppc, self.alpha)
+                lxpc = self.lxpcrec + lxpcpen
+
+                bound = (self.txi + lxpc) + (self.txc + lxpi) + lxi + lxc
+
+            else:
+                raise NotImplementedError
+
+            loss = -bound
+            return loss
+
+
+    def _summaries(self,):
+
+        with tf.variable_scope("summaries"):
+            tf.summary.scalar('loss_(ignore_test)', self.loss)
+
+            if self.objective == "joint":
+                tf.summary.scalar('lower_bound_on_log_p_x_y', self.lxj)
+
+            elif self.objective == "translate":
+                tf.summary.scalar('lower_bound_on_log_p_x_y_ti', self.txi + self.lxpc)
+                tf.summary.scalar('lower_bound_on_log_p_x_y_tc', self.txc + self.lxpi)
+
+            else:
+                raise NotImplementedError
+
+            tf.summary.scalar('marg_x1_(ignore_test)', self.lxi)
+            tf.summary.scalar('marg_x2_(ignore_test)', self.lxc)
+            tf.summary.scalar('marg_x1p', self.lxpi)
+            tf.summary.scalar('marg_x2p', self.lxpc)
+
+            tf.summary.scalar('joint', self.lxj)
+            tf.summary.scalar('trans_to_x1', self.txi)
+            tf.summary.scalar('trans_to_x2', self.txc)
+
+            return tf.summary.merge_all()
+
+
+
