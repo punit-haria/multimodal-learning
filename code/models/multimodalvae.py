@@ -106,55 +106,51 @@ class MultiModalVAE(base.Model):
             if not init:
                 scope.reuse_variables()
 
-            extra = self.args['flow']
-
             xi, xc, xpi, xpc = xs
 
             # encoders
-            z1p_mu, z1p_sigma, h1p, he1p = self._encoder(x1p, init=init, scope='x1_enc')
-            z2p_mu, z2p_sigma, h2p, he2p = self._encoder(x2p, init=init, scope='x2_enc')
+            mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
+            mu_pc, sigma_pc, hepc = self._encoder_c(xpc, init=init, scope='xc_enc')
 
             # joint encoder
-            z12_mu, z12_sigma, h12 = self._joint_encoder(z1p_mu, z1p_sigma, h1p, z2p_mu, z2p_sigma, h2p,
-                                                         x1, x2, x1h=he1p, x2h=he2p,
-                                                         extra=extra, init=init, scope='x1x2_enc')
+            mu_j, sigma_j = self._joint_encoder(xhi=hepi, xhc=hepc, init=init, scope='xixc_enc')
 
             # sample network
-            z12, log_q12 = self._sample(z12_mu, z12_sigma, h12, scope='sample')
+            zj = self._sample(mu_j, sigma_j, scope='sample')
 
             # decoders
-            rx1_12, rx1_12_probs = self._decoder(z12, x1p, init=init, scope='x1_dec')
-            rx2_12, rx2_12_probs = self._decoder(z12, x2p, init=init, scope='x2_dec')
+            rxi_ic, rxi_ic_probs = self._decoder_i(zj, init=init, scope='xi_dec')
+            rxc_ic, rxc_ic_probs = self._decoder_c(zj, init=init, scope='xc_dec')
 
         if not init:
             with tf.variable_scope('multimodal_vae') as scope:
                 scope.reuse_variables()
 
                 # unpaired encodings
-                z1_mu, z1_sigma, h1, _ = self._encoder(x1, init=init, scope='x1_enc')
-                z2_mu, z2_sigma, h2, _ = self._encoder(x2, init=init, scope='x2_enc')
+                mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')
+                mu_c, sigma_c, _ = self._encoder_c(xc, init=init, scope='xc_enc')
 
                 # additional samples
-                z1, log_q1 = self._sample(z1_mu, z1_sigma, h1, scope='sample')
-                z2, log_q2 = self._sample(z2_mu, z2_sigma, h2, scope='sample')
-                z1p, log_q1p = self._sample(z1p_mu, z1p_sigma, h1p, scope='sample')
-                z2p, log_q2p = self._sample(z2p_mu, z2p_sigma, h2p, scope='sample')
+                zi = self._sample(mu_i, sigma_i, scope='sample')
+                zc = self._sample(mu_c, sigma_c, scope='sample')
+                zpi = self._sample(mu_pi, sigma_pi, scope='sample')
+                zpc = self._sample(mu_pc, sigma_pc, scope='sample')
 
                 # reconstructions
-                rx1_1, rx1_1_probs = self._decoder(z1, x1, init=init, scope='x1_dec')
-                rx2_2, rx2_2_probs = self._decoder(z2, x2, init=init, scope='x2_dec')
+                rxi_i, rxi_i_probs = self._decoder_i(zi, init=init, scope='xi_dec')
+                rxc_c, rxc_c_probs = self._decoder_c(zc, init=init, scope='xc_dec')
 
                 # translations
-                rx1_2, rx1_2_probs = self._decoder(z2, x1, init=init, scope='x1_dec')
-                rx2_1, rx2_1_probs = self._decoder(z1, x2, init=init, scope='x2_dec')
+                rxi_c, rxi_c_probs = self._decoder_i(zc, init=init, scope='xi_dec')
+                rxc_i, rxc_i_probs = self._decoder_c(zi, init=init, scope='xc_dec')
 
                 # reconstructions (from paired input)
-                rx1_1p, rx1_1p_probs = self._decoder(z1p, x1p, init=init, scope='x1_dec')
-                rx2_2p, rx2_2p_probs = self._decoder(z2p, x2p, init=init, scope='x2_dec')
+                rxi_pi, rxi_pi_probs = self._decoder_i(zpi, init=init, scope='xi_dec')
+                rxc_pc, rxc_pc_probs = self._decoder_c(zpc, init=init, scope='xc_dec')
 
                 # translations (from paired input)
-                rx1_2p, rx1_2p_probs = self._decoder(z2p, x1p, init=init, scope='x1_dec')
-                rx2_1p, rx2_1p_probs = self._decoder(z1p, x2p, init=init, scope='x2_dec')
+                rxi_pc, rxi_pc_probs = self._decoder_i(zpc, init=init, scope='xi_dec')
+                rxc_pi, rxc_pi_probs = self._decoder_c(zpi, init=init, scope='xc_dec')
 
                 # final tensors
                 self.z12_mu, self.z12_sigma = (z12_mu, z12_sigma)
@@ -233,3 +229,12 @@ class MultiModalVAE(base.Model):
             parms = tf.nn.softmax(logits, dim=-1)
 
             return logits, parms
+
+
+    def _joint_encoder(self, xhi, xhc, init, scope):
+
+        with tf.variable_scope(scope):
+
+            z_mu, z_sigma = nw.joint_coco_encode(xhi, xhc, self.n_units, self.n_z, init, scope=scope)
+
+            return z_mu, z_sigma

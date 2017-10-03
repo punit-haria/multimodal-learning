@@ -96,6 +96,23 @@ def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
         return z
 
 
+def joint_coco_encode(h1, h2, n_units, n_z, init, scope):
+
+    with tf.variable_scope(scope):
+
+        nonlinearity = tf.nn.elu
+
+        h1 = linear(h1, n_units, init=init, scope='layer_h1')
+        h2 = linear(h2, n_units, init=init, scope='layer_h2')
+
+        h12 = nonlinearity(h1 + h2)
+
+        mean = linear(h12, n_z, init=init, scope="mean_layer")
+
+        sigma = linear(h12, n_z, init=init, scope="var_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        return mean, sigma, h
 
 
 
