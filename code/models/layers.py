@@ -2,12 +2,72 @@ import tensorflow as tf
 import numpy as np
 
 
-def seq_encoder(x, n_units, n_z, init, scope):
-    pass
+def seq_encoder(x, vocab_size, embed_size, n_units, n_z, init, scope):
+    """
+    Bidirectional RNN encoder using GRUs.
+    """
+    with tf.variable_scope(scope):
+
+        embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
+                                     initializer=tf.random_normal_initializer(0, 0.05))   # weight normalization???
+
+        x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
+
+
+
+        nonlin = tf.nn.elu
 
 
 def seq_decoder(z, n_units, nxc, init, scope):
     pass
+
+
+class GRUCell(tf.nn.rnn_cell.RNNCell):
+    """
+    Gated Recurrent Unit cell (cf. http://arxiv.org/abs/1406.1078).
+    Taken from https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/rnn_cell_impl.py
+    """
+    def __init__(self, num_units, activation, reuse=None, kernel_initializer=None, bias_initializer=None):
+        super(GRUCell, self).__init__(_reuse=reuse)
+        self._num_units = num_units
+        self._activation = activation
+        self._kernel_initializer = kernel_initializer
+        self._bias_initializer = bias_initializer
+
+    @property
+    def state_size(self):
+        return self._num_units
+
+    @property
+    def output_size(self):
+        return self._num_units
+
+    def call(self, inputs, state):
+
+        with tf.variable_scope("gates"):
+
+            # Reset gate and update gate.
+            # We start with bias of 1.0 to not reset and not update.
+
+            bias_ones = self._bias_initializer
+
+            if self._bias_initializer is None:
+                dtype = [a.dtype for a in [inputs, state]][0]
+                bias_ones = tf.constant_initializer(1.0, dtype=dtype)
+
+            value = tf.sigmoid(_linear([inputs, state], 2 * self._num_units,
+                                             True, bias_ones, self._kernel_initializer))
+
+            r, u = tf.split(value=value, num_or_size_splits=2, axis=1)
+
+        with tf.variable_scope("candidate"):
+            c = self._activation(_linear([inputs, r * state], self._num_units, True,
+                                         self._bias_initializer, self._kernel_initializer))
+
+        new_h = u * state + (1 - u) * c
+
+        return new_h, new_h
+
 
 
 def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
