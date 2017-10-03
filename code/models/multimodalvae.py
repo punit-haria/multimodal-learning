@@ -65,16 +65,16 @@ class MultiModalVAE(base.Model):
 
         # marginal bounds
 
-        self.lx1, self.lx1rec, self.lx1pen, self.logq1, self.logp1 = self._marginal_bound(self.rxi_i, self.xi,
+        self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
                                         self.mu_i, self.sigma_i, dtype='image', scope='marg_xi')
 
-        self.lx2, self.lx2rec, self.lx2pen, self.logq2, self.logp2 = self._marginal_bound(self.rxc_c, self.xc,
+        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
                                         self.mu_c, self.sigma_c, dtype='caption', scope='marg_xc')
 
-        self.lx1p, self.lx1prec, self.lx1ppen, self.logq1p, self.logp1p = self._marginal_bound(self.rxi_pi, self.xpi,
+        self.lxpi, self.lxpirec, self.lxpipen, self.logqpi, self.logppi = self._marginal_bound(self.rxi_pi, self.xpi,
                              self.mu_pi, self.sigma_pi, dtype='image', scope='marg_xpi')
 
-        self.lx2p, self.lx2prec, self.lx2ppen, self.logq2p, self.logp2p = self._marginal_bound(self.rxc_pc, self.xpc,
+        self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
                              self.mu_pc, self.sigma_pc, dtype='caption', scope='marg_xpc')
 
 
