@@ -454,3 +454,58 @@ class MultiModalVAE(base.Model):
         self.te_writer.add_summary(summary, self.n_steps)
 
 
+    def reconstruct(self, xs):
+        """
+        Reconstruct input.
+        If one input is None, then this can be interpretted as a translation from the other input.
+
+        xs: (xi, xc) or (xi, None) or (None, xc)
+        """
+        z = self.encode(xs, mean=False)
+        xi, xc = self.decode(z)
+
+        return xi, xc
+
+
+    def encode(self, xs, mean=False):
+        """
+        Encodes xi or xc or both xi and xc to the latent space.
+        """
+        xi, xc = xs
+        feed = {self.xpi: xi, self.xpc: xc}
+        outputs = self.mu_j, self.zj
+
+        if xi is None and xc is None:
+            raise ValueError
+
+        elif xi is None:
+            feed = {self.xpc: xc}
+            outputs = self.mu_pc, self.zpc
+
+        elif xc is None:
+            feed = {self.xpi: xi}
+            outputs = self.mu_pi, self.zpi
+
+        out = outputs[0] if mean else outputs[1]
+
+        return self.sess.run(out, feed_dict=feed)
+
+
+    def decode(self, z):
+
+        if self.is_autoregressive:
+            x1 = np.random.rand(z.shape[0], self.n_x)
+            x2 = np.random.rand(z.shape[0], self.n_x)
+
+            x1, x2 = self._joint_autoregressive_sampling(z, x1, x2, n_pixels=0,
+                    z_var=self.z12, p1_var=self.rx1_12_probs, p2_var=self.rx2_12_probs)
+
+        else:
+            feed = {self.z12: z}
+            outputs = [self.rx1_12_probs, self.rx2_12_probs]
+            rx1, rx2 = self.sess.run(outputs, feed_dict=feed)
+
+            x1 = self._factorized_sampling(rx1)
+            x2 = self._factorized_sampling(rx2)
+
+        return x1, x2
