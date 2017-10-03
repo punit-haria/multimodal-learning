@@ -186,7 +186,7 @@ class MultiModalVAE(base.Model):
 
     def _encoder_c(self, x, init, scope):
 
-        mu, sigma, he = nw.seq_encoder(x, self.nch, self.n_units, self.n_z, init, scope)
+        mu, sigma, he = nw.seq_encoder(x, self.n_units, self.n_z, init, scope)
 
         return mu, sigma, he
 
@@ -221,7 +221,7 @@ class MultiModalVAE(base.Model):
 
             nxc = self.nxc * self.vocab_size
 
-            z = nw.seq_decoder(z, nxc, self.n_units, init, scope)
+            z = nw.seq_decoder(z, self.n_units, nxc, init, scope)
 
             logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
             parms = tf.nn.softmax(logits, dim=-1)

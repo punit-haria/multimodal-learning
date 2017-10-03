@@ -2,6 +2,13 @@ import tensorflow as tf
 import numpy as np
 
 
+def seq_encoder(x, n_units, n_z, init, scope):
+    pass
+
+
+def seq_decoder(z, n_units, nxc, init, scope):
+    pass
+
 
 def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
     """
