@@ -8,6 +8,10 @@ from scipy import ndimage
 import os
 import os.path
 import pandas as pd
+import json
+from collections import defaultdict
+from pathlib import Path as pathlib_path
+import pickle
 
 '''
 
@@ -1020,3 +1024,219 @@ class CIFAR(object):
         with open(f_name, 'rb') as fo:
             dd = pickle.load(fo, encoding='bytes')
         return dd[b'data'], dd[b'labels']
+
+
+
+class MSCOCO(object):
+
+    def __init__(self, n_paired):
+
+        _train_annotations_path = '../data/mscoco/annotations/captions_train2014.json'
+        _val_annotations_path = '../data/mscoco/annotations/captions_val2014.json'
+
+        _train_images_dir = '../data/mscoco/train_samples/'
+        _val_images_dir = '../data/mscoco/val_samples/'
+
+        _data_path = '../data/mscoco/data.pickle'
+
+        self._padding = '<PAD>'
+
+
+        if os.path.isfile(_data_path):  # load processed data
+
+            print("Loading data...", flush=True)
+
+            with open(_data_path, 'rb') as ff:
+                data = pickle.load(ff)
+
+            self._captions = data['captions']
+            self._vocab = data['vocab']
+            self._imcapt = data['imcapt']
+            self._images = data['images']
+            self._val_captions = data['val_captions']
+            self._val_vocab = data['val_vocab']
+            self._val_imcapt = data['val_imcapt']
+            self._val_images = data['val_images']
+
+            print("Data loaded.", flush=True)
+
+
+        else: # process data and load
+            print("Processing data..", flush=True)
+
+            paths = [(_train_annotations_path, _train_images_dir),
+                     (_val_annotations_path, _val_images_dir)]
+            self._max_seq_len = 1
+
+            for j, (ann_p,im_p) in enumerate(paths):
+
+                with open(ann_p) as ff:
+                    ann = json.load(ff)
+
+                # create caption dictionary
+                captions = dict()   # key,value ---> caption_id, word sequence
+                for k in ann['annotations']:
+                    capt = k['caption']
+
+                    # caption preprocessing
+                    capt = capt.strip()     # remove unnecessary whitespace
+                    capt = capt.lower()     # make lower case
+                    capt = capt.replace('.', ' ')    # remove periods
+                    capt = capt.replace(',', ' ')    # expand commas
+                    capt = capt.replace('"', ' ')  # expand double quotes
+                    capt = capt.split()  # split string
+
+                    captions[k['id']] = capt
+
+                # compute maximum sequence length
+                self._max_seq_len = max(max([len(_v) for _,_v in captions.items()]), self._max_seq_len)
+
+                # create vocabulary
+                vocab = dict()  # key,value ---> word, word_id
+                vocab[0] = self._padding  # add padding term to vocabulary
+                words = {w for _, _v in captions.items() for w in _v}
+                for i,w in enumerate(words):
+                    assert w != self._padding
+                    vocab[i+1] = w
+
+                # convert captions dictionary to contain sequences of vocab ids (instead of actual words)
+                for _k,_v in captions.items():
+                    for i in range(len(_v)):
+                        _v[i] = vocab[_v[i]]
+
+                # image captions
+                im_capt = defaultdict(set)    # key,value ---> image_id, set of caption ids
+                for k in ann['annotations']:
+                    im_capt[k['image_id']].add(k['id'])
+
+                # image dictionary
+                images = dict()     # key,value ---> image_id, image array
+                for k in ann['images']:
+                    file_path = im_p + k['file_name']
+                    im_file = pathlib_path(file_path)
+                    if im_file.exists():
+                        image = ndimage.imread(file_path)
+                        image = imresize(image, size=(48,64), interp='cubic')
+
+                        assert image.shape == (48,64,3)
+                        image = np.reshape(image, newshape=[1, -1])
+
+                        images[k['id']] = image
+
+                if j == 0:      # training set
+                    self._captions = captions
+                    self._vocab = vocab
+                    self._imcapt = im_capt
+                    self._images = images
+
+                else:           # validation set
+                    self._val_captions = captions
+                    self._val_vocab = vocab
+                    self._val_imcapt = im_capt
+                    self._val_images = images
+
+            tosave = dict()
+            tosave['captions'] = self._captions
+            tosave['vocab'] = self._vocab
+            tosave['imcapt'] = self._imcapt
+            tosave['images'] = self._images
+            tosave['val_captions'] = self._val_captions
+            tosave['val_vocab'] = self._val_vocab
+            tosave['val_imcapt'] = self._val_imcapt
+            tosave['val_images'] = self._val_images
+
+            print("Saving data...", flush=True)
+            with open(_data_path, 'wb') as ff:
+                pickle.dump(tosave, ff, pickle.HIGHEST_PROTOCOL)
+            print("Saved.", flush=True)
+
+        # lists of image ids
+        self.image_ids = self._images.keys()
+        self.val_image_ids = self._val_images.keys()
+
+        # construct pairings
+        _n = len(self.image_ids)
+        self.paired = set(np.random.choice(self.image_ids, size=n_paired, replace=False))
+        _remain = set(self.image_ids) - self.paired
+        _each_size = len(_remain) // 2
+        self.image_only = set(np.random.choice(list(_remain), size=_each_size, replace=False))
+        self.caption_only = _remain - self.image_only
+
+        self.paired = list(self.paired)
+        self.image_only = list(self.image_only)
+        self.caption_only = list(self.caption_only)
+
+
+    def _sample_setup(self, image_ids, train):
+        """
+        Generate samples in matrix form based on already sampled images.
+        """
+
+        if train:
+            imcapt = self._imcapt
+            captions = self._captions
+            images = self._images
+
+        else:
+            imcapt = self._val_imcapt
+            captions = self._val_captions
+            images = self._val_images
+
+        x_caption = []
+        x_image = []
+        for i in image_ids:
+            capts = imcapt[i]
+            capt_id = np.random.choice(capts, size=1)
+            caption = captions[capt_id]
+
+            # add padding to each caption
+            while len(caption) < self._max_seq_len:
+                caption.extend(0)
+
+            x_caption.append(caption)
+
+            image = images[i]
+
+            x_image.append(image)
+
+        x_image = np.array(x_image) / 255
+        x_caption = np.array(x_caption)
+
+        return x_image, x_caption
+
+
+
+    def sample_stratified(self, n_paired_samples, n_unpaired_samples, dtype='train'):
+
+        # test set case
+        if dtype == 'test':
+
+            ids = list(np.random.choice(self.val_image_ids, size=n_paired_samples, replace=False))
+            x_image, x_caption = self._sample_setup(ids, train=False)
+
+            return x_image, x_caption
+
+
+        # training set case
+        elif dtype == 'train':
+
+            n_min = 2 * n_unpaired_samples // 5
+            n_min = max(1, n_min)
+            n_max = n_unpaired_samples - n_min
+
+            n_x1 = np.random.randint(low=n_min, high=n_max + 1)
+            n_x2 = n_unpaired_samples - n_x1
+
+            paired_ids = list(np.random.choice(self.paired, size=n_paired_samples, replace=False))
+            xp_image, xp_caption = self._sample_setup(paired_ids, train=True)
+
+            image_only_ids = list(np.random.choice(self.image_only, size=n_x1, replace=False))
+            x_image, _ = self._sample_setup(image_only_ids, train=True)
+
+            caption_only_ids = list(np.random.choice(self.caption_only, size=n_x2, replace=False))
+            _, x_caption = self._sample_setup(caption_only_ids, train=True)
+
+            return x_image, x_caption, xp_image, xp_caption
+
+
+
