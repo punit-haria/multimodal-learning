@@ -363,23 +363,23 @@ class MultiModalVAE(base.Model):
             tf.summary.scalar('loss_(ignore_test)', self.loss)
 
             if self.objective == "joint":
-                tf.summary.scalar('lower_bound_on_log_p_x_y', self.lxj)
+                tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj)
 
             elif self.objective == "translate":
-                tf.summary.scalar('lower_bound_on_log_p_x_y_ti', self.txi + self.lxpc)
-                tf.summary.scalar('lower_bound_on_log_p_x_y_tc', self.txc + self.lxpi)
+                tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc)
+                tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc + self.lxpi)
 
             else:
                 raise NotImplementedError
 
-            tf.summary.scalar('marg_x1_(ignore_test)', self.lxi)
-            tf.summary.scalar('marg_x2_(ignore_test)', self.lxc)
-            tf.summary.scalar('marg_x1p', self.lxpi)
-            tf.summary.scalar('marg_x2p', self.lxpc)
+            tf.summary.scalar('marg_xi_(ignore_test)', self.lxi)
+            tf.summary.scalar('marg_xc_(ignore_test)', self.lxc)
+            tf.summary.scalar('marg_xpi', self.lxpi)
+            tf.summary.scalar('marg_xpc', self.lxpc)
 
             tf.summary.scalar('joint', self.lxj)
-            tf.summary.scalar('trans_to_x1', self.txi)
-            tf.summary.scalar('trans_to_x2', self.txc)
+            tf.summary.scalar('trans_to_xi', self.txi)
+            tf.summary.scalar('trans_to_xc', self.txc)
 
             return tf.summary.merge_all()
 
