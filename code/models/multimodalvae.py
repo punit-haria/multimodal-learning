@@ -23,6 +23,7 @@ class MultiModalVAE(base.Model):
         self.n_fmaps = self.args['n_feature_maps']          # number of feature maps in Conv. layers
         self.alpha = self.args['anneal']                    # freebits parameter
         self.joint_anneal = self.args['joint_anneal']       # joint annealing parameter
+        self.lr = self.args['learning_rate']                # learning rate
 
         # image dimensions
         self.h, self.w, self.nch = (48, 64, 3)
@@ -94,7 +95,7 @@ class MultiModalVAE(base.Model):
         self.loss = self._loss(scope='loss')
 
         # optimizer
-        self.step = self._optimizer(self.loss)
+        self.step = self._optimizer(self.loss, scope='optimizer')
 
         # summary variables
         self.summary = self._summaries()
@@ -306,6 +307,14 @@ class MultiModalVAE(base.Model):
 
         with tf.variable_scope(scope):
             return self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
+
+
+    def _optimizer(self, loss, scope):
+
+        with tf.variable_scope(scope):
+            step = tf.train.RMSPropOptimizer(self.lr).minimize(loss)
+
+            return step
 
 
     def _freebits(self, l2, log_q, log_p, alpha):
