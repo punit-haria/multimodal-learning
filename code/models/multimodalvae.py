@@ -80,13 +80,13 @@ class MultiModalVAE(base.Model):
 
         # joint bound
 
-        self.lx12, self.lx12rec1, self.lx12rec2, self.lx12pen, self.logq12, self.logp12 = self._joint_bound(
+        self.lxj, self.lxjreci, self.lxjrecc, self.lxjpen, self.logqj, self.logpj = self._joint_bound(
             self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j, scope='joint_bound')
 
         # translation bounds
 
-        self.tx1 = self._translation_bound(self.rx1_2p, self.xpi, scope='translate_to_x1')
-        self.tx2 = self._translation_bound(self.rx2_1p, self.xpc, scope='translate_to_x2')
+        self.txi = self._translation_bound(self.rxi_pc, self.xpi, dtype='image', scope='translate_to_xi')
+        self.txc = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption', scope='translate_to_xc')
 
         # loss function
         self.loss = self._loss(scope='loss')
@@ -300,7 +300,7 @@ class MultiModalVAE(base.Model):
             return bound, l1_xi, l1_xc, l2, log_q, log_p
 
 
-    def _translation_bound(self, logits, labels, scope):
+    def _translation_bound(self, logits, labels, dtype, scope):
 
         with tf.variable_scope(scope):
-            return self._reconstruction(logits=logits, labels=labels, scope='reconstruction')
+            return self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
