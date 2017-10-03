@@ -119,8 +119,8 @@ class MultiModalVAE(base.Model):
             zj = self._sample(mu_j, sigma_j, scope='sample')
 
             # decoders
-            rxi_ic, rxi_ic_probs = self._decoder_i(zj, init=init, scope='xi_dec')
-            rxc_ic, rxc_ic_probs = self._decoder_c(zj, init=init, scope='xc_dec')
+            rxi_j, rxi_j_probs = self._decoder_i(zj, init=init, scope='xi_dec')
+            rxc_j, rxc_j_probs = self._decoder_c(zj, init=init, scope='xc_dec')
 
         if not init:
             with tf.variable_scope('multimodal_vae') as scope:
@@ -153,30 +153,26 @@ class MultiModalVAE(base.Model):
                 rxc_pi, rxc_pi_probs = self._decoder_c(zpi, init=init, scope='xc_dec')
 
                 # final tensors
-                self.z12_mu, self.z12_sigma = (z12_mu, z12_sigma)
-                self.z1_mu, self.z1_sigma = (z1_mu, z1_sigma)
-                self.z2_mu, self.z2_sigma = (z2_mu, z2_sigma)
-                self.z1p_mu, self.z1p_sigma = (z1p_mu, z1p_sigma)
-                self.z2p_mu, self.z2p_sigma = (z2p_mu, z2p_sigma)
+                self.mu_j, self.sigma_j = (mu_j, sigma_j)
+                self.mu_i, self.sigma_i = (mu_i, sigma_i)
+                self.mu_c, self.sigma_c = (mu_c, sigma_c)
+                self.mu_pi, self.sigma_pi = (mu_pi, sigma_pi)
+                self.mu_pc, self.sigma_pc = (mu_pc, sigma_pc)
 
-                self.z12, self.log_q12 = (z12, log_q12)
-                self.z1, self.log_q1 = (z1, log_q1)
-                self.z2, self.log_q2 = (z2, log_q2)
-                self.z1p, self.log_q1p = (z1p, log_q1p)
-                self.z2p, self.log_q2p = (z2p, log_q2p)
+                self.zj, self.zi, self.zc, self.zpi, self.zpc = (zj, zi, zc, zpi, zpc)
 
-                self.rx1_12, self.rx1_12_probs = (rx1_12, rx1_12_probs)
-                self.rx2_12, self.rx2_12_probs = (rx2_12, rx2_12_probs)
+                self.rxi_j, self.rxi_j_probs = (rxi_j, rxi_j_probs)
+                self.rxc_j, self.rxc_j_probs = (rxc_j, rxc_j_probs)
 
-                self.rx1_1, self.rx1_1_probs = (rx1_1, rx1_1_probs)
-                self.rx2_2, self.rx2_2_probs = (rx2_2, rx2_2_probs)
-                self.rx1_2, self.rx1_2_probs = (rx1_2, rx1_2_probs)
-                self.rx2_1, self.rx2_1_probs = (rx2_1, rx2_1_probs)
+                self.rxi_i, self.rxi_i_probs = (rxi_i, rxi_i_probs)
+                self.rxc_c, self.rxc_c_probs = (rxc_c, rxc_c_probs)
+                self.rxi_c, self.rxi_c_probs = (rxi_c, rxi_c_probs)
+                self.rxc_i, self.rxc_i_probs = (rxc_i, rxc_i_probs)
 
-                self.rx1_1p, self.rx1_1p_probs = (rx1_1p, rx1_1p_probs)
-                self.rx2_2p, self.rx2_2p_probs = (rx2_2p, rx2_2p_probs)
-                self.rx1_2p, self.rx1_2p_probs = (rx1_2p, rx1_2p_probs)
-                self.rx2_1p, self.rx2_1p_probs = (rx2_1p, rx2_1p_probs)
+                self.rxi_pi, self.rxi_pi_probs = (rxi_pi, rxi_pi_probs)
+                self.rxc_pc, self.rxc_pc_probs = (rxc_pc, rxc_pc_probs)
+                self.rxi_pc, self.rxi_pc_probs = (rxi_pc, rxi_pc_probs)
+                self.rxc_pi, self.rxc_pi_probs = (rxc_pi, rxc_pi_probs)
 
 
     def _encoder_i(self, x, init, scope):
