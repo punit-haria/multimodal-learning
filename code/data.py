@@ -1040,6 +1040,7 @@ class MSCOCO(object):
         _data_path = '../data/mscoco/data.pickle'
 
         self._padding = '<PAD>'
+        self._oov = '<OOV>'
 
 
         if os.path.isfile(_data_path):  # load processed data
@@ -1095,12 +1096,17 @@ class MSCOCO(object):
 
 
                 print("Creating vocabulary..", flush=True)
-                vocab = dict()  # key,value ---> word, word_id
-                vocab[0] = self._padding  # add padding term to vocabulary
+                if j > 0: # validation set
+                    vocab = self._vocab
+                    aux = len(vocab)
+                else:
+                    vocab = dict()  # key,value ---> word, word_id
+                    vocab[0] = self._padding  # padding term
+                    aux = 1
                 words = {w for _, _v in captions.items() for w in _v}
                 for i,w in enumerate(words):
-                    assert w != self._padding
-                    vocab[w] = i+1
+                    if w not in vocab:
+                        vocab[w] = i+aux
 
 
                 print("Converting captions to ids (from vocab)..", flush=True)
@@ -1145,7 +1151,7 @@ class MSCOCO(object):
 
                 else:           # validation set
                     self._val_captions = captions
-                    self._val_vocab = vocab
+                    self._vocab = vocab
                     self._val_imcapt = im_capt
                     self._val_images = images
 
