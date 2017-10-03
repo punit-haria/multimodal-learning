@@ -2,6 +2,105 @@ import tensorflow as tf
 import numpy as np
 
 
+
+def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
+    """
+    Convolutional network for images of dimension 48 x 64 x nch.
+    """
+    with tf.variable_scope(scope):
+
+        x = tf.reshape(x, shape=[-1, 48, 64, nch])
+        nonlin = tf.nn.elu
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=True, init=init, scope='res_1')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=True, init=init, scope='res_2')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=False, init=init, scope='unstrided_1')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=True, init=init, scope='res_3')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=True, init=init, scope='res_4')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=False, init=init, scope='unstrided_2')
+        x = nonlin(x)
+
+        x = tf.contrib.layers.flatten(x)
+
+        x = linear(x, n_out=n_units, init=init, scope='linear_layer')
+        x = nonlin(x)
+
+        mu = linear(x, n_z, init=init, scope="mu_layer")
+
+        sigma = linear(x, n_z, init=init, scope="sigma_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        return mu, sigma, x
+
+
+def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
+    """
+    Deconvolution network for images of dimension 48 x 64 x nch.
+    """
+    with tf.variable_scope(scope):
+
+        nonlin = tf.nn.elu
+
+        z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')
+        z = nonlin(z)
+
+        h = 3
+        w = 4
+        dim = h * w * n_fmaps
+        z = linear(z, n_out=dim, init=init, scope='linear_layer')
+        z = nonlin(z)
+
+        z = tf.reshape(z, shape=[-1, h, w, n_fmaps])
+
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_2')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=True, init=init, scope='res_4')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=True, init=init, scope='res_3')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_1')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps, nonlinearity=nonlin,
+                                  stride=True, init=init, scope='res_2')
+        z = nonlin(z)
+
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=nch, nonlinearity=nonlin,
+                                  stride=True, init=init, scope='res_1')
+
+        return z
+
+
+
+
+
+
+
 def convolution_daynight(x, n_ch, n_feature_maps, n_units, n_z, extra, init, scope):
     """
     Convolution network for use with DayNight dataset.

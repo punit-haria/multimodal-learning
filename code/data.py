@@ -1205,7 +1205,7 @@ class MSCOCO(object):
 
             # add padding to each caption
             while len(caption) < self._max_seq_len:
-                caption.extend(0)
+                caption.append(0)
 
             x_caption.append(caption)
 
@@ -1214,6 +1214,8 @@ class MSCOCO(object):
             x_image.append(image)
 
         x_image = np.array(x_image) / 255
+        x_image = np.squeeze(x_image)
+
         x_caption = np.array(x_caption)
 
         return x_image, x_caption
