@@ -393,4 +393,62 @@ class MultiModalVAE(base.Model):
             return tf.summary.merge_all()
 
 
+    def _track(self, terms, prefix):
 
+        if self.tracker is not None:
+
+            for name, term in terms.items():
+                self.tracker.add(i=self.n_steps, value=term, series_name=prefix+name, run_name=self.name)
+
+
+    def train(self, xs):
+        """
+        Performs single training step.
+        """
+        xi, xc, xi_pairs, xc_pairs = xs
+
+        feed = {self.xi: xi, self.xc: xc, self.xpi: xi_pairs, self.xpc: xc_pairs}
+        outputs = [self.summary, self.step, self.loss, self.lxi, self.lxc, self.lxj, self.txi, self.txc, self.lxpi, self.lxpc]
+
+        summary, _, loss, lxi, lxc, lxj, txi, txc, lxpi, lxpc = self.sess.run(outputs, feed_dict=feed)
+
+        if self.objective == 'joint':
+            bound = lxj
+            terms = {'lower_bound_on_log_p_xi_xc': bound, 'loss': loss,
+                     'lxi': lxi, 'lxc': lxc, 'lxj': lxj, 'txi': txi, 'txc': txc}
+        else:  # translate
+            bound_ti = txi + lxpc
+            bound_tc = txc + lxpi
+            terms = {'lower_bound_on_log_p_xi_xc_ti': bound_ti, 'lower_bound_on_log_p_xi_xc_tc': bound_tc, 'loss': loss,
+                     'lxi': lxi, 'lxc': lxc, 'lxj': lxj, 'txi': txi, 'txc': txc}
+
+        self._track(terms, prefix='train_')
+        self.tr_writer.add_summary(summary, self.n_steps)
+
+        self.n_steps = self.n_steps + 1
+
+
+    def test(self, xs):
+        """
+        Computes lower bound on test data.
+        """
+        xi, xc = xs
+
+        feed = {self.xi: xi, self.xc: xc, self.xpi: xi, self.xpc: xc}
+        outputs = [self.summary, self.loss, self.lxpi, self.lxpc, self.lxj, self.txi, self.txc, self.lxpi, self.lxpc]
+
+        summary, loss, lxi, lxc, lxj, txi, txc, lxpi, lxpc = self.sess.run(outputs, feed_dict=feed)
+
+        if self.objective == 'joint':
+            bound = lxj
+            terms = {'lower_bound_on_log_p_xi_xc': bound, 'loss': loss,
+                     'lxi': lxi, 'lxc': lxc, 'lxj': lxj, 'txi': txi, 'txc': txc}
+
+        else:  # translate
+            bound_ti = txi + lxpc
+            bound_tc = txc + lxpi
+            terms = {'lower_bound_on_log_p_xi_xc_ti': bound_ti, 'lower_bound_on_log_p_xi_xc_tc': bound_tc, 'loss': loss,
+                     'lxi': lxi, 'lxc': lxc, 'lxj': lxj, 'txi': txi, 'txc': txc}
+
+        self._track(terms, prefix='test_')
+        self.te_writer.add_summary(summary, self.n_steps)
