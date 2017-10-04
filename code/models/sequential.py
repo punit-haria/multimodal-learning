@@ -31,59 +31,58 @@ class GRUCell(tf.contrib.rnn.RNNCell):
             # note: start with bias of 1.0 to not reset and not update.
             # note: state = h_{t-1}, inputs = x_t
 
-            value = tf.sigmoid(self._gru_linear([inputs, state], 2 * self._num_units, self._init, scope='rt_zt'))
+            value = tf.sigmoid(gru_linear([inputs, state], 2 * self._num_units, self._init, scope='rt_zt'))
 
             r, z = tf.split(value=value, num_or_size_splits=2, axis=1)   # r_t, z_t
 
         with tf.variable_scope("candidate"):
-            c = self._activation(_linear([inputs, r * state], self._num_units, True,
-                                         self._bias_initializer, self._kernel_initializer))
+            c = self._activation(gru_linear([inputs, r * state], self._num_units, self._init, scope='ct'))
 
         new_h = z * state + (1 - z) * c
 
         return new_h, new_h
 
 
-    def _gru_linear(self, args, n_out, init, scope):
+def gru_linear(args, n_out, init, scope):
 
-        total_arg_size = 0
-        shapes = [a.get_shape() for a in args]
-        for shape in shapes:
-            total_arg_size += shape[1].value
+    total_arg_size = 0
+    shapes = [a.get_shape() for a in args]
+    for shape in shapes:
+        total_arg_size += shape[1].value
 
-        with tf.variable_scope(scope):
+    with tf.variable_scope(scope):
 
-            n_x = total_arg_size
-            x = tf.concat(args, axis=1)
+        n_x = total_arg_size
+        x = tf.concat(args, axis=1)
 
-            if init:
-                v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
-                v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+        if init:
+            v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
 
-                t = tf.matmul(x, v_norm)
-                mu_t, var_t = tf.nn.moments(t, axes=0)
+            t = tf.matmul(x, v_norm)
+            mu_t, var_t = tf.nn.moments(t, axes=0)
 
-                inv = 1 / tf.sqrt(var_t + 1e-10)
-                _ = tf.get_variable("g", initializer=inv)
-                _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t ??
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t ??
 
-                inv = tf.reshape(inv, shape=[1, n_out])
-                mu_t = tf.reshape(mu_t, shape=[1, n_out])
+            inv = tf.reshape(inv, shape=[1, n_out])
+            mu_t = tf.reshape(mu_t, shape=[1, n_out])
 
-                return tf.multiply(t - mu_t, inv)
+            return tf.multiply(t - mu_t, inv)
 
-            else:
-                v = tf.get_variable("v", shape=[n_x, n_out])
-                g = tf.get_variable("g", shape=[n_out])
-                b = tf.get_variable("b", shape=[n_out])
+        else:
+            v = tf.get_variable("v", shape=[n_x, n_out])
+            g = tf.get_variable("g", shape=[n_out])
+            b = tf.get_variable("b", shape=[n_out])
 
-                x = tf.matmul(x, v)
-                scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+            x = tf.matmul(x, v)
+            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
 
-                scaling = tf.reshape(scaling, shape=[1, n_out])
-                b = tf.reshape(b, shape=[1, n_out])
+            scaling = tf.reshape(scaling, shape=[1, n_out])
+            b = tf.reshape(b, shape=[1, n_out])
 
-                return tf.multiply(scaling, x) + b
+            return tf.multiply(scaling, x) + b
 
 
 
