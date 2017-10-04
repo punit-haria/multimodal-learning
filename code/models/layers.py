@@ -50,16 +50,20 @@ class GRUCell(tf.contrib.rnn.RNNCell):
             # Reset gate and update gate.
             # We start with bias of 1.0 to not reset and not update.
 
+            # note: state = h_{t-1}, inputs = x_t
+
             bias_ones = self._bias_initializer
 
             if self._bias_initializer is None:
                 dtype = [a.dtype for a in [inputs, state]][0]
                 bias_ones = tf.constant_initializer(1.0, dtype=dtype)
 
-            value = tf.sigmoid(_linear([inputs, state], 2 * self._num_units,
-                                             True, bias_ones, self._kernel_initializer))
+            value = tf.sigmoid(self._gru_linear([inputs, state], 2 * self._num_units, init, scope))
 
-            r, u = tf.split(value=value, num_or_size_splits=2, axis=1)
+            #value = tf.sigmoid(_linear([inputs, state], 2 * self._num_units,
+            #                                 True, bias_ones, self._kernel_initializer))
+
+            r, u = tf.split(value=value, num_or_size_splits=2, axis=1)   # r_t, z_t
 
         with tf.variable_scope("candidate"):
             c = self._activation(_linear([inputs, r * state], self._num_units, True,
@@ -70,34 +74,50 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         return new_h, new_h
 
 
-def gru_linear(args, output_size, bias, init, scope):
+    def _gru_linear(self, args, n_out, init, scope):
 
-    total_arg_size = 0
-    shapes = [a.get_shape() for a in args]
-    for shape in shapes:
-        total_arg_size += shape[1].value
+        total_arg_size = 0
+        shapes = [a.get_shape() for a in args]
+        for shape in shapes:
+            total_arg_size += shape[1].value
 
-    dtype = [a.dtype for a in args][0]
+        with tf.variable_scope(scope):
 
-    with tf.variable_scope(scope):
+            n_x = total_arg_size
+            x = tf.concat(args, axis=1)
 
-        weights = tf.get_variable('w', [total_arg_size, output_size], dtype=dtype,
-                                  initializer=kernel_initializer)
+            if init:
+                v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+                v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
 
-        res = tf.matmul(tf.concat(args, axis=1), weights)
+                t = tf.matmul(x, v_norm)
+                mu_t, var_t = tf.nn.moments(t, axes=0)
 
-        if not bias:
-            return res
+                inv = 1 / tf.sqrt(var_t + 1e-10)
+                _ = tf.get_variable("g", initializer=inv)
+                _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t ??
 
-        bias_initializer = tf.constant_initializer(0.0, dtype=dtype)
-        biases = tf.get_variable('b', [output_size], dtype=dtype,
-                                 initializer=bias_initializer)
+                inv = tf.reshape(inv, shape=[1, n_out])
+                mu_t = tf.reshape(mu_t, shape=[1, n_out])
 
-        return tf.nn.bias_add(res, biases)
+                return tf.multiply(t - mu_t, inv)
+
+            else:
+                v = tf.get_variable("v", shape=[n_x, n_out])
+                g = tf.get_variable("g", shape=[n_out])
+                b = tf.get_variable("b", shape=[n_out])
+
+                x = tf.matmul(x, v)
+                scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+
+                scaling = tf.reshape(scaling, shape=[1, n_out])
+                b = tf.reshape(b, shape=[1, n_out])
+
+                return tf.multiply(scaling, x) + b
 
 
 
-def linear(x, n_out, init, scope):
+def linear_test(x, n_out, init, scope):
     """
     Linear tranform
     """
