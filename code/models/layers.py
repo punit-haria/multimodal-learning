@@ -34,7 +34,7 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
 
 def seq_decoder(z, x, embed_size, nxc, n_layers, init, scope):
     """
-    RNN decoder using GRUs.
+    RNN decoder using GRUs (autoregressive)
     """
     with tf.variable_scope(scope):
 
