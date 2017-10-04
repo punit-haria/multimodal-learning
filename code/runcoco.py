@@ -1,14 +1,14 @@
-from models import jointvae
+from models import multimodalvae
 from data import MSCOCO
 
 from training import train_joint, Results
 
 
-experiment_name = 'discrete_colored_final'
+experiment_name = 'mscoco_initial'
 
 
 models = [
-    jointvae.JointVAE
+    multimodalvae.MultiModalVAE
 ]
 models = {x.__name__: x for x in models}
 
@@ -16,32 +16,14 @@ models = {x.__name__: x for x in models}
 # parameters
 parms = {
     # options
-    'type': "cnn",              # fc, cnn
-    'data': "mnist",            # mnist
-    'autoregressive': False,
-    'flow': False,
-    'output': 'continuous',     # discrete, continuous
     'objective': 'joint',    # joint, translate
-    'joint_type': 'small',   # constrain, small, large
 
     # basic parameters
-    'n_z': 200,  # 32, 49, 200
-    'height': 28,
-    'width': 28,
-    'n_channels': 3,
-    'n_mixtures': 5,
+    'n_z': 200,
 
     # network parameters
     'n_units': 96,
     'n_feature_maps': 32,  # 32
-
-    # normalizing flow parameters
-    'flow_units': 320,
-    'flow_layers': 2,
-    'flow_type': "made",  # cnn, made
-
-    # autoregressive model parameters
-    'n_pixelcnn_layers': 2,
 
     # loss function parameters
     'anneal': -0.25,  # 0, -0.0625, -0.125, -0.25
@@ -62,6 +44,11 @@ parms = {
 
 
 if __name__ == "__main__":
+
+
+
+
+
 
     # data, type, flow, flow_layers, flow_units, flow_type, autoregressive, n_ar_layers, anneal,
     # joint_type, n_z, n_mix, lr, n_units, n_fmaps, objective, joint_anneal
