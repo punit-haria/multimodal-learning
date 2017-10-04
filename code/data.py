@@ -1087,6 +1087,7 @@ class MSCOCO(object):
                     capt = capt.replace(',', ' ')    # expand commas
                     capt = capt.replace('"', ' ')  # expand double quotes
                     capt = capt.split()  # split string
+                    capt.append(self._padding)  # pad with EOF character
 
                     captions[k['id']] = capt
 
@@ -1211,7 +1212,7 @@ class MSCOCO(object):
 
             # add padding to each caption
             while len(caption) < self._max_seq_len:
-                caption.append(0)
+                caption.append(0)   # note: 0 is the id for padding word
 
             x_caption.append(caption)
 

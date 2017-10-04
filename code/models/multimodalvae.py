@@ -222,9 +222,7 @@ class MultiModalVAE(base.Model):
 
         with tf.variable_scope(scope):
 
-            nxc = self.nxc * self.vocab_size
-
-            z = nw.seq_decoder(z, x_emb, self.embed_size, nxc, self.gru_layers, init, scope)
+            z = nw.seq_decoder(z, x_emb, self.vocab_size, self.embed_size, self.gru_layers, init, scope)
 
             logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
             parms = tf.nn.softmax(logits, dim=-1)
@@ -496,22 +494,16 @@ class MultiModalVAE(base.Model):
 
     def decode(self, z):
 
+        xc = np.random.rand(z.shape[0], self.n_x)
 
+        xc =
 
-        if self.is_autoregressive:
-            x1 = np.random.rand(z.shape[0], self.n_x)
-            x2 = np.random.rand(z.shape[0], self.n_x)
+        xc = self._autoregressive_sampling(z, xc)
 
-            x1, x2 = self._joint_autoregressive_sampling(z, x1, x2, n_pixels=0,
-                    z_var=self.z12, p1_var=self.rx1_12_probs, p2_var=self.rx2_12_probs)
+        feed = {self.zj: z}
+        rxi = self.sess.run(self.rxi_j_probs, feed_dict=feed)
 
-        else:
-            feed = {self.z12: z}
-            outputs = [self.rx1_12_probs, self.rx2_12_probs]
-            rx1, rx2 = self.sess.run(outputs, feed_dict=feed)
-
-            x1 = self._categorical_sampling(rx1, n_cats=256) / 255
-            x2 = self._categorical_sampling(rx2, n_cats=256) / 255
+        xi = self._categorical_sampling(rxi, n_cats=256) / 255
 
         return x1, x2
 
@@ -546,72 +538,8 @@ class MultiModalVAE(base.Model):
             pb = np.expand_dims(pb, axis=1)
 
             pb = self._categorical_sampling(pb, n_cats=self.vocab_size)
+            pb = np.squeeze(pb)
 
-            xc[:,i] = np.squeeze(pb)
+            xc[:,i] = pb
 
-
-
-
-
-
-
-
-
-    def _joint_autoregressive_sampling(self, z, x1, x2, n_pixels, z_var, p1_var, p2_var):
-        """
-        Synthesize images autoregressively.
-        """
-        def _locate_2d(idx, w):
-            pos = idx + 1
-            r = np.ceil(pos / w)
-            c = pos - (r-1)*w
-
-            return int(r-1), int(c-1)
-
-        h = self.h
-        w = self.w
-        ch = self.n_ch
-        n_x = h * w * ch
-
-        remain = h*w - n_pixels
-
-        x1 = x1.copy()
-        x2 = x2.copy()
-        x1_empty, x2_empty = self._empty_like(x1, x2)
-
-        for i in range(remain):
-
-            feed = {z_var: z, self.x1p: x1, self.x2p: x2, self.x1: x1_empty, self.x2: x2_empty}
-            p1, p2 = self.sess.run([p1_var, p2_var], feed_dict=feed)
-
-            hp, wp = _locate_2d(n_pixels + i, w)
-
-            x1 = np.reshape(x1, newshape=[-1, h, w, ch])
-            x2 = np.reshape(x2, newshape=[-1, h, w, ch])
-
-
-
-            p1 = np.reshape(p1, newshape=[-1, h, w, ch, 256])
-            p1 = p1[:, hp, wp, :, :]
-            x1[:, hp, wp, :] = self._categorical_sampling(p1) / 255
-
-
-
-
-            x1 = np.reshape(x1, newshape=[-1, n_x])
-            x2 = np.reshape(x2, newshape=[-1, n_x])
-
-        return x1, x2
-
-
-    def _empty_like(self, x1, x2):
-
-        x1_shape = list(x1.shape)
-        x1_shape[0] = 0
-        x2_shape = list(x2.shape)
-        x2_shape[0] = 0
-        x1_empty = np.zeros(shape=x1_shape)
-        x2_empty = np.zeros(shape=x2_shape)
-
-        return x1_empty, x2_empty
-
+        return xc
