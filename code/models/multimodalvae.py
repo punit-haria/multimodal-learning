@@ -494,18 +494,16 @@ class MultiModalVAE(base.Model):
 
     def decode(self, z):
 
-        xc = np.random.rand(z.shape[0], self.n_x)
-
-        xc =
-
+        # autoregressive caption generation
+        xc = np.random.randint(0, self.vocab_size, size=(z.shape[0], self.nxc))
         xc = self._autoregressive_sampling(z, xc)
 
+        # factorized image generation
         feed = {self.zj: z}
         rxi = self.sess.run(self.rxi_j_probs, feed_dict=feed)
-
         xi = self._categorical_sampling(rxi, n_cats=256) / 255
 
-        return x1, x2
+        return xi, xc
 
 
     def _categorical_sampling(self, rx, n_cats):
