@@ -8,12 +8,12 @@ class GRUCell(tf.contrib.rnn.RNNCell):
     Gated Recurrent Unit cell (cf. http://arxiv.org/abs/1406.1078).
     Taken from https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/rnn_cell_impl.py
     """
-    def __init__(self, num_units, activation, reuse=None, kernel_initializer=None, bias_initializer=None):
+    def __init__(self, num_units, activation, init, reuse=None):
         super(GRUCell, self).__init__(_reuse=reuse)
         self._num_units = num_units
         self._activation = activation
-        self._kernel_initializer = kernel_initializer
-        self._bias_initializer = bias_initializer
+        self._init = init
+
 
     @property
     def state_size(self):
@@ -28,29 +28,18 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
         with tf.variable_scope("gates"):
 
-            # Reset gate and update gate.
-            # We start with bias of 1.0 to not reset and not update.
-
+            # note: start with bias of 1.0 to not reset and not update.
             # note: state = h_{t-1}, inputs = x_t
 
-            bias_ones = self._bias_initializer
+            value = tf.sigmoid(self._gru_linear([inputs, state], 2 * self._num_units, self._init, scope='rt_zt'))
 
-            if self._bias_initializer is None:
-                dtype = [a.dtype for a in [inputs, state]][0]
-                bias_ones = tf.constant_initializer(1.0, dtype=dtype)
-
-            value = tf.sigmoid(self._gru_linear([inputs, state], 2 * self._num_units, init, scope))
-
-            #value = tf.sigmoid(_linear([inputs, state], 2 * self._num_units,
-            #                                 True, bias_ones, self._kernel_initializer))
-
-            r, u = tf.split(value=value, num_or_size_splits=2, axis=1)   # r_t, z_t
+            r, z = tf.split(value=value, num_or_size_splits=2, axis=1)   # r_t, z_t
 
         with tf.variable_scope("candidate"):
             c = self._activation(_linear([inputs, r * state], self._num_units, True,
                                          self._bias_initializer, self._kernel_initializer))
 
-        new_h = u * state + (1 - u) * c
+        new_h = z * state + (1 - z) * c
 
         return new_h, new_h
 
@@ -95,45 +84,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 b = tf.reshape(b, shape=[1, n_out])
 
                 return tf.multiply(scaling, x) + b
-
-
-
-def linear_test(x, n_out, init, scope):
-    """
-    Linear tranform
-    """
-    with tf.variable_scope(scope):
-
-        n_x = x.get_shape()[1].value
-
-        if init:
-            v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.05))
-            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
-
-            t = tf.matmul(x, v_norm)
-            mu_t, var_t = tf.nn.moments(t, axes=0)
-
-            inv = 1 / tf.sqrt(var_t + 1e-10)
-            _ = tf.get_variable("g", initializer=inv)
-            _ = tf.get_variable("b", initializer=-mu_t * inv)
-
-            inv = tf.reshape(inv, shape=[1, n_out])
-            mu_t = tf.reshape(mu_t, shape=[1, n_out])
-
-            return tf.multiply(t - mu_t, inv)
-
-        else:
-            v = tf.get_variable("v", shape=[n_x, n_out])
-            g = tf.get_variable("g", shape=[n_out])
-            b = tf.get_variable("b", shape=[n_out])
-
-            x = tf.matmul(x, v)
-            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
-
-            scaling = tf.reshape(scaling, shape=[1, n_out])
-            b = tf.reshape(b, shape=[1, n_out])
-
-            return tf.multiply(scaling, x) + b
 
 
 
