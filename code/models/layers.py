@@ -5,7 +5,7 @@ from models import sequential as sq
 
 def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
     """
-    Bidirectional RNN encoder using GRUs.
+    RNN encoder using GRUs.
     """
     with tf.variable_scope(scope):
 
@@ -28,12 +28,31 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mu, sigma, out
+        return mu, sigma, out, x
 
 
 
-def seq_decoder(z, n_units, nxc, init, scope):
-    pass
+def seq_decoder(z, x, embed_size, nxc, n_layers, init, scope):
+    """
+    RNN decoder using GRUs.
+    """
+    with tf.variable_scope(scope):
+
+        nonlin = tf.nn.elu
+
+        z = linear(z, n_out=embed_size, init=init, scope='mu_sigma_layer')  # batch_size x embed_size
+
+        # x: batch_size x max_seq_len x embed_size
+        max_seq_len = x.get_shape()[1].value
+        x = tf.slice(x, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
+
+        z = tf.concat([z,x], axis=1)
+
+        gru = sq.GRUCell(num_units=nxc, activation=nonlin, init=init)
+        gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
+        out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
+
+        return out
 
 
 

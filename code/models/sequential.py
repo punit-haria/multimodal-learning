@@ -6,6 +6,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
     """
     Gated Recurrent Unit cell (cf. http://arxiv.org/abs/1406.1078).
     Taken from https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/rnn_cell_impl.py
+    and modified.
     """
     def __init__(self, num_units, activation, init, reuse=None):
         super(GRUCell, self).__init__(_reuse=reuse)
