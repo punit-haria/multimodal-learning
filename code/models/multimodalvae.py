@@ -19,6 +19,8 @@ class MultiModalVAE(base.Model):
         self.objective = self.args['objective']             # joint vs. translation objective function
         self.nxc = self.args['max_seq_len']                 # maximum caption length
         self.vocab_size = self.args['vocab_size']           # vocabulary size
+        self.embed_size = self.args['embed_size']           # embedding size
+        self.gru_layers = self.args['gru_layers']           # number of GRU layers
         self.n_units = self.args['n_units']                 # number of hidden units in FC layers
         self.n_fmaps = self.args['n_feature_maps']          # number of feature maps in Conv. layers
         self.alpha = self.args['anneal']                    # freebits parameter
@@ -112,7 +114,7 @@ class MultiModalVAE(base.Model):
 
             # encoders
             mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
-            mu_pc, sigma_pc, hepc = self._encoder_c(xpc, init=init, scope='xc_enc')
+            mu_pc, sigma_pc, hepc, emb_pc = self._encoder_c(xpc, init=init, scope='xc_enc')
 
             # joint encoder
             mu_j, sigma_j = self._joint_encoder(xhi=hepi, xhc=hepc, init=init, scope='xixc_enc')
@@ -122,7 +124,7 @@ class MultiModalVAE(base.Model):
 
             # decoders
             rxi_j, rxi_j_probs = self._decoder_i(zj, init=init, scope='xi_dec')
-            rxc_j, rxc_j_probs = self._decoder_c(zj, init=init, scope='xc_dec')
+            rxc_j, rxc_j_probs = self._decoder_c(zj, emb_pc, init=init, scope='xc_dec')
 
         if not init:
             with tf.variable_scope('multimodal_vae') as scope:
@@ -130,7 +132,7 @@ class MultiModalVAE(base.Model):
 
                 # unpaired encodings
                 mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')
-                mu_c, sigma_c, _ = self._encoder_c(xc, init=init, scope='xc_enc')
+                mu_c, sigma_c, _, emb_c = self._encoder_c(xc, init=init, scope='xc_enc')
 
                 # additional samples
                 zi = self._sample(mu_i, sigma_i, scope='sample')
@@ -140,18 +142,18 @@ class MultiModalVAE(base.Model):
 
                 # reconstructions
                 rxi_i, rxi_i_probs = self._decoder_i(zi, init=init, scope='xi_dec')
-                rxc_c, rxc_c_probs = self._decoder_c(zc, init=init, scope='xc_dec')
+                rxc_c, rxc_c_probs = self._decoder_c(zc, emb_c, init=init, scope='xc_dec')
 
                 # translations
-                rxi_c, rxi_c_probs = self._decoder_i(zc, init=init, scope='xi_dec')
+                rxi_c, rxi_c_probs = self._decoder_i(zc, emb_c, init=init, scope='xi_dec')
                 rxc_i, rxc_i_probs = self._decoder_c(zi, init=init, scope='xc_dec')
 
                 # reconstructions (from paired input)
                 rxi_pi, rxi_pi_probs = self._decoder_i(zpi, init=init, scope='xi_dec')
-                rxc_pc, rxc_pc_probs = self._decoder_c(zpc, init=init, scope='xc_dec')
+                rxc_pc, rxc_pc_probs = self._decoder_c(zpc, emb_pc, init=init, scope='xc_dec')
 
                 # translations (from paired input)
-                rxi_pc, rxi_pc_probs = self._decoder_i(zpc, init=init, scope='xi_dec')
+                rxi_pc, rxi_pc_probs = self._decoder_i(zpc, emb_pc, init=init, scope='xi_dec')
                 rxc_pi, rxc_pi_probs = self._decoder_c(zpi, init=init, scope='xc_dec')
 
                 # final tensors
@@ -186,9 +188,10 @@ class MultiModalVAE(base.Model):
 
     def _encoder_c(self, x, init, scope):
 
-        mu, sigma, he = nw.seq_encoder(x, self.n_units, self.n_z, init, scope)
+        mu, sigma, he, emb = nw.seq_encoder(x,  self.vocab_size, self.embed_size, self.n_units,
+                                       self.n_z, self.gru_layers, init, scope)
 
-        return mu, sigma, he
+        return mu, sigma, he, emb
 
 
 
@@ -215,13 +218,13 @@ class MultiModalVAE(base.Model):
             return logits, parms
 
 
-    def _decoder_c(self, z, init, scope):
+    def _decoder_c(self, z, x_emb, init, scope):
 
         with tf.variable_scope(scope):
 
             nxc = self.nxc * self.vocab_size
 
-            z = nw.seq_decoder(z, self.n_units, nxc, init, scope)
+            z = nw.seq_decoder(z, x_emb, self.embed_size, nxc, self.gru_layers, init, scope)
 
             logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
             parms = tf.nn.softmax(logits, dim=-1)
