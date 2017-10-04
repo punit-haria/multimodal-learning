@@ -3,20 +3,29 @@ import numpy as np
 from models import sequential as sq
 
 
-def seq_encoder(x, vocab_size, embed_size, n_units, n_z, init, scope):
+def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
     """
     Bidirectional RNN encoder using GRUs.
     """
     with tf.variable_scope(scope):
 
+        nonlin = tf.nn.elu
+
         embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
                                      initializer=tf.random_normal_initializer(0, 0.05))   # weight normalization???
-
         x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
 
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init)
+        gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
+        out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None)
 
+        mu = linear(out, n_out=n_z, init=init, scope="mu_layer")   # assuming 'out' is n_z dimensional vector h_t
 
-        nonlin = tf.nn.elu
+        sigma = linear(x, n_z, init=init, scope="sigma_layer")
+        sigma = tf.nn.softplus(sigma)
+
+        return mu, sigma, x
+
 
 
 def seq_decoder(z, n_units, nxc, init, scope):
