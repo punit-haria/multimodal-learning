@@ -1050,12 +1050,12 @@ class MSCOCO(object):
             with open(_data_path, 'rb') as ff:
                 data = pickle.load(ff)
 
-            self._captions = data['captions']
             self._vocab = data['vocab']
+
+            self._captions = data['captions']
             self._imcapt = data['imcapt']
             self._images = data['images']
             self._val_captions = data['val_captions']
-            self._val_vocab = data['val_vocab']
             self._val_imcapt = data['val_imcapt']
             self._val_images = data['val_images']
             self._max_seq_len = data['max_seq_len']
@@ -1157,12 +1157,12 @@ class MSCOCO(object):
                     self._val_images = images
 
             tosave = dict()
-            tosave['captions'] = self._captions
             tosave['vocab'] = self._vocab
+
+            tosave['captions'] = self._captions
             tosave['imcapt'] = self._imcapt
             tosave['images'] = self._images
             tosave['val_captions'] = self._val_captions
-            tosave['val_vocab'] = self._val_vocab
             tosave['val_imcapt'] = self._val_imcapt
             tosave['val_images'] = self._val_images
             tosave['max_seq_len'] = self._max_seq_len

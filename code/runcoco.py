@@ -23,10 +23,7 @@ parms = {
     'n_feature_maps': 32,
     'n_units': 80,
     'embed_size': 80,
-    'max_seq_len': 10,   ############## ?????
-    'vocab_size': 240,   ############## ?????
     'gru_layers': 1,
-
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25   (0 is no anneal)
@@ -55,6 +52,10 @@ if __name__ == "__main__":
     ]
 
     data = MSCOCO(parms['n_paired'])
+
+    parms['max_seq_len'] = data._max_seq_len    # max sequence length
+    parms['vocab_size'] = len(data._vocab)      # vocabulary size
+
 
     tracker = Results(experiment_name)  # performance tracker
 
