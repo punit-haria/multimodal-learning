@@ -145,16 +145,16 @@ class MultiModalVAE(base.Model):
                 rxc_c, rxc_c_probs = self._decoder_c(zc, emb_c, init=init, scope='xc_dec')
 
                 # translations
-                rxi_c, rxi_c_probs = self._decoder_i(zc, emb_c, init=init, scope='xi_dec')
-                rxc_i, rxc_i_probs = self._decoder_c(zi, init=init, scope='xc_dec')
+                rxi_c, rxi_c_probs = self._decoder_i(zc, init=init, scope='xi_dec')
+                rxc_i, rxc_i_probs = self._decoder_c(zi, emb_c, init=init, scope='xc_dec')
 
                 # reconstructions (from paired input)
                 rxi_pi, rxi_pi_probs = self._decoder_i(zpi, init=init, scope='xi_dec')
                 rxc_pc, rxc_pc_probs = self._decoder_c(zpc, emb_pc, init=init, scope='xc_dec')
 
                 # translations (from paired input)
-                rxi_pc, rxi_pc_probs = self._decoder_i(zpc, emb_pc, init=init, scope='xi_dec')
-                rxc_pi, rxc_pi_probs = self._decoder_c(zpi, init=init, scope='xc_dec')
+                rxi_pc, rxi_pc_probs = self._decoder_i(zpc, init=init, scope='xi_dec')
+                rxc_pi, rxc_pi_probs = self._decoder_c(zpi, emb_pc, init=init, scope='xc_dec')
 
                 # final tensors
                 self.mu_j, self.sigma_j = (mu_j, sigma_j)
