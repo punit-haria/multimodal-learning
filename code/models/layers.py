@@ -70,6 +70,73 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         return new_h, new_h
 
 
+def gru_linear(args, output_size, bias, init, scope):
+
+    total_arg_size = 0
+    shapes = [a.get_shape() for a in args]
+    for shape in shapes:
+        total_arg_size += shape[1].value
+
+    dtype = [a.dtype for a in args][0]
+
+    with tf.variable_scope(scope):
+
+        weights = tf.get_variable('w', [total_arg_size, output_size], dtype=dtype,
+                                  initializer=kernel_initializer)
+
+        res = tf.matmul(tf.concat(args, axis=1), weights)
+
+        if not bias:
+            return res
+
+        bias_initializer = tf.constant_initializer(0.0, dtype=dtype)
+        biases = tf.get_variable('b', [output_size], dtype=dtype,
+                                 initializer=bias_initializer)
+
+        return tf.nn.bias_add(res, biases)
+
+
+
+def linear(x, n_out, init, scope):
+    """
+    Linear tranform
+    """
+    with tf.variable_scope(scope):
+
+        n_x = x.get_shape()[1].value
+
+        if init:
+            v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0,0.05))
+            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+
+            t = tf.matmul(x, v_norm)
+            mu_t, var_t = tf.nn.moments(t, axes=0)
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, n_out])
+            mu_t = tf.reshape(mu_t, shape=[1, n_out])
+
+            return tf.multiply(t - mu_t, inv)
+
+        else:
+            v = tf.get_variable("v", shape=[n_x, n_out])
+            g = tf.get_variable("g", shape=[n_out])
+            b = tf.get_variable("b", shape=[n_out])
+
+            x = tf.matmul(x, v)
+            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+
+            scaling = tf.reshape(scaling, shape=[1, n_out])
+            b = tf.reshape(b, shape=[1, n_out])
+
+            return tf.multiply(scaling, x) + b
+
+
+
+
 def _linear(args, output_size, bias, bias_initializer=None, kernel_initializer=None):
     """
     Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
@@ -112,19 +179,19 @@ def _linear(args, output_size, bias, bias_initializer=None, kernel_initializer=N
 
     with tf.variable_scope(scope) as outer_scope:
 
-        weights = vs.get_variable(_WEIGHTS_VARIABLE_NAME, [total_arg_size, output_size], dtype=dtype,
+        weights = tf.get_variable(_WEIGHTS_VARIABLE_NAME, [total_arg_size, output_size], dtype=dtype,
                                   initializer=kernel_initializer)
         if len(args) == 1:
-            res = math_ops.matmul(args[0], weights)
+            res = tf.matmul(args[0], weights)
         else:
-            res = math_ops.matmul(array_ops.concat(args, 1), weights)
+            res = tf.matmul(tf.concat(args, 1), weights)
         if not bias:
             return res
         with tf.variable_scope(outer_scope) as inner_scope:
 
             inner_scope.set_partitioner(None)
             if bias_initializer is None:
-                bias_initializer = init_ops.constant_initializer(0.0, dtype=dtype)
+                bias_initializer = tf.constant_initializer(0.0, dtype=dtype)
             biases = tf.get_variable(_BIAS_VARIABLE_NAME, [output_size], dtype=dtype,
                                      initializer=bias_initializer)
 
