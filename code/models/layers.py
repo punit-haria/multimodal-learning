@@ -11,8 +11,12 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
 
         nonlin = tf.nn.elu
 
-        embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
-                                     initializer=tf.random_normal_initializer(0, 0.05))   # weight normalization???
+        if init:
+            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
+                                         initializer=tf.random_normal_initializer(0, 0.05))
+        else:
+            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size])
+
         x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
 
         gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init)
@@ -24,7 +28,7 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mu, sigma, x
+        return mu, sigma, out
 
 
 
