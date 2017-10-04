@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from models import sequential as sq
 
 
 def seq_encoder(x, vocab_size, embed_size, n_units, n_z, init, scope):
