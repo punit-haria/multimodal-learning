@@ -51,6 +51,7 @@ def seq_decoder(z, x, vocab_size, embed_size, n_layers, init, scope):
         max_seq_len = x.get_shape()[1].value
         x = tf.slice(x, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
 
+        z = tf.expand_dims(z, axis=1)
         z = tf.concat([z,x], axis=1)
 
         gru = sq.GRUCell(num_units=vocab_size, activation=nonlin, init=init)
