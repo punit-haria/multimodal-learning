@@ -56,9 +56,9 @@ class MultiModalVAE(base.Model):
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         xi_init = tf.constant(self.xi_init, tf.float32)
-        xc_init = tf.constant(self.xc_init, tf.float32)
+        xc_init = tf.constant(self.xc_init, tf.int32)
         xpi_init = tf.constant(self.xpi_init, tf.float32)
-        xpc_init = tf.constant(self.xpc_init, tf.float32)
+        xpc_init = tf.constant(self.xpc_init, tf.int32)
 
 
         # compute weight initializations
