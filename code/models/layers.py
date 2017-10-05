@@ -23,7 +23,10 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
         out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None)
 
-        mu = linear(out, n_out=n_z, init=init, scope="mu_layer")   # assuming 'out' is n_z dimensional vector h_t
+        seq_pos = out.get_shape()[1].value - 1
+        last_out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
+
+        mu = linear(last_out, n_out=n_z, init=init, scope="mu_layer")
 
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
@@ -52,9 +55,9 @@ def seq_decoder(z, x, vocab_size, embed_size, n_layers, init, scope):
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
         out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
 
-        # state: batch_size x max_seq_len x vocab_size ?
+        # out: batch_size x max_seq_len x vocab_size
 
-        return state
+        return out
 
 
 
