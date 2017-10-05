@@ -1189,6 +1189,12 @@ class MSCOCO(object):
         self.caption_only = list(self.caption_only)
 
 
+    def get_max_seq_len(self):
+        return self._max_seq_len
+
+    def get_vocab_size(self):
+        return len(self._vocab)
+
     def _sample_setup(self, image_ids, train):
         """
         Generate samples in matrix form based on already sampled images.

@@ -53,8 +53,8 @@ if __name__ == "__main__":
 
     data = MSCOCO(parms['n_paired'])
 
-    parms['max_seq_len'] = data._max_seq_len    # max sequence length
-    parms['vocab_size'] = len(data._vocab)      # vocabulary size
+    parms['max_seq_len'] = data.get_max_seq_len()    # max sequence length
+    parms['vocab_size'] = data.get_vocab_size()     # vocabulary size
 
 
     tracker = Results(experiment_name)  # performance tracker
