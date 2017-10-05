@@ -25,3 +25,5 @@ for i in range(save_steps, train_steps+save_steps, save_steps):
     image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
                n_rows=8, n_cols=4, n_pixels=0, spacing=0, model_type='joint', count=60)
 
+
+

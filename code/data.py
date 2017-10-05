@@ -1034,8 +1034,8 @@ class MSCOCO(object):
         _train_annotations_path = '../data/mscoco/annotations/captions_train2014.json'
         _val_annotations_path = '../data/mscoco/annotations/captions_val2014.json'
 
-        _train_images_dir = '../data/mscoco/train_samples/'
-        _val_images_dir = '../data/mscoco/val_samples/'
+        _train_images_dir = '../data/mscoco/train2014/'
+        _val_images_dir = '../data/mscoco/val2014/'
 
         _data_path = '../data/mscoco/data.pickle'
 
