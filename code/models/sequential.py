@@ -53,36 +53,39 @@ def gru_linear(args, n_out, init, scope):
 
     with tf.variable_scope(scope):
 
-        n_x = total_arg_size
-        x = tf.concat(args, axis=1)
+            n_x = total_arg_size
+            x = tf.concat(args, axis=1)
 
-        if init:
-            v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
-            v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+            if init:
+                with tf.control_dependencies(None):
+                    v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+                v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
 
-            t = tf.matmul(x, v_norm)
-            mu_t, var_t = tf.nn.moments(t, axes=0)
+                t = tf.matmul(x, v_norm)
+                mu_t, var_t = tf.nn.moments(t, axes=0)
 
-            inv = 1 / tf.sqrt(var_t + 1e-10)
-            _ = tf.get_variable("g", initializer=inv)
-            _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t ??
+                inv = 1 / tf.sqrt(var_t + 1e-10)
+                with tf.control_dependencies(None):
+                    _ = tf.get_variable("g", initializer=inv)
+                    _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t..
 
-            inv = tf.reshape(inv, shape=[1, n_out])
-            mu_t = tf.reshape(mu_t, shape=[1, n_out])
+                inv = tf.reshape(inv, shape=[1, n_out])
+                mu_t = tf.reshape(mu_t, shape=[1, n_out])
 
-            return tf.multiply(t - mu_t, inv)
+                return tf.multiply(t - mu_t, inv)
 
-        else:
-            v = tf.get_variable("v", shape=[n_x, n_out])
-            g = tf.get_variable("g", shape=[n_out])
-            b = tf.get_variable("b", shape=[n_out])
+            else:
+                with tf.control_dependencies(None):
+                    v = tf.get_variable("v", shape=[n_x, n_out])
+                    g = tf.get_variable("g", shape=[n_out])
+                    b = tf.get_variable("b", shape=[n_out])
 
-            x = tf.matmul(x, v)
-            scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
+                x = tf.matmul(x, v)
+                scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
 
-            scaling = tf.reshape(scaling, shape=[1, n_out])
-            b = tf.reshape(b, shape=[1, n_out])
+                scaling = tf.reshape(scaling, shape=[1, n_out])
+                b = tf.reshape(b, shape=[1, n_out])
 
-            return tf.multiply(scaling, x) + b
+                return tf.multiply(scaling, x) + b
 
 
