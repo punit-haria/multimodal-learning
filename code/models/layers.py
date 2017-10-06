@@ -56,9 +56,8 @@ def seq_decoder(z, x, vocab_size, embed_size, n_layers, init, scope):
 
         gru = sq.GRUCell(num_units=vocab_size, activation=nonlin, init=init)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
-        print("BEFORE", flush=True)
         out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
-        print("AFTER", flush=True)
+
         # out: batch_size x max_seq_len x vocab_size
 
         return out
