@@ -72,7 +72,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 inv = 1 / tf.sqrt(var_t + 1e-10)
 
                 #_ = tf.get_variable("g", shape=[n_out], initializer=tf.random_normal_initializer(0, 0.05))
-                #_ = tf.get_variable("b", shape=[n_out], initializer=tf.random_normal_initializer(0, 0.05))
+                #_ = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(1.0))
 
                 _ = tf.get_variable("g", initializer=inv)
                 _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t..

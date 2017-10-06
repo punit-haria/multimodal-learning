@@ -205,28 +205,24 @@ class MultiModalVAE(base.Model):
 
     def _decoder_i(self, z, init, scope):
 
-        with tf.variable_scope(scope):
+        nch = self.nch * 256
 
-            nch = self.nch * 256
+        z = nw.deconvolution_coco(z, nch, self.n_fmaps, self.n_units, init, scope)
 
-            z = nw.deconvolution_coco(z, nch, self.n_fmaps, self.n_units, init, scope)
+        logits = tf.reshape(z, shape=[-1, self.nxi, 256])
+        parms = tf.nn.softmax(logits, dim=-1)
 
-            logits = tf.reshape(z, shape=[-1, self.nxi, 256])
-            parms = tf.nn.softmax(logits, dim=-1)
-
-            return logits, parms
+        return logits, parms
 
 
     def _decoder_c(self, z, x_emb, init, scope):
 
-        with tf.variable_scope(scope):
+        z = nw.seq_decoder(z, x_emb, self.vocab_size, self.embed_size, self.gru_layers, init, scope)
 
-            z = nw.seq_decoder(z, x_emb, self.vocab_size, self.embed_size, self.gru_layers, init, scope)
+        logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
+        parms = tf.nn.softmax(logits, dim=-1)
 
-            logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
-            parms = tf.nn.softmax(logits, dim=-1)
-
-            return logits, parms
+        return logits, parms
 
 
     def _joint_encoder(self, xhi, xhc, init, scope):
