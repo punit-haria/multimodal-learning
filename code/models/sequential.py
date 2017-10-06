@@ -13,8 +13,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         self._num_units = num_units
         self._activation = activation
         self._init = init
-        self.called = False
-
 
     @property
     def state_size(self):
@@ -34,14 +32,12 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
             value = tf.sigmoid(self.gru_linear([inputs, state], 2 * self._num_units, self._init, scope='rt_zt'))
 
-            r, z = tf.split(value=value, num_or_size_splits=2, axis=1)   # r_t, z_t
+            r, z = tf.split(value=value, num_or_size_splits=2, axis=1)
 
         with tf.variable_scope("candidate"):
             c = self._activation(self.gru_linear([inputs, r * state], self._num_units, self._init, scope='ct'))
 
         new_h = z * state + (1 - z) * c
-
-        self.called = True
 
         return new_h, new_h
 
@@ -75,7 +71,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 #_ = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(1.0))
 
                 _ = tf.get_variable("g", initializer=inv)
-                _ = tf.get_variable("b", initializer=-mu_t * inv) # maybe initialize with constant(1.0) for z_t, r_t..
+                _ = tf.get_variable("b", initializer=-mu_t * inv)
 
                 inv = tf.reshape(inv, shape=[1, n_out])
                 mu_t = tf.reshape(mu_t, shape=[1, n_out])
