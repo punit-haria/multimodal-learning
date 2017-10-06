@@ -126,9 +126,8 @@ class MultiModalVAE(base.Model):
             rxi_j, rxi_j_probs = self._decoder_i(zj, init=init, scope='xi_dec')
             rxc_j, rxc_j_probs = self._decoder_c(zj, emb_pc, init=init, scope='xc_dec')
 
-        if not init:
-            with tf.variable_scope('multimodal_vae') as scope:
-                scope.reuse_variables()
+
+            if not init:
 
                 # unpaired encodings
                 mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')

@@ -55,6 +55,9 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
         with tf.variable_scope(scope):
 
+            print("-------------------------------", tf.get_variable_scope().name, flush=True)
+            print("Init:", init, flush=True)
+
             n_x = total_arg_size
             x = tf.concat(args, axis=1)
 
