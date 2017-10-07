@@ -8,11 +8,47 @@ class GRUCell(tf.contrib.rnn.RNNCell):
     Taken from https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/rnn_cell_impl.py
     and modified.
     """
-    def __init__(self, num_units, activation, init, reuse=None):
+    def __init__(self, num_units, activation, init, input, reuse=None):
         super(GRUCell, self).__init__(_reuse=reuse)
         self._num_units = num_units
         self._activation = activation
         self._init = init
+
+        '''
+        with tf.variable_scope('rnn'):
+            with tf.variable_scope('multi_rnn_cell'):
+                with tf.variable_scope('cell_0'):
+                    with tf.variable_scope('gru_cell'):
+                        with tf.variable_scope('gates'):
+                            with tf.variable_scope('rt_zt'):
+                                pass
+
+                        with tf.variable_scope('candidate'):
+                            with tf.variable_scope('ct'):
+                                pass
+        '''
+
+        with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
+            pass
+
+        with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
+            pass
+
+
+    def _weight_norm_variables(self, inputs, n_out):
+
+
+        v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
+        v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+
+        t = tf.matmul(x, v_norm)
+        mu_t, var_t = tf.nn.moments(t, axes=0)
+
+        inv = 1 / tf.sqrt(var_t + 1e-10)
+
+        _ = tf.get_variable("g", initializer=inv)
+        _ = tf.get_variable("b", initializer=-mu_t * inv)
+
 
     @property
     def state_size(self):
@@ -24,6 +60,9 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
 
     def call(self, inputs, state):
+
+        print(inputs.__class__)
+        print(state.__class__)
 
         with tf.variable_scope("gates"):
 
@@ -40,6 +79,11 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         new_h = z * state + (1 - z) * c
 
         return new_h, new_h
+
+
+    def _initialize_variables(self, input):
+        pass
+
 
 
     def gru_linear(self, args, n_out, init, scope):
@@ -66,9 +110,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 mu_t, var_t = tf.nn.moments(t, axes=0)
 
                 inv = 1 / tf.sqrt(var_t + 1e-10)
-
-                #_ = tf.get_variable("g", shape=[n_out], initializer=tf.random_normal_initializer(0, 0.05))
-                #_ = tf.get_variable("b", shape=[n_out], initializer=tf.constant_initializer(1.0))
 
                 _ = tf.get_variable("g", initializer=inv)
                 _ = tf.get_variable("b", initializer=-mu_t * inv)
