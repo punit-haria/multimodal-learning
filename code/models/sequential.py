@@ -27,21 +27,28 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                             with tf.variable_scope('ct'):
                                 pass
         '''
+        if self._init:
+            with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
+                self._initialize_variables(input, 2 * self._num_units)
 
-        with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
-            pass
-
-        with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
-            pass
+            with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
+                self._initialize_variables(input, self._num_units)
 
 
-    def _weight_norm_variables(self, inputs, n_out):
+    def _initialize_variables(self, inputs, n_out):
 
+        # inputs: batch x time x depth
+        inp = tf.slice(inputs, begin=[0,0,0], size=[-1,1,-1])
+        inp = tf.squeeze(inp)   # batch x depth
+        state = tf.zeros(shape=[tf.shape(inp)[0], self._num_units])
+        inp = tf.concat([inp, state], axis=1)
+
+        n_x = inp.get_shape()[1].value
 
         v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
         v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
 
-        t = tf.matmul(x, v_norm)
+        t = tf.matmul(inp, v_norm)
         mu_t, var_t = tf.nn.moments(t, axes=0)
 
         inv = 1 / tf.sqrt(var_t + 1e-10)
@@ -61,9 +68,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
     def call(self, inputs, state):
 
-        print(inputs.__class__)
-        print(state.__class__)
-
         with tf.variable_scope("gates"):
 
             # note: start with bias of 1.0 to not reset and not update.
@@ -79,11 +83,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         new_h = z * state + (1 - z) * c
 
         return new_h, new_h
-
-
-    def _initialize_variables(self, input):
-        pass
-
 
 
     def gru_linear(self, args, n_out, init, scope):
@@ -102,7 +101,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
             x = tf.concat(args, axis=1)
 
             if init:
-
+                '''
                 v = tf.get_variable("v", shape=[n_x, n_out], initializer=tf.random_normal_initializer(0, 0.05))
                 v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
 
@@ -113,6 +112,19 @@ class GRUCell(tf.contrib.rnn.RNNCell):
 
                 _ = tf.get_variable("g", initializer=inv)
                 _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+                inv = tf.reshape(inv, shape=[1, n_out])
+                mu_t = tf.reshape(mu_t, shape=[1, n_out])
+
+                return tf.multiply(t - mu_t, inv)
+                '''
+                v = tf.get_variable("v", shape=[n_x, n_out])
+                v_norm = tf.nn.l2_normalize(v.initialized_value(), dim=0)
+
+                t = tf.matmul(x, v_norm)
+                mu_t, var_t = tf.nn.moments(t, axes=0)
+
+                inv = 1 / tf.sqrt(var_t + 1e-10)
 
                 inv = tf.reshape(inv, shape=[1, n_out])
                 mu_t = tf.reshape(mu_t, shape=[1, n_out])

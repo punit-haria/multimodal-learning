@@ -19,7 +19,7 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
 
         x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
 
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init)
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
         out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None)
 
