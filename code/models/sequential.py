@@ -92,7 +92,9 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         for shape in shapes:
             total_arg_size += shape[1].value
 
-        with tf.variable_scope(scope):
+        with tf.variable_scope(scope) as scope:
+
+            scope.reuse_variables()
 
             print("-------------------------------", tf.get_variable_scope().name, flush=True)
             print("Init:", init, flush=True)
