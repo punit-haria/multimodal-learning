@@ -35,15 +35,18 @@ class Model(object):
         self._initialize()
 
         # summary writers
+        print("File writers...", flush=True)
         self.tr_writer = tf.summary.FileWriter(self.log_dir+self.name+'_train') 
         self.te_writer = tf.summary.FileWriter(self.log_dir+self.name+'_test') 
 
         # tensorflow session
         if self.sess is None:
+            print("Session + global variables initializer...", flush=True)
             self.sess = tf.Session()
             self.sess.run(tf.global_variables_initializer())
 
         # visualize tf graph
+        print("Add graph visualization...", flush=True)
         self.tr_writer.add_graph(self.sess.graph)
         self.te_writer.add_graph(self.sess.graph)
       
