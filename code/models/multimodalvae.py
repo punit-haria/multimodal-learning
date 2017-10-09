@@ -49,12 +49,14 @@ class MultiModalVAE(base.Model):
     def _initialize(self,):
 
         # input placeholders
+        print("Placeholders...", flush=True)
         self.xi = tf.placeholder(tf.float32, [None, self.nxi], name='xi')
         self.xc = tf.placeholder(tf.int32, [None, self.nxc], name='xc')
         self.xpi = tf.placeholder(tf.float32, [None, self.nxi], name='xpi')
         self.xpc = tf.placeholder(tf.int32, [None, self.nxc], name='xpc')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
+        print("Sample batch...", flush=True)
         xi_init = tf.constant(self.xi_init, tf.float32)
         xc_init = tf.constant(self.xc_init, tf.int32)
         xpi_init = tf.constant(self.xpi_init, tf.float32)
@@ -62,14 +64,16 @@ class MultiModalVAE(base.Model):
 
 
         # compute weight initializations
+        print("Initialize model weights...", flush=True)
         self._model((xi_init, xc_init, xpi_init, xpc_init), init=True)
 
         # model specification
+        print("Define model connections...", flush=True)
         self._model((self.xi, self.xc, self.xpi, self.xpc), init=False)
 
 
         # marginal bounds
-
+        print("Marginal bounds...", flush=True)
         self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
                                         self.mu_i, self.sigma_i, dtype='image', scope='marg_xi')
 
@@ -84,22 +88,25 @@ class MultiModalVAE(base.Model):
 
 
         # joint bound
-
+        print("Joint bound...", flush=True)
         self.lxj, self.lxjreci, self.lxjrecc, self.lxjpen, self.logqj, self.logpj = self._joint_bound(
             self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j, scope='joint_bound')
 
         # translation bounds
-
+        print("Translation bounds...", flush=True)
         self.txi = self._translation_bound(self.rxi_pc, self.xpi, dtype='image', scope='translate_to_xi')
         self.txc = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption', scope='translate_to_xc')
 
         # loss function
+        print("Loss function...", flush=True)
         self.loss = self._loss(scope='loss')
 
         # optimizer
+        print("Optimizer...", flush=True)
         self.step = self._optimizer(self.loss, scope='optimizer')
 
         # summary variables
+        print("Summary variables...", flush=True)
         self.summary = self._summaries()
 
 
@@ -113,16 +120,20 @@ class MultiModalVAE(base.Model):
             xi, xc, xpi, xpc = xs
 
             # encoders
+            print("Encoders...", flush=True)
             mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
             mu_pc, sigma_pc, hepc, emb_pc = self._encoder_c(xpc, init=init, scope='xc_enc')
 
             # joint encoder
+            print("Joint Encoder...", flush=True)
             mu_j, sigma_j = self._joint_encoder(xhi=hepi, xhc=hepc, init=init, scope='xixc_enc')
 
             # sample network
+            print("Sampler...", flush=True)
             zj = self._sample(mu_j, sigma_j, scope='sample')
 
             # decoders
+            print("Decoders...", flush=True)
             rxi_j, rxi_j_probs = self._decoder_i(zj, init=init, scope='xi_dec')
             rxc_j, rxc_j_probs = self._decoder_c(zj, emb_pc, init=init, scope='xc_dec')
 
@@ -130,16 +141,19 @@ class MultiModalVAE(base.Model):
             if not init:
 
                 # unpaired encodings
+                print("Encoders (2)...", flush=True)
                 mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')
                 mu_c, sigma_c, _, emb_c = self._encoder_c(xc, init=init, scope='xc_enc')
 
                 # additional samples
+                print("Samplers (2)...", flush=True)
                 zi = self._sample(mu_i, sigma_i, scope='sample')
                 zc = self._sample(mu_c, sigma_c, scope='sample')
                 zpi = self._sample(mu_pi, sigma_pi, scope='sample')
                 zpc = self._sample(mu_pc, sigma_pc, scope='sample')
 
                 # reconstructions
+                print("Decoders (2)...", flush=True)
                 rxi_i, rxi_i_probs = self._decoder_i(zi, init=init, scope='xi_dec')
                 rxc_c, rxc_c_probs = self._decoder_c(zc, emb_c, init=init, scope='xc_dec')
 
@@ -156,6 +170,7 @@ class MultiModalVAE(base.Model):
                 rxc_pi, rxc_pi_probs = self._decoder_c(zpi, emb_pc, init=init, scope='xc_dec')
 
                 # final tensors
+                print("Assignments...", flush=True)
                 self.mu_j, self.sigma_j = (mu_j, sigma_j)
                 self.mu_i, self.sigma_i = (mu_i, sigma_i)
                 self.mu_c, self.sigma_c = (mu_c, sigma_c)
