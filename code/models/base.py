@@ -41,9 +41,12 @@ class Model(object):
 
         # tensorflow session
         if self.sess is None:
-            print("Session + global variables initializer...", flush=True)
+            print("Session...", flush=True)
             self.sess = tf.Session()
-            self.sess.run(tf.global_variables_initializer())
+            print("Global variables initializer...", flush=True)
+            gvi = tf.global_variables_initializer()
+            print("Running session...", flush=True)
+            self.sess.run(gvi)
 
         # visualize tf graph
         print("Add graph visualization...", flush=True)

@@ -14,6 +14,7 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
                                          initializer=tf.random_normal_initializer(0, 0.05))
+            embeddings = embeddings.initialized_value()
         else:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size])
 

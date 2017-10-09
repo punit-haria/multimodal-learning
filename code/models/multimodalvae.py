@@ -378,7 +378,6 @@ class MultiModalVAE(base.Model):
 
 
     def _summaries(self,):
-
         with tf.variable_scope("summaries"):
             tf.summary.scalar('loss_(ignore_test)', self.loss)
 
