@@ -17,11 +17,11 @@ models = {x.__name__: x for x in models}
 parms = {
     # basic parameters
     'objective': 'joint',    # joint, translate
-    'n_z': 32,
+    'n_z': 50,
 
     # network parameters
     'n_feature_maps': 32,
-    'n_units': 32,
+    'n_units': 64,
     'embed_size': 64,
     'gru_layers': 1,
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # objective, n_z, n_feature_maps, n_units, embed_size, gru_layers, anneal, joint_anneal, learning_rate
 
     configs = [
-        ['joint', 50, 32, 75, 80, 1, 0, 0.3, 0.001]
+        ['joint', 50, 32, 64, 64, 1, 0, 0.3, 0.001]
     ]
 
     data = MSCOCO(parms['n_paired'])
