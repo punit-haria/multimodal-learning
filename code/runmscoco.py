@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # objective, n_z, n_feature_maps, n_units, embed_size, gru_layers, anneal, joint_anneal, learning_rate
 
     configs = [
-        ['joint', 50, 32, 64, 64, 1, 0, 0.3, 0.001]
+        ['joint', 48, 32, 64, 64, 1, 0, 0.3, 0.001]
     ]
 
     data = MSCOCO(parms['n_paired'])
