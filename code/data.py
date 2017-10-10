@@ -1219,7 +1219,7 @@ class MSCOCO(object):
 
             # add padding to each caption
             while len(caption) < self._max_seq_len:
-                caption.append(0)   # note: 0 is the id for padding word
+                caption.append(0)   # note: 0 is the id for <PAD>
 
             x_caption.append(caption)
 
@@ -1235,7 +1235,6 @@ class MSCOCO(object):
         return x_image, x_caption
 
 
-
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
 
         fake_vocab_size = 10000
@@ -1249,7 +1248,6 @@ class MSCOCO(object):
             x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption
-
 
         # training set case
         elif dtype == 'train':
@@ -1271,7 +1269,6 @@ class MSCOCO(object):
             _, x_caption = self._sample_setup(caption_only_ids, train=True)
 
             x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
-
             xp_caption[xp_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption, xp_image, xp_caption
