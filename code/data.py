@@ -1160,11 +1160,6 @@ class MSCOCO(object):
                             image = np.expand_dims(image, axis=2)
                             image = np.concatenate((image,image,image), axis=2)
 
-                        assert image.shape == (48,64,3)
-                        assert image.min() >= 0
-                        assert image.max() <= 255
-                        assert image.max() > 1
-
                         image = np.reshape(image, newshape=[1, -1])
 
                         images[k['id']] = image
