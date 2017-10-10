@@ -55,6 +55,8 @@ if __name__ == "__main__":
     parms['max_seq_len'] = data.get_max_seq_len()    # max sequence length
     parms['vocab_size'] = data.get_vocab_size()     # vocabulary size
 
+    print("Max seq. length: ", parms['max_seq_len'], flush=True)
+    print("Vocabulary size: ", parms['vocab_size'], flush=True)
 
     tracker = Results(experiment_name)  # performance tracker
 
