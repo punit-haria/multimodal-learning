@@ -1083,9 +1083,15 @@ class MSCOCO(object):
                     # caption preprocessing
                     capt = capt.strip()     # remove unnecessary whitespace
                     capt = capt.lower()     # make lower case
-                    capt = capt.replace('.', ' ')    # remove periods
-                    capt = capt.replace(',', ' ')    # expand commas
-                    capt = capt.replace('"', ' ')  # expand double quotes
+                    capt = capt.replace('.', ' ')  # remove periods
+                    capt = capt.replace(',', ' ')  # remove commas
+                    capt = capt.replace('?', ' ')  # remove question marks
+                    capt = capt.replace('-', ' ')  # remove dashes
+                    capt = capt.replace('"', ' " ')  # expand double quotes
+                    capt = capt.replace('(', ' ( ')  # expand brackets
+                    capt = capt.replace(')', ' ) ')  # expand brackets
+                    capt = capt.replace('{', ' { ')  # expand brackets
+                    capt = capt.replace('}', ' } ')  # expand brackets
                     capt = capt.split()  # split string
                     capt.append(self._padding)  # pad with EOF character
 
@@ -1094,6 +1100,21 @@ class MSCOCO(object):
 
                 self._max_seq_len = max(max([len(_v) for _,_v in captions.items()]), self._max_seq_len)
                 print("Max sequence length: ", self._max_seq_len, flush=True)
+
+
+                if j == 0: # training set
+                    print("Word frequencies", flush=True)
+                    freqs = defaultdict(int)
+                    for _, capt in captions.items():
+                        for word in capt:
+                            freqs[word] += 1
+
+                    print("Adding <OOV> words", flush=True)
+                    min_freq = 2
+                    for k,capts in captions.items():
+                        for i,w in enumerate(capts):
+                            if freqs[w] < min_freq:
+                                capts[i] = self._oov
 
 
                 print("Creating vocabulary..", flush=True)
