@@ -51,6 +51,9 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
     plt.close('all')
 
 
+def coco_plot():
+    pass
+
 
 def image_plot(tracker, models, data, n_rows, n_cols, syntheses,
                n_pixels=300, spacing=0, suffix=None, model_type='regular', count=1):

@@ -7,8 +7,8 @@ from runjoint import models
 
 experiment_name = "coco"
 
-train_steps = 10000
-save_steps = 2000
+train_steps = 100
+save_steps = 100
 
 data = MSCOCO(40000)
 
