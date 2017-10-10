@@ -1121,17 +1121,6 @@ class MSCOCO(object):
                 if j > 0: # validation set
                     vocab = self._vocab
 
-                    print("Training vocab size: ", len(vocab), flush=True)
-
-                    words = {w for _, _v in captions.items() for w in _v}
-                    cnt = 0
-                    for i, w in enumerate(words):
-                        if w not in vocab:
-                            cnt += 1
-
-                    print("Extra from validation: ", cnt, flush=True)
-
-
                 else:
                     vocab = dict()  # key,value ---> word, word_id
                     vocab[0] = self._padding
