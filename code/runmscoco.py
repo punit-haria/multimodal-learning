@@ -17,7 +17,7 @@ models = {x.__name__: x for x in models}
 parms = {
     # basic parameters
     'objective': 'joint',    # joint, translate
-    'n_z': 50,
+    'n_z': 48,
 
     # network parameters
     'n_feature_maps': 32,
@@ -33,12 +33,12 @@ parms = {
     'learning_rate': 0.001,
     'n_unpaired_samples': 128,
     'n_paired_samples': 128,
-
     'n_paired': 40000,
+
     'test_sample_size': 128,
-    'train_steps': 10000,  # 350000
+    'train_steps': 100,  # 350000
     'test_steps': 50,
-    'save_steps': 2000
+    'save_steps': 100
 }
 
 
