@@ -62,6 +62,7 @@ def train_joint(name, model, parameters, data, tracker):
 
     print("Training model...", flush=True)
     for i in range(parameters['train_steps'] + 1):
+        print("Iteration: ", i, flush=True)
 
         x1, x2, x1p, x2p = data.sample_stratified(n_paired_samples=parameters['n_paired_samples'],
                                 n_unpaired_samples=parameters['n_unpaired_samples'], dtype='train')

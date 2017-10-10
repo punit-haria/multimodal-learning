@@ -17,12 +17,12 @@ models = {x.__name__: x for x in models}
 parms = {
     # basic parameters
     'objective': 'joint',    # joint, translate
-    'n_z': 8,
+    'n_z': 32,
 
     # network parameters
-    'n_feature_maps': 3,
-    'n_units': 8,
-    'embed_size': 8,
+    'n_feature_maps': 32,
+    'n_units': 32,
+    'embed_size': 64,
     'gru_layers': 1,
 
     # loss function parameters
@@ -31,8 +31,8 @@ parms = {
 
     # train/test parameters
     'learning_rate': 0.001,
-    'n_unpaired_samples': 8,
-    'n_paired_samples': 8,
+    'n_unpaired_samples': 128,
+    'n_paired_samples': 128,
 
     'n_paired': 40000,
     'test_sample_size': 128,

@@ -1194,7 +1194,7 @@ class MSCOCO(object):
 
     def get_vocab_size(self):
         #return len(self._vocab)
-        return 1001
+        return 10001
 
     def _sample_setup(self, image_ids, train):
         """
@@ -1238,7 +1238,7 @@ class MSCOCO(object):
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
 
-        fake_vocab_size = 1000
+        fake_vocab_size = 10000
 
         # test set case
         if dtype == 'test':
@@ -1246,7 +1246,7 @@ class MSCOCO(object):
             ids = list(np.random.choice(self.val_image_ids, size=n_paired_samples, replace=False))
             x_image, x_caption = self._sample_setup(ids, train=False)
 
-            x_caption = x_caption[:,0:2]  ##############################
+            #x_caption = x_caption[:,0:2]  ##############################
             x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption
@@ -1271,10 +1271,10 @@ class MSCOCO(object):
             caption_only_ids = list(np.random.choice(self.caption_only, size=n_x2, replace=False))
             _, x_caption = self._sample_setup(caption_only_ids, train=True)
 
-            x_caption = x_caption[:, 0:2]   ##############################
+            #x_caption = x_caption[:, 0:2]   ##############################
             x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
-            xp_caption = xp_caption[:, 0:2] ##############################
+            #xp_caption = xp_caption[:, 0:2] ##############################
             xp_caption[xp_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption, xp_image, xp_caption
