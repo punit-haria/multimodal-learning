@@ -1111,30 +1111,33 @@ class MSCOCO(object):
 
                     print("Adding <OOV> words", flush=True)
                     min_freq = 2
-                    for k,capts in captions.items():
-                        for i,w in enumerate(capts):
+                    for k,capt in captions.items():
+                        for i,w in enumerate(capt):
                             if freqs[w] < min_freq:
-                                capts[i] = self._oov
+                                capt[i] = self._oov
 
 
                 print("Creating vocabulary..", flush=True)
                 if j > 0: # validation set
                     vocab = self._vocab
-                    aux = len(vocab)
                 else:
                     vocab = dict()  # key,value ---> word, word_id
-                    vocab[0] = self._padding  # padding term
-                    aux = 1
-                words = {w for _, _v in captions.items() for w in _v}
-                for i,w in enumerate(words):
-                    if w not in vocab:
+                    vocab[0] = self._padding
+                    vocab[1] = self._oov
+                    aux = 2
+
+                    words = {w for _, _v in captions.items() for w in _v}
+                    for i,w in enumerate(words):
                         vocab[w] = i+aux
 
 
                 print("Converting captions to ids (from vocab)..", flush=True)
                 for _k,_v in captions.items():
                     for i in range(len(_v)):
-                        _v[i] = vocab[_v[i]]
+                        if _v[i] in vocab:
+                            _v[i] = vocab[_v[i]]
+                        else:
+                            _v[i] = vocab[self._oov]
 
 
                 print("Creating image-caption mapping..", flush=True)
@@ -1214,8 +1217,7 @@ class MSCOCO(object):
         return self._max_seq_len
 
     def get_vocab_size(self):
-        #return len(self._vocab)    #########################################
-        return 10001
+        return len(self._vocab)
 
     def _sample_setup(self, image_ids, train):
         """
@@ -1240,7 +1242,7 @@ class MSCOCO(object):
 
             # add padding to each caption
             while len(caption) < self._max_seq_len:
-                caption.append(0)   # note: 0 is the id for <PAD>
+                caption.append(self._vocab[self._padding])
 
             x_caption.append(caption)
 
@@ -1258,15 +1260,11 @@ class MSCOCO(object):
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
 
-        fake_vocab_size = 10000
-
         # test set case
         if dtype == 'test':
 
             ids = list(np.random.choice(self.val_image_ids, size=n_paired_samples, replace=False))
             x_image, x_caption = self._sample_setup(ids, train=False)
-
-            x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption
 
@@ -1288,9 +1286,6 @@ class MSCOCO(object):
 
             caption_only_ids = list(np.random.choice(self.caption_only, size=n_x2, replace=False))
             _, x_caption = self._sample_setup(caption_only_ids, train=True)
-
-            x_caption[x_caption > fake_vocab_size] = fake_vocab_size  ##############################
-            xp_caption[xp_caption > fake_vocab_size] = fake_vocab_size  ##############################
 
             return x_image, x_caption, xp_image, xp_caption
 
