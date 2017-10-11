@@ -1160,7 +1160,7 @@ class MSCOCO(object):
                             freqs[word] += 1
 
                     print("Adding <OOV> words", flush=True)
-                    min_freq = 2
+                    min_freq = 2                # minimum word frequency
                     for k,capt in captions.items():
                         for i,w in enumerate(capt):
                             if freqs[w] < min_freq:
