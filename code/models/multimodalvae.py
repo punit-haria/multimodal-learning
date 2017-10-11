@@ -282,15 +282,16 @@ class MultiModalVAE(base.Model):
 
             elif dtype == 'caption':
 
+                w, b = proj
+
                 if mode == 'test':
+                    logits = tf.matmul(logits, tf.transpose(w)) + b
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif mode == 'train':
-                    w,b = proj
                     l1 = -tf.nn.sampled_softmax_loss(weights=w, biases=b, inputs=logits, labels=labels,
                                                      num_sampled=2000, num_classes=self.vocab_size,
                                                      partition_strategy="div")
-
                 else:
                     raise NotImplementedError
 
