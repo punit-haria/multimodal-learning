@@ -51,16 +51,16 @@ class MultiModalVAE(base.Model):
         # input placeholders
         print("Placeholders...", flush=True)
         self.xi = tf.placeholder(tf.float32, [None, self.nxi], name='xi')
-        self.xc = tf.placeholder(tf.int16, [None, self.nxc], name='xc')
+        self.xc = tf.placeholder(tf.int32, [None, self.nxc], name='xc')
         self.xpi = tf.placeholder(tf.float32, [None, self.nxi], name='xpi')
-        self.xpc = tf.placeholder(tf.int16, [None, self.nxc], name='xpc')
+        self.xpc = tf.placeholder(tf.int32, [None, self.nxc], name='xpc')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         print("Sample batch...", flush=True)
         xi_init = tf.constant(self.xi_init, tf.float32)
-        xc_init = tf.constant(self.xc_init, tf.int16)
+        xc_init = tf.constant(self.xc_init, tf.int32)
         xpi_init = tf.constant(self.xpi_init, tf.float32)
-        xpc_init = tf.constant(self.xpc_init, tf.int16)
+        xpc_init = tf.constant(self.xpc_init, tf.int32)
 
 
         # compute weight initializations
