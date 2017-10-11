@@ -156,19 +156,19 @@ class MultiModalVAE(base.Model):
                 # reconstructions
                 print("Decoders (2)...", flush=True)
                 rxi_i, rxi_i_probs = self._decoder_i(zi, init=init, scope='xi_dec')
-                rxc_c, rxc_c_probs = self._decoder_c(zc, emb_c, init=init, scope='xc_dec')
+                rxc_c, rxc_c_probs, proj_c = self._decoder_c(zc, emb_c, init=init, scope='xc_dec')
 
                 # translations
                 rxi_c, rxi_c_probs = self._decoder_i(zc, init=init, scope='xi_dec')
-                rxc_i, rxc_i_probs = self._decoder_c(zi, emb_c, init=init, scope='xc_dec')
+                rxc_i, rxc_i_probs, proj_i = self._decoder_c(zi, emb_c, init=init, scope='xc_dec')
 
                 # reconstructions (from paired input)
                 rxi_pi, rxi_pi_probs = self._decoder_i(zpi, init=init, scope='xi_dec')
-                rxc_pc, rxc_pc_probs = self._decoder_c(zpc, emb_pc, init=init, scope='xc_dec')
+                rxc_pc, rxc_pc_probs, proj_pc = self._decoder_c(zpc, emb_pc, init=init, scope='xc_dec')
 
                 # translations (from paired input)
                 rxi_pc, rxi_pc_probs = self._decoder_i(zpc, init=init, scope='xi_dec')
-                rxc_pi, rxc_pi_probs = self._decoder_c(zpi, emb_pc, init=init, scope='xc_dec')
+                rxc_pi, rxc_pi_probs, proj_pi = self._decoder_c(zpi, emb_pc, init=init, scope='xc_dec')
 
                 # final tensors
                 print("Assignments...", flush=True)
@@ -177,6 +177,9 @@ class MultiModalVAE(base.Model):
                 self.mu_c, self.sigma_c = (mu_c, sigma_c)
                 self.mu_pi, self.sigma_pi = (mu_pi, sigma_pi)
                 self.mu_pc, self.sigma_pc = (mu_pc, sigma_pc)
+
+                self.proj_j, self.proj_c, self.proj_i, self.proj_pc, self.proj_pi = \
+                    proj_j, proj_c, proj_i, proj_pc, proj_pi
 
                 self.zj, self.zi, self.zc, self.zpi, self.zpc = (zj, zi, zc, zpi, zpc)
 
@@ -237,8 +240,15 @@ class MultiModalVAE(base.Model):
         # logits: batch_size x max_seq_len x n_units
 
         with tf.variable_scope('projections'):
-            w = tf.get_variable("w", shape=[self.vocab_size, self.n_units], initializer=tf.random_normal_initializer(0, 0.05))
-            b = tf.get_variable("b", shape=[self.vocab_size], initializer=tf.random_normal_initializer(0, 0.05))
+            if init:
+                w = tf.get_variable("w", shape=[self.vocab_size, self.n_units], initializer=tf.random_normal_initializer(0, 0.05))
+                b = tf.get_variable("b", shape=[self.vocab_size], initializer=tf.random_normal_initializer(0, 0.05))
+                w = w.initialized_value()
+                b = b.initialized_value()
+
+            else:
+                w = tf.get_variable("w", shape=[self.vocab_size, self.n_units])
+                b = tf.get_variable("b", shape=[self.vocab_size])
 
             output_projections = (w, b)
 
@@ -256,7 +266,7 @@ class MultiModalVAE(base.Model):
             return z_mu, z_sigma
 
 
-    def _reconstruction(self, logits, labels, dtype, mode, scope):
+    def _reconstruction(self, logits, labels, dtype, mode, proj, scope):
 
         with tf.variable_scope(scope):
 
@@ -276,7 +286,10 @@ class MultiModalVAE(base.Model):
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif mode == 'train':
-                    pass
+                    w,b = proj
+                    l1 = -tf.nn.sampled_softmax_loss(weights=w, biases=b, inputs=logits, labels=labels,
+                                                     num_sampled=2000, num_classes=self.vocab_size,
+                                                     partition_strategy="div")
 
                 else:
                     raise NotImplementedError
