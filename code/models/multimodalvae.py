@@ -233,12 +233,18 @@ class MultiModalVAE(base.Model):
 
     def _decoder_c(self, z, x_emb, init, scope):
 
-        z = nw.seq_decoder(z, x_emb, self.vocab_size, self.embed_size, self.gru_layers, init, scope)
+        logits = nw.seq_decoder(z, x_emb, self.n_units, self.embed_size, self.gru_layers, init, scope)
+        # logits: batch_size x max_seq_len x n_units
 
-        logits = tf.reshape(z, shape=[-1, self.nxc, self.vocab_size])
+        with tf.variable_scope('projections'):
+            w = tf.get_variable("w", shape=[self.vocab_size, self.n_units], initializer=tf.random_normal_initializer(0, 0.05))
+            b = tf.get_variable("b", shape=[self.vocab_size], initializer=tf.random_normal_initializer(0, 0.05))
+
+            output_projections = (w, b)
+
         parms = tf.nn.softmax(logits, dim=-1)
 
-        return logits, parms
+        return logits, parms, output_projections
 
 
     def _joint_encoder(self, xhi, xhc, init, scope):
@@ -250,7 +256,7 @@ class MultiModalVAE(base.Model):
             return z_mu, z_sigma
 
 
-    def _reconstruction(self, logits, labels, dtype, scope):
+    def _reconstruction(self, logits, labels, dtype, mode, scope):
 
         with tf.variable_scope(scope):
 
@@ -266,7 +272,14 @@ class MultiModalVAE(base.Model):
 
             elif dtype == 'caption':
 
-                l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+                if mode == 'test':
+                    l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+
+                elif mode == 'train':
+                    pass
+
+                else:
+                    raise NotImplementedError
 
                 l1 = tf.reduce_sum(l1, axis=1)
                 l1 = tf.reduce_mean(l1, axis=0)
