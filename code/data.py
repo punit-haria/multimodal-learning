@@ -1037,27 +1037,79 @@ class MSCOCO(object):
         _train_images_dir = '../data/mscoco/train2014/'
         _val_images_dir = '../data/mscoco/val2014/'
 
-        _data_path = '../data/mscoco/data.pickle'
+        _caption_path = '../data/mscoco/captions.pickle'
+        _image_path = '../data/mscoco/images.pickle'
 
         self._padding = '<PAD>'
         self._oov = '<OOV>'
 
+        paths = [(_train_annotations_path, _train_images_dir), (_val_annotations_path, _val_images_dir)]
 
-        if os.path.isfile(_data_path):  # load processed data
+
+        if os.path.isfile(_image_path):
+
+            print("Loading images...", flush=True)
+
+            with open(_image_path, 'rb') as ff:
+                data = pickle.load(ff)
+
+            self._images = data['images']
+            self._val_images = data['val_images']
+
+            print("Images loaded.", flush=True)
+
+        else:
+
+            for j, (ann_p,im_p) in enumerate(paths):
+
+                with open(ann_p) as ff:
+                    ann = json.load(ff)
+
+                print("Creating image dictionary..", flush=True)
+                images = dict()  # key,value ---> image_id, image array
+                for k in ann['images']:
+                    file_path = im_p + k['file_name']
+                    im_file = pathlib_path(file_path)
+                    if im_file.exists():
+                        image = ndimage.imread(file_path)
+                        image = imresize(image, size=(48, 64), interp='cubic')
+
+                        if image.shape == (48, 64):
+                            image = np.expand_dims(image, axis=2)
+                            image = np.concatenate((image, image, image), axis=2)
+
+                        image = np.reshape(image, newshape=[1, -1])
+
+                        images[k['id']] = image
+
+                if j == 0:      # training set
+                    self._images = images
+                else:           # validation set
+                    self._val_images = images
+
+            tosave = dict()
+            tosave['images'] = self._images
+            tosave['val_images'] = self._val_images
+
+            print("Saving images...", flush=True)
+            with open(_image_path, 'wb') as ff:
+                pickle.dump(tosave, ff, pickle.HIGHEST_PROTOCOL)
+            print("Saved.", flush=True)
+
+
+        if os.path.isfile(_caption_path):  # load processed data
 
             print("Loading data...", flush=True)
 
-            with open(_data_path, 'rb') as ff:
+            with open(_caption_path, 'rb') as ff:
                 data = pickle.load(ff)
 
             self._vocab = data['vocab']
 
             self._captions = data['captions']
             self._imcapt = data['imcapt']
-            self._images = data['images']
             self._val_captions = data['val_captions']
             self._val_imcapt = data['val_imcapt']
-            self._val_images = data['val_images']
             self._max_seq_len = data['max_seq_len']
 
             print("Data loaded.", flush=True)
@@ -1066,8 +1118,6 @@ class MSCOCO(object):
         else: # process data and load
             print("Processing data..", flush=True)
 
-            paths = [(_train_annotations_path, _train_images_dir),
-                     (_val_annotations_path, _val_images_dir)]
             self._max_seq_len = 1
 
             for j, (ann_p,im_p) in enumerate(paths):
@@ -1147,48 +1197,27 @@ class MSCOCO(object):
                     im_capt[k['image_id']].add(k['id'])
 
 
-                print("Creating image dictionary..", flush=True)
-                images = dict()     # key,value ---> image_id, image array
-                for k in ann['images']:
-                    file_path = im_p + k['file_name']
-                    im_file = pathlib_path(file_path)
-                    if im_file.exists():
-                        image = ndimage.imread(file_path)
-                        image = imresize(image, size=(48,64), interp='cubic')
-
-                        if image.shape == (48,64):
-                            image = np.expand_dims(image, axis=2)
-                            image = np.concatenate((image,image,image), axis=2)
-
-                        image = np.reshape(image, newshape=[1, -1])
-
-                        images[k['id']] = image
-
                 if j == 0:      # training set
                     self._captions = captions
                     self._vocab = vocab
                     self._imcapt = im_capt
-                    self._images = images
 
                 else:           # validation set
                     self._val_captions = captions
                     self._vocab = vocab
                     self._val_imcapt = im_capt
-                    self._val_images = images
 
             tosave = dict()
             tosave['vocab'] = self._vocab
 
             tosave['captions'] = self._captions
             tosave['imcapt'] = self._imcapt
-            tosave['images'] = self._images
             tosave['val_captions'] = self._val_captions
             tosave['val_imcapt'] = self._val_imcapt
-            tosave['val_images'] = self._val_images
             tosave['max_seq_len'] = self._max_seq_len
 
             print("Saving data...", flush=True)
-            with open(_data_path, 'wb') as ff:
+            with open(_caption_path, 'wb') as ff:
                 pickle.dump(tosave, ff, pickle.HIGHEST_PROTOCOL)
             print("Saved.", flush=True)
 

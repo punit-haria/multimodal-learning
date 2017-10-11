@@ -16,6 +16,83 @@ Helper methods and classes for synthesizing images under various conditions.
 '''
 
 
+def coco_plot(tracker, models, data, train_steps=None, repetitions=1):
+
+    for name in tracker.get_runs():
+
+        print("Plotting ", name, flush=True)
+
+        trial = tracker.get(name)
+        _model = models[trial.model_name]
+        parms = trial.parameters
+
+        if train_steps is None:
+            train_steps = str(parms['train_steps'])
+
+        model = _coco_initialize(name, _model, parms, data, tracker)
+        model.load_state(suffix=train_steps)
+
+        print("Translation (with mean)", flush=True)
+        path = '../plots/' + name.replace(".", "-") + '_withMean_' + train_steps
+        for cc in range(repetitions):
+            path_ext = path + '_' + str(cc)
+            _coco_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+
+
+        print("Translation (stochastic)", flush=True)
+        path = '../plots/' + name.replace(".", "-") + '_stochastic_' + train_steps
+        for cc in range(repetitions):
+            path_ext = path + '_' + str(cc)
+            _coco_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+
+        model.close()
+
+
+def _coco_initialize(name, model, parameters, data, tracker):
+
+    paired = parameters['n_paired_samples']
+    unpaired = parameters['n_unpaired_samples']
+
+    xs = data.sample_stratified(n_paired_samples=paired, n_unpaired_samples=unpaired, dtype='train')
+
+    mod = model(arguments=parameters, name=name, tracker=tracker, init_minibatches=xs)
+
+    return mod
+
+
+def _coco_reconstruct(model, data, parms, n_rows, n_cols, model_type, path):
+
+    n_x = model.n_x
+
+    n_images = n_rows * n_cols
+    assert n_cols % 2 == 0
+    n = n_images // 2
+
+    names = ['translate_x1', 'translate_x2']
+    ims = []
+
+    x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
+    _, rx2 = model.reconstruct((x1, None))
+    rx1, _ = model.reconstruct((None, x2))
+    ims.append((x1, rx2))
+    ims.append((x2, rx1))
+
+    for name, tup in zip(names, ims):
+        x, rx = tup
+
+        images = np.empty((n_images, n_x))
+        images[0::2] = x
+        images[1::2] = rx
+
+        images = np.reshape(images, newshape=[n_rows, n_cols, n_x])
+
+        current_path = path + "_" + name
+        _image_plot(images, parms, spacing, current_path)
+
+
+
+
+
 
 def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=True,
                legend='lower right', legend_font=18, xlab='x', ylab='f(x)'):
@@ -49,10 +126,6 @@ def curve_plot(tracker, curve_name, curve_label=None, axis=None, scale_by_batch=
 
     plt.savefig('../plots/' + tracker.name + '_' + curve_name + '.png')
     plt.close('all')
-
-
-def coco_plot():
-    pass
 
 
 def image_plot(tracker, models, data, n_rows, n_cols, syntheses,

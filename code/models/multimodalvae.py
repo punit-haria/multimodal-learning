@@ -120,9 +120,10 @@ class MultiModalVAE(base.Model):
             xi, xc, xpi, xpc = xs
 
             # encoders
-            print("Encoders...", flush=True)
-            mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
+            print("Encoder (caption)...", flush=True)
             mu_pc, sigma_pc, hepc, emb_pc = self._encoder_c(xpc, init=init, scope='xc_enc')
+            print("Encoder (image)...", flush=True)
+            mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
 
             # joint encoder
             print("Joint Encoder...", flush=True)

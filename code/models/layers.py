@@ -71,42 +71,54 @@ def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
     """
     with tf.variable_scope(scope):
 
+        print("start", flush=True)
         x = tf.reshape(x, shape=[-1, 48, 64, nch])
         nonlin = tf.nn.elu
 
+        print("a", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=True, init=init, scope='res_1')
         x = nonlin(x)
 
+        print("b", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=True, init=init, scope='res_2')
         x = nonlin(x)
 
+        print("c", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=False, init=init, scope='unstrided_1')
         x = nonlin(x)
 
+        print("d", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=True, init=init, scope='res_3')
         x = nonlin(x)
 
+        print("e", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=True, init=init, scope='res_4')
         x = nonlin(x)
 
+        print("f", flush=True)
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
                                 stride=False, init=init, scope='unstrided_2')
         x = nonlin(x)
 
+        print("g", flush=True)
         x = tf.contrib.layers.flatten(x)
 
+        print("h", flush=True)
         x = linear(x, n_out=n_units, init=init, scope='linear_layer')
         x = nonlin(x)
 
+        print("i", flush=True)
         mu = linear(x, n_z, init=init, scope="mu_layer")
 
         sigma = linear(x, n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
+
+        print("end", flush=True)
 
         return mu, sigma, x
 
@@ -637,13 +649,17 @@ def conv_residual_block(c, k, n_feature_maps, nonlinearity, stride, init, scope)
 
         id = c
 
+        print("A", flush=True)
         c = conv(c, k=k, out_ch=n_feature_maps, stride=False, init=init, scope='layer_1')
         c = nonlinearity(c)
+        print("B", flush=True)
         c = conv(c, k=k, out_ch=n_feature_maps, stride=stride, init=init, scope='layer_2')
+        print("C", flush=True)
 
         if stride:
             id = conv(id, k=k, out_ch=n_feature_maps, stride=True, init=init, scope='identity_downsampled')
 
+        print("D", flush=True)
         c = c + id
 
         return c
@@ -675,14 +691,20 @@ def conv(x, k, out_ch, stride, init, scope, mask_type=None):
     """
     with tf.variable_scope(scope):
 
+        print("AA", flush=True)
+
         in_ch = x.get_shape()[3].value
 
         strides = [1, 2, 2, 1] if stride else [1, 1, 1, 1]
         w_shape = [k, k, in_ch, out_ch]
 
+        print("BB", flush=True)
+
         if init:
             v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
             v = v.initialized_value()
+
+            print("CC", flush=True)
 
             if mask_type is not None:
                 mask = conv_mask(w_shape, mask_type)
@@ -690,15 +712,23 @@ def conv(x, k, out_ch, stride, init, scope, mask_type=None):
 
             v_norm = tf.nn.l2_normalize(v, dim = [0, 1, 2])
 
+            print("DD", flush=True)
+
             t = tf.nn.conv2d(x, v_norm, strides=strides, padding='SAME')
             mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
+
+            print("EE", flush=True)
 
             inv = 1 / tf.sqrt(var_t + 1e-10)
             _ = tf.get_variable("g", initializer=inv)
             _ = tf.get_variable("b", initializer=-mu_t * inv)
 
+            print("FF", flush=True)
+
             inv = tf.reshape(inv, shape=[1, 1, 1, out_ch])
             mu_t = tf.reshape(mu_t, shape=[1, 1, 1, out_ch])
+
+            print("GG", flush=True)
 
             return tf.multiply(t - mu_t, inv)
 
