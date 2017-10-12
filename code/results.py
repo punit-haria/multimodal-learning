@@ -89,8 +89,6 @@ def _coco_image_plot(images, capts, n_rows, n_cols, path):
 
     images = np.reshape(images, newshape=[n_rows, n_cols, 48, 64, 3])
 
-    #fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
-
     for i in range(n_rows):
         for j in range(n_cols):
             image = images[i,j,:,:,:]
@@ -99,22 +97,12 @@ def _coco_image_plot(images, capts, n_rows, n_cols, path):
             current_path = path + '_' + str(i) + '_' + str(j)
             _coco_single_plot(image, caption, current_path)
 
-            #plots[i,j].imshow(images[i,j], cmap=cm_choice, interpolation='none')
-            #plots[i,j].axis('off')
-            #plots[i,j].set_title(capts[i][j])
-
-    #fig.subplots_adjust(wspace=0, hspace=0)
-
-    #plt.savefig(path)
-    #plt.close('all')
-
 
 def _coco_single_plot(image, caption, path):
 
     plt.imshow(image, cmap=cm_choice, interpolation='none')
     plt.suptitle(caption, fontsize=14)
     plt.axis('off')
-    plt.figure(figsize=(4,5))
 
     plt.savefig(path)
     plt.close('all')
@@ -138,7 +126,17 @@ def _get_caption_text(data, capts, n_rows, n_cols):
                     break
                 c.append(word)
 
-            row.append(' '.join(c))
+            kk = 0
+            for k in range(0, len(c), 6):  # every six words, insert newline
+                if k > 0:
+                    if k+kk >= len(c):
+                        break
+                    c.insert(k+kk,"\n")
+                    kk += 1
+
+            string = ' '.join(c)
+
+            row.append(string)
         captions.append(row)
 
     return captions
