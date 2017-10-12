@@ -1042,9 +1042,9 @@ class MSCOCO(object):
 
         self._padding = '<PAD>'
         self._oov = '<OOV>'
+        self._inverse_vocab = None
 
         paths = [(_train_annotations_path, _train_images_dir), (_val_annotations_path, _val_images_dir)]
-
 
         if os.path.isfile(_image_path):
 
@@ -1244,6 +1244,12 @@ class MSCOCO(object):
 
     def get_vocab_size(self):
         return len(self._vocab)
+
+    def get_word(self, word_id):
+        if self._inverse_vocab is None:
+            self._inverse_vocab = {v: k for k, v in self._vocab.items()}
+        return self._inverse_vocab[word_id]
+
 
     def _sample_setup(self, image_ids, train):
         """

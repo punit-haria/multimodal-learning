@@ -36,14 +36,14 @@ def coco_plot(tracker, models, data, train_steps=None, repetitions=1):
         path = '../plots/' + name.replace(".", "-") + '_withMean_' + train_steps
         for cc in range(repetitions):
             path_ext = path + '_' + str(cc)
-            _coco_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+            _coco_reconstruct(model, data, parms, n_rows, n_cols, model_type, mean=True, path=path_ext)
 
 
         print("Translation (stochastic)", flush=True)
         path = '../plots/' + name.replace(".", "-") + '_stochastic_' + train_steps
         for cc in range(repetitions):
             path_ext = path + '_' + str(cc)
-            _coco_reconstruct(model, data, parms, spacing, n_rows, n_cols, model_type, path_ext)
+            _coco_reconstruct(model, data, parms, n_rows, n_cols, model_type, mean=False, path=path_ext)
 
         model.close()
 
@@ -60,20 +60,28 @@ def _coco_initialize(name, model, parameters, data, tracker):
     return mod
 
 
-def _coco_reconstruct(model, data, parms, n_rows, n_cols, model_type, path):
+def _coco_reconstruct(model, data, parms, n_rows, n_cols, mean, path):
 
-    n_x = model.n_x
+    n = n_rows * n_cols
 
-    n_images = n_rows * n_cols
-    assert n_cols % 2 == 0
-    n = n_images // 2
+    names = ['translate_xi', 'translate_xc']
 
-    names = ['translate_x1', 'translate_x2']
-    ims = []
+    xi, xc = data.sample_stratified(n_paired_samples=n, dtype='test')
 
-    x1, x2 = sample(data, n_samples=n, model_type=model_type, dtype='test')
-    _, rx2 = model.reconstruct((x1, None))
-    rx1, _ = model.reconstruct((None, x2))
+    _, rxc = model.reconstruct((xi, None), mean=mean)
+    rxi, _ = model.reconstruct((None, xc), mean=mean)
+
+    # rxi: float ndarray --> batch_size x (48*64*3)
+    # rxc: int ndarray --> batch_size x max_seq_len
+
+    # images to captions
+
+
+
+
+    # captions to images
+
+
     ims.append((x1, rx2))
     ims.append((x2, rx1))
 
@@ -90,6 +98,37 @@ def _coco_reconstruct(model, data, parms, n_rows, n_cols, model_type, path):
         _image_plot(images, parms, spacing, current_path)
 
 
+def _get_caption_text(data, capts):
+
+    # note: when printing caption, stop when < PAD > is encountered. #####
+
+    # capts: batch_size x max_seq_len
+
+    captions = []
+
+    def get_txt( seq ):
+        return seq
+
+
+
+
+def _coco_image_plot(images, capts, n_rows, n_cols, path):
+
+    images = np.reshape(images, newshape=[n_rows, n_cols, 48, 64, 3])
+
+
+
+    fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
+
+    for i in range(n_rows):
+        for j in range(n_cols):
+            plots[i,j].imshow(images[i,j], cmap=cm_choice, interpolation='none')
+            plots[i,j].axis('off')
+
+    fig.subplots_adjust(wspace=0, hspace=0)
+
+    plt.savefig(path)
+    plt.close('all')
 
 
 

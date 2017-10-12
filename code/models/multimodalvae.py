@@ -549,14 +549,14 @@ class MultiModalVAE(base.Model):
         self.te_writer.add_summary(summary, self.n_steps)
 
 
-    def reconstruct(self, xs):
+    def reconstruct(self, xs, mean=False):
         """
         Reconstruct input.
         If one input is None, then this can be interpretted as a translation from the other input.
 
         xs: (xi, xc) or (xi, None) or (None, xc)
         """
-        z = self.encode(xs, mean=False)
+        z = self.encode(xs, mean=mean)
         xi, xc = self.decode(z)
 
         return xi, xc
