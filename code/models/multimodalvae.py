@@ -414,8 +414,6 @@ class MultiModalVAE(base.Model):
         with tf.variable_scope(scope):
             step = tf.train.RMSPropOptimizer(self.lr).minimize(loss)
 
-            #g = tf.Print(g, [tf.reduce_sum(tf.abs(g))])  ###############################
-
             return step
 
 
@@ -465,6 +463,9 @@ class MultiModalVAE(base.Model):
                 raise NotImplementedError
 
             loss = -bound
+
+            loss = tf.Print(loss, [loss])
+
             return loss
 
 

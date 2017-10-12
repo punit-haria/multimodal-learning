@@ -106,8 +106,6 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 g = tf.get_variable("g", shape=[n_out])
                 b = tf.get_variable("b", shape=[n_out])
 
-                g = tf.Print(g, [tf.reduce_sum(tf.abs(g))])  ###############################
-
                 x = tf.matmul(x, v)
                 scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
 
