@@ -284,10 +284,14 @@ class MultiModalVAE(base.Model):
 
             output_projections = (w, b)
 
+        outputs = tf.unstack(logits, axis=1)
+        outputs = [tf.matmul(out, tf.transpose(w)) + b  for out in outputs]
+        logits = tf.stack(outputs, axis=1)
+        # logits: batch_size x max_seq_len x vocab_size
 
-        parms = tf.nn.softmax(logits, dim=-1)  ####################################
+        probs = tf.nn.softmax(logits, dim=-1)
 
-        return logits, parms, output_projections
+        return logits, probs, output_projections
 
 
     def _joint_encoder(self, xhi, xhc, init, scope):
