@@ -413,13 +413,13 @@ class MultiModalVAE(base.Model):
             lxi = self.lxirec + lxipen
 
             # marginal x2
-            lxcpen = self._freebits(self.lxcpen, self.logqc, self.logpc, self.alpha)
-            lxc = self.lxcrec + lxcpen
+            lxcpen = self._freebits(self.lxcpen_tr, self.logqc_tr, self.logpc_tr, self.alpha)
+            lxc = self.lxcrec_tr + lxcpen
 
             if self.objective == "joint":
                 # joint xi and xc
-                lxjpen = self._freebits(self.lxjpen, self.logqj, self.logpj, self.alpha)
-                lxj = self.lxjreci + self.lxjrecc + lxjpen
+                lxjpen = self._freebits(self.lxjpen_tr, self.logqj_tr, self.logpj_tr, self.alpha)
+                lxj = self.lxjreci_tr + self.lxjrecc_tr + lxjpen
 
                 bound = (self.joint_anneal * lxj) + lxi + lxc
 
@@ -429,10 +429,10 @@ class MultiModalVAE(base.Model):
                 lxpi = self.lxpirec + lxpipen
 
                 # marginal x2p
-                lxpcpen = self._freebits(self.lxpcpen, self.logqpc, self.logppc, self.alpha)
-                lxpc = self.lxpcrec + lxpcpen
+                lxpcpen = self._freebits(self.lxpcpen_tr, self.logqpc_tr, self.logppc_tr, self.alpha)
+                lxpc = self.lxpcrec_tr + lxpcpen
 
-                bound = (self.txi + lxpc) + (self.txc + lxpi) + lxi + lxc
+                bound = (self.txi + lxpc) + (self.txc_tr + lxpi) + lxi + lxc
 
             else:
                 raise NotImplementedError
@@ -447,41 +447,43 @@ class MultiModalVAE(base.Model):
             training = []
             evaluation = []
 
-            # training only
-
-
-
-            # test only
-
-
-            # combined
-
-            tf.summary.scalar('loss_(ignore_test)', self.loss)
+            training.append( tf.summary.scalar('loss', self.loss) )
 
             if self.objective == "joint":
-                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj_tr) )
-                evaluation.append(tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj_te))
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_train', self.lxj_tr) )
+                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_eval', self.lxj_te) )
 
             elif self.objective == "translate":
-                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc_tr) )
-                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc_tr + self.lxpi) )
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti_train', self.txi + self.lxpc_tr) )
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc_train', self.txc_tr + self.lxpi) )
 
-                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc_te) )
-                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc_te + self.lxpi) )
+                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti_eval', self.txi + self.lxpc_te) )
+                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc_eval', self.txc_te + self.lxpi) )
 
             else:
                 raise NotImplementedError
 
-            tf.summary.scalar('marg_xi_(ignore_test)', self.lxi)
-            tf.summary.scalar('marg_xc_(ignore_test)', self.lxc)
-            tf.summary.scalar('marg_xpi', self.lxpi)
-            tf.summary.scalar('marg_xpc', self.lxpc)
+            training.append( tf.summary.scalar('marg_xi_train', self.lxi) )
+            training.append( tf.summary.scalar('marg_xc_train', self.lxc_tr) )
 
-            tf.summary.scalar('joint', self.lxj)
-            tf.summary.scalar('trans_to_xi', self.txi)
-            tf.summary.scalar('trans_to_xc', self.txc)
+            training.append( tf.summary.scalar('marg_xpi_train', self.lxpi) )
+            training.append( tf.summary.scalar('marg_xpc_train', self.lxpc_tr) )
 
-            return tf.summary.merge_all()
+            evaluation.append(tf.summary.scalar('marg_xpi_eval', self.lxpi))
+            evaluation.append(tf.summary.scalar('marg_xpc_eval', self.lxpc_te))
+
+            training.append( tf.summary.scalar('joint_train', self.lxj_tr) )
+            training.append( tf.summary.scalar('trans_to_xi_train', self.txi) )
+            training.append( tf.summary.scalar('trans_to_xc_train', self.txc_tr) )
+
+            evaluation.append( tf.summary.scalar('joint_eval', self.lxj_te) )
+            evaluation.append( tf.summary.scalar('trans_to_xi_eval', self.txi) )
+            evaluation.append( tf.summary.scalar('trans_to_xc_eval', self.txc_te) )
+
+            training = tf.summary.merge(training)
+            evaluation = tf.summary.merge(evaluation)
+
+            return training, evaluation
 
 
     def _track(self, terms, prefix):
@@ -499,7 +501,7 @@ class MultiModalVAE(base.Model):
         xi, xc, xi_pairs, xc_pairs = xs
 
         feed = {self.xi: xi, self.xc: xc, self.xpi: xi_pairs, self.xpc: xc_pairs}
-        summary, _ = self.sess.run([self.summary, self.step], feed_dict=feed)
+        summary, _ = self.sess.run([self.summary_train, self.step], feed_dict=feed)
 
         self.tr_writer.add_summary(summary, self.n_steps)
 
@@ -513,7 +515,7 @@ class MultiModalVAE(base.Model):
         xi, xc = xs
 
         feed = {self.xi: xi, self.xc: xc, self.xpi: xi, self.xpc: xc}
-        summary = self.sess.run(self.summary, feed_dict=feed)
+        summary = self.sess.run(self.summary_test, feed_dict=feed)
 
         self.te_writer.add_summary(summary, self.n_steps)
 
