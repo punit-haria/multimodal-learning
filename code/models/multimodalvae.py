@@ -77,11 +77,13 @@ class MultiModalVAE(base.Model):
         self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
                                         self.mu_i, self.sigma_i, dtype='image', mode=None, proj=None, scope='marg_xi')
 
-        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
-                                        self.mu_c, self.sigma_c, dtype='caption', proj=self.proj_c, scope='marg_xc')
-
         self.lxpi, self.lxpirec, self.lxpipen, self.logqpi, self.logppi = self._marginal_bound(self.rxi_pi, self.xpi,
                              self.mu_pi, self.sigma_pi, dtype='image', mode=None, proj=None, scope='marg_xpi')
+
+
+
+        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
+                                        self.mu_c, self.sigma_c, dtype='caption', proj=self.proj_c, scope='marg_xc')
 
         self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
                              self.mu_pc, self.sigma_pc, dtype='caption', proj=self.proj_pc, scope='marg_xpc')
