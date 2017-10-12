@@ -139,7 +139,7 @@ class MultiModalVAE(base.Model):
 
         # summary variables
         print("Summary variables...", flush=True)
-        self.summary = self._summaries()
+        self.summary_train, self.summary_test = self._summaries()
 
 
 
@@ -443,14 +443,31 @@ class MultiModalVAE(base.Model):
 
     def _summaries(self,):
         with tf.variable_scope("summaries"):
+
+            training = []
+            evaluation = []
+
+            # training only
+
+
+
+            # test only
+
+
+            # combined
+
             tf.summary.scalar('loss_(ignore_test)', self.loss)
 
             if self.objective == "joint":
-                tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj)
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj_tr) )
+                evaluation.append(tf.summary.scalar('lower_bound_on_log_p_xi_xc', self.lxj_te))
 
             elif self.objective == "translate":
-                tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc)
-                tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc + self.lxpi)
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc_tr) )
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc_tr + self.lxpi) )
+
+                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti', self.txi + self.lxpc_te) )
+                evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc', self.txc_te + self.lxpi) )
 
             else:
                 raise NotImplementedError
