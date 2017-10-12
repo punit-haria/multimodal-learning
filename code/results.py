@@ -78,6 +78,8 @@ def _coco_reconstruct(model, data, n_rows, n_cols, mean, path):
     # rxi: float ndarray --> batch_size x (48*64*3)
     # rxc: grid of strings --> n_rows x n_cols
 
+
+
     # images to captions
     _coco_image_plot(xi, rxc, n_rows, n_cols, path=path+'_translate_images')
 
@@ -85,20 +87,35 @@ def _coco_reconstruct(model, data, n_rows, n_cols, mean, path):
     _coco_image_plot(rxi, xc, n_rows, n_cols, path=path + '_translate_captions')
 
 
-
 def _coco_image_plot(images, capts, n_rows, n_cols, path):
 
     images = np.reshape(images, newshape=[n_rows, n_cols, 48, 64, 3])
 
-    fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
+    #fig, plots = plt.subplots(n_rows, n_cols, figsize=(10,10))
 
     for i in range(n_rows):
         for j in range(n_cols):
-            plots[i,j].imshow(images[i,j], cmap=cm_choice, interpolation='none')
-            plots[i,j].axis('off')
-            plots[i,j].set_title(capts[i][j])
+            image = images[i,j,:,:,:]
+            caption = capts[i][j]
 
-    fig.subplots_adjust(wspace=5, hspace=5)
+            current_path = path + '_' + str(i) + '_' + str(j)
+            _coco_single_plot(image, caption, current_path)
+
+            #plots[i,j].imshow(images[i,j], cmap=cm_choice, interpolation='none')
+            #plots[i,j].axis('off')
+            #plots[i,j].set_title(capts[i][j])
+
+    #fig.subplots_adjust(wspace=0, hspace=0)
+
+    #plt.savefig(path)
+    #plt.close('all')
+
+
+def _coco_single_plot(image, caption, path):
+
+    plt.imshow(image, cmap=cm_choice, interpolation='none')
+    plt.title(caption)
+    plt.axis('off')
 
     plt.savefig(path)
     plt.close('all')

@@ -19,7 +19,7 @@ for i in range(save_steps, train_steps+save_steps, save_steps):
 
     suffix = str(i)
 
-    coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=3)
+    coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=1)
 
 
 
