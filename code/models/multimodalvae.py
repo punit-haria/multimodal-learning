@@ -331,9 +331,21 @@ class MultiModalVAE(base.Model):
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif mode == 'train':
+                    # logits: batch_size x max_seq_len x n_units
+                    # labels: batch_size x max_seq_len
+
+                    batch_size = tf.shape(logits)[0]
+                    max_seq_len = logits.get_shape()[1].value
+                    n_units = logits.get_shape()[2].value
+                    logits = tf.reshape(logits, shape=[batch_size * max_seq_len, n_units])
+                    labels = tf.reshape(labels, shape=[-1, 1])
+
                     l1 = -tf.nn.sampled_softmax_loss(weights=w, biases=b, inputs=logits, labels=labels,
                                                      num_sampled=2000, num_classes=self.vocab_size,
                                                      partition_strategy="div")
+                    # l1: (batch_size x max_seq_len) x 1
+                    l1 = tf.reshape(l1, shape=[batch_size, max_seq_len])
+
                 else:
                     raise NotImplementedError
 
