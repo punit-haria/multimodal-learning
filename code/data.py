@@ -1164,7 +1164,8 @@ class MSCOCO(object):
                     for k,capt in captions.items():
                         for i,w in enumerate(capt):
                             if freqs[w] < min_freq:
-                                capt[i] = self._oov
+                                if np.random.binomial(n=1, p=0.9) == 1:   # 90% chance of setting <OOV>
+                                    capt[i] = self._oov
 
 
                 print("Creating vocabulary..", flush=True)
