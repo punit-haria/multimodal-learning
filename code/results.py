@@ -23,6 +23,7 @@ def coco_plot(tracker, models, data, n_rows, n_cols, train_steps=None, repetitio
         print("Plotting ", name, flush=True)
 
         trial = tracker.get(name)
+
         _model = models[trial.model_name]
         parms = trial.parameters
 

@@ -2,7 +2,7 @@ from data import MSCOCO
 from training import Results
 from results import coco_plot
 
-from runjoint import models
+from runmscoco import models
 
 
 experiment_name = "coco"
