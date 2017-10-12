@@ -70,10 +70,12 @@ if __name__ == "__main__":
         parms['embed_size'] = c[4]
         parms['gru_layers'] = c[5]
 
-        parms['anneal'] = c[6]
-        parms['joint_anneal'] = c[7]
+        parms['softmax_samples'] = c[6]
 
-        parms['learning_rate'] = c[8]
+        parms['anneal'] = c[7]
+        parms['joint_anneal'] = c[8]
+
+        parms['learning_rate'] = c[9]
 
 
         for name, model in models.items():
