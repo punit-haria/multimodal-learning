@@ -34,7 +34,7 @@ parms = {
     'learning_rate': 0.001,
     'n_unpaired_samples': 128,
     'n_paired_samples': 128,
-    'n_paired': 40000,
+    'n_paired': 80000,
 
     'test_sample_size': 128,
     'train_steps': 100,  # 350000
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # objective, n_z, n_feature_maps, n_units, embed_size, gru_layers, softmax_samples, anneal, joint_anneal, learning_rate
 
     configs = [
-        ['joint', 48, 32, 64, 64, 1, 2000, 0, 0.3, 0.001]  # change learning rate later!!!
+        ['joint', 48, 32, 64, 64, 1, 2000, 0, 0.3, 0.001]
     ]
 
     data = MSCOCO(parms['n_paired'])
