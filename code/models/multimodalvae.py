@@ -284,6 +284,7 @@ class MultiModalVAE(base.Model):
 
             output_projections = (w, b)
 
+
         parms = tf.nn.softmax(logits, dim=-1)  ####################################
 
         return logits, parms, output_projections
