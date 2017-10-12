@@ -112,8 +112,9 @@ def _coco_image_plot(images, capts, n_rows, n_cols, path):
 def _coco_single_plot(image, caption, path):
 
     plt.imshow(image, cmap=cm_choice, interpolation='none')
-    plt.title(caption)
+    plt.suptitle(caption, fontsize=14)
     plt.axis('off')
+    plt.figure(figsize=(4,5))
 
     plt.savefig(path)
     plt.close('all')
