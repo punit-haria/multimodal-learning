@@ -1174,8 +1174,8 @@ class MSCOCO(object):
 
                 else:
                     vocab = dict()  # key,value ---> word, word_id
-                    vocab[0] = self._padding
-                    vocab[1] = self._oov
+                    vocab[self._padding] = 0
+                    vocab[self._oov] = 1
                     aux = 2
 
                     words = {w for _, _v in captions.items() for w in _v}
