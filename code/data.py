@@ -1174,14 +1174,9 @@ class MSCOCO(object):
 
                 else:
                     vocab = dict()  # key,value ---> word, word_id
-                    vocab[self._padding] = 0
-                    vocab[self._oov] = 1
-                    aux = 2
-
                     words = {w for _, _v in captions.items() for w in _v}
                     for i,w in enumerate(words):
-                        if w not in vocab:
-                            vocab[w] = i+aux
+                        vocab[w] = i
 
 
                 print("Converting captions to ids (from vocab)..", flush=True)
