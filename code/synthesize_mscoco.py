@@ -1,29 +1,25 @@
 from data import MSCOCO
 from training import Results
-from results import image_plot
+from results import coco_plot
 
 from runjoint import models
 
 
 experiment_name = "coco"
 
-train_steps = 100
-save_steps = 100
+train_steps = 10
+save_steps = 10
 
-data = MSCOCO(40000)
+data = MSCOCO(50000)
 
 tracker = Results.load(experiment_name)
-
-syntheses = ['repeated_synth']#, 'sample', 'reconstruct', 'fix_latents']
-#syntheses = ['repeated_synth', 'fix_latents']
 
 
 for i in range(save_steps, train_steps+save_steps, save_steps):
 
     suffix = str(i)
 
-    image_plot(tracker, models, data=data, suffix=suffix, syntheses=syntheses,
-               n_rows=8, n_cols=4, n_pixels=0, spacing=0, model_type='joint', count=60)
+    coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=3)
 
 
 
