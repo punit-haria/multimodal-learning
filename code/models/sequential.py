@@ -105,10 +105,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 g = tf.get_variable("g", shape=[n_out])
                 b = tf.get_variable("b", shape=[n_out])
 
-                #g = tf.Print(g, [tf.contrib.keras.backend.any(tf.is_nan(g))])  #############################
-                g = tf.Print(g, [tf.reduce_sum(tf.abs(g))])
-                #b = tf.Print(b, [tf.contrib.keras.backend.any(tf.is_nan(b))])  #############################
-                b = tf.Print(b, [tf.reduce_sum(tf.abs(b))])
+                g = tf.Print(g, [tf.reduce_sum(tf.abs(g))])  ###############################
 
                 x = tf.matmul(x, v)
                 scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))

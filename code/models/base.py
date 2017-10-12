@@ -49,9 +49,11 @@ class Model(object):
             self.sess.run(gvi)
 
         # visualize tf graph
-        print("Add graph visualization...", flush=True)
-        self.tr_writer.add_graph(self.sess.graph)
-        self.te_writer.add_graph(self.sess.graph)
+        #print("Add graph visualization...", flush=True)
+        #self.tr_writer.add_graph(self.sess.graph)
+        #self.te_writer.add_graph(self.sess.graph)
+
+        print("Model initialization complete.", flush=True)
       
     
     def _initialize(self,):
