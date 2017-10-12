@@ -36,6 +36,7 @@ def coco_plot(tracker, models, data, n_rows, n_cols, train_steps=None, repetitio
         print("Translation (with mean)", flush=True)
         path = '../plots/' + name.replace(".", "-") + '_withMean_' + train_steps
         for cc in range(repetitions):
+            print("Rep ", cc, flush=True)
             path_ext = path + '_' + str(cc)
             _coco_reconstruct(model, data, n_rows, n_cols, mean=True, path=path_ext)
 
@@ -43,6 +44,7 @@ def coco_plot(tracker, models, data, n_rows, n_cols, train_steps=None, repetitio
         print("Translation (stochastic)", flush=True)
         path = '../plots/' + name.replace(".", "-") + '_stochastic_' + train_steps
         for cc in range(repetitions):
+            print("Rep ", cc, flush=True)
             path_ext = path + '_' + str(cc)
             _coco_reconstruct(model, data, n_rows, n_cols, mean=False, path=path_ext)
 
