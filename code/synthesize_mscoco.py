@@ -7,8 +7,8 @@ from runmscoco import models
 
 experiment_name = "coco"
 
-train_steps = 10
-save_steps = 10
+train_steps = 3
+save_steps = 3
 
 data = MSCOCO(50000)
 

@@ -96,7 +96,7 @@ def _coco_image_plot(images, capts, n_rows, n_cols, path):
             image = images[i,j,:,:,:]
             caption = capts[i][j]
 
-            print(caption)
+            print(caption, flush=True)
 
             current_path = path + '_' + str(i) + '_' + str(j)
             _coco_single_plot(image, caption, current_path)
@@ -140,8 +140,7 @@ def _get_caption_text(data, capts, n_rows, n_cols):
                 word = data.get_word(w)
                 c.append(word)
 
-            ' '.join(c)
-            row.append(c)
+            row.append(' '.join(c))
         captions.append(row)
 
     return captions
