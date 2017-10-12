@@ -343,7 +343,7 @@ class MultiModalVAE(base.Model):
                     labels = tf.reshape(labels, shape=[-1, 1])
 
                     l1 = -tf.nn.sampled_softmax_loss(weights=w, biases=b, inputs=logits, labels=labels,
-                                                     num_sampled=2000, num_classes=self.vocab_size,
+                                                     num_sampled=self.softmax_samples, num_classes=self.vocab_size,
                                                      partition_strategy="div")
 
                     # l1: (batch_size x max_seq_len) x 1

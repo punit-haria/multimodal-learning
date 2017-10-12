@@ -24,6 +24,7 @@ parms = {
     'n_units': 64,
     'embed_size': 64,
     'gru_layers': 1,
+    'softmax_samples': 2000,
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25   (0 is no anneal)
