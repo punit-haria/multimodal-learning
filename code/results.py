@@ -37,14 +37,14 @@ def coco_plot(tracker, models, data, n_rows, n_cols, train_steps=None, repetitio
         path = '../plots/' + name.replace(".", "-") + '_withMean_' + train_steps
         for cc in range(repetitions):
             path_ext = path + '_' + str(cc)
-            _coco_reconstruct(model, data, parms, n_rows, n_cols, mean=True, path=path_ext)
+            _coco_reconstruct(model, data, n_rows, n_cols, mean=True, path=path_ext)
 
 
         print("Translation (stochastic)", flush=True)
         path = '../plots/' + name.replace(".", "-") + '_stochastic_' + train_steps
         for cc in range(repetitions):
             path_ext = path + '_' + str(cc)
-            _coco_reconstruct(model, data, parms, n_rows, n_cols, mean=False, path=path_ext)
+            _coco_reconstruct(model, data, n_rows, n_cols, mean=False, path=path_ext)
 
         model.close()
 
@@ -61,7 +61,7 @@ def _coco_initialize(name, model, parameters, data, tracker):
     return mod
 
 
-def _coco_reconstruct(model, data, parms, n_rows, n_cols, mean, path):
+def _coco_reconstruct(model, data, n_rows, n_cols, mean, path):
 
     n = n_rows * n_cols
 
@@ -70,8 +70,8 @@ def _coco_reconstruct(model, data, parms, n_rows, n_cols, mean, path):
     _, rxc = model.reconstruct((xi, None), mean=mean)
     rxi, _ = model.reconstruct((None, xc), mean=mean)
 
-    xc = _get_caption_text(data, xc)
-    rxc = _get_caption_text(data, rxc)
+    xc = _get_caption_text(data, xc, n_rows, n_cols)
+    rxc = _get_caption_text(data, rxc, n_rows, n_cols)
 
     # rxi: float ndarray --> batch_size x (48*64*3)
     # rxc: grid of strings --> n_rows x n_cols
