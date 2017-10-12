@@ -72,7 +72,7 @@ class MultiModalVAE(base.Model):
         self._model((self.xi, self.xc, self.xpi, self.xpc), init=False)
 
 
-        # marginal bounds
+        # marginal bounds (images)
         print("Marginal bounds...", flush=True)
         self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
                                         self.mu_i, self.sigma_i, dtype='image', mode=None, proj=None, scope='marg_xi')
@@ -81,12 +81,19 @@ class MultiModalVAE(base.Model):
                              self.mu_pi, self.sigma_pi, dtype='image', mode=None, proj=None, scope='marg_xpi')
 
 
-
+        # marginal bounds (captions)  <--- training time
         self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
-                                        self.mu_c, self.sigma_c, dtype='caption', proj=self.proj_c, scope='marg_xc')
+                        self.mu_c, self.sigma_c, dtype='caption', mode='train', proj=self.proj_c, scope='marg_xc')
 
         self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
-                             self.mu_pc, self.sigma_pc, dtype='caption', proj=self.proj_pc, scope='marg_xpc')
+                        self.mu_pc, self.sigma_pc, dtype='caption', mode='train', proj=self.proj_pc, scope='marg_xpc')
+
+        # marginal bounds (captions)  <--- evaluation time
+        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
+                        self.mu_c, self.sigma_c, dtype='caption', mode='test', proj=self.proj_c, scope='marg_xc')
+
+        self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
+                        self.mu_pc, self.sigma_pc, dtype='caption', mode='test', proj=self.proj_pc, scope='marg_xpc')
 
 
         # joint bound
