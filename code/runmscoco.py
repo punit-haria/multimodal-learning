@@ -86,7 +86,8 @@ if __name__ == "__main__":
                     + '_fmaps_' + str(parms['n_feature_maps']) \
                     + '_units_' + str(parms['n_units']) \
                     + '_embed_' + str(parms['embed_size']) \
-                    + '_gru_' + str(parms['gru_layers'])
+                    + '_gru_' + str(parms['gru_layers']) \
+                    + '_sftsamples_' + str(parms['softmax_samples'])
 
             if parms['anneal'] < 0:
                 name += "_anneal_" + str(parms['anneal'])
