@@ -15,17 +15,18 @@ class MultiModalVAE(base.Model):
         self.args = deepcopy(arguments)
 
         # options
-        self.n_z = self.args['n_z']                         # latent dimensionality
-        self.objective = self.args['objective']             # joint vs. translation objective function
-        self.nxc = self.args['max_seq_len']                 # maximum caption length
-        self.vocab_size = self.args['vocab_size']           # vocabulary size
-        self.embed_size = self.args['embed_size']           # embedding size
-        self.gru_layers = self.args['gru_layers']           # number of GRU layers
-        self.n_units = self.args['n_units']                 # number of hidden units in FC layers
-        self.n_fmaps = self.args['n_feature_maps']          # number of feature maps in Conv. layers
-        self.alpha = self.args['anneal']                    # freebits parameter
-        self.joint_anneal = self.args['joint_anneal']       # joint annealing parameter
-        self.lr = self.args['learning_rate']                # learning rate
+        self.n_z = self.args['n_z']                             # latent dimensionality
+        self.objective = self.args['objective']                 # joint vs. translation objective function
+        self.nxc = self.args['max_seq_len']                     # maximum caption length
+        self.vocab_size = self.args['vocab_size']               # vocabulary size
+        self.embed_size = self.args['embed_size']               # embedding size
+        self.gru_layers = self.args['gru_layers']               # number of GRU layers
+        self.n_units = self.args['n_units']                     # number of hidden units in FC layers
+        self.n_fmaps = self.args['n_feature_maps']              # number of feature maps in Conv. layers
+        self.alpha = self.args['anneal']                        # freebits parameter
+        self.joint_anneal = self.args['joint_anneal']           # joint annealing parameter
+        self.lr = self.args['learning_rate']                    # learning rate
+        self.softmax_samples = self.args['softmax_samples']     # softmax samples
 
         # image dimensions
         self.h, self.w, self.nch = (48, 64, 3)
@@ -464,7 +465,7 @@ class MultiModalVAE(base.Model):
 
             loss = -bound
 
-            loss = tf.Print(loss, [loss])
+            loss = tf.Print(loss, [loss])   ############################
 
             return loss
 
