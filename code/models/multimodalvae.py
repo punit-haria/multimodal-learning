@@ -101,18 +101,33 @@ class MultiModalVAE(base.Model):
             mode='test', proj=self.proj_pc, scope='marg_xpc_test')
 
 
-        # joint bound
         print("Joint bound...", flush=True)
-        self.lxj, self.lxjreci, self.lxjrecc, self.lxjpen, self.logqj, self.logpj = self._joint_bound(
-            self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j,
-            proj=self.proj_j, scope='joint_bound')
 
-        # translation bounds
+        # joint bound <--- training time
+        self.lxj_tr, self.lxjreci_tr, self.lxjrecc_tr, self.lxjpen_tr, self.logqj_tr, self.logpj_tr = self._joint_bound(
+            self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j,
+            mode='train', proj=self.proj_j, scope='joint_bound')
+
+        # joint bound <--- evaluation time
+        self.lxj_te, self.lxjreci_te, self.lxjrecc_te, self.lxjpen_te, self.logqj_te, self.logpj_te = self._joint_bound(
+            self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j,
+            mode='test', proj=self.proj_j, scope='joint_bound')
+
+
         print("Translation bounds...", flush=True)
+
+        # translation bound (images)
         self.txi = self._translation_bound(self.rxi_pc, self.xpi, dtype='image',
                                            mode=None, proj=None, scope='translate_to_xi')
-        self.txc = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption',
-                                           proj=self.proj_pi, scope='translate_to_xc')
+
+        # translation bounds (captions) <--- training time
+        self.txc_tr = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption',
+                                           mode='train', proj=self.proj_pi, scope='translate_to_xc')
+
+        # translation bounds (captions) <--- evaluation time
+        self.txc_te = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption',
+                                           mode='test', proj=self.proj_pi, scope='translate_to_xc')
+
 
         # loss function
         print("Loss function...", flush=True)
