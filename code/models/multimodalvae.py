@@ -75,27 +75,30 @@ class MultiModalVAE(base.Model):
         # marginal bounds
         print("Marginal bounds...", flush=True)
         self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
-                                        self.mu_i, self.sigma_i, dtype='image', scope='marg_xi')
+                                        self.mu_i, self.sigma_i, dtype='image', mode=None, proj=None, scope='marg_xi')
 
         self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
-                                        self.mu_c, self.sigma_c, dtype='caption', scope='marg_xc')
+                                        self.mu_c, self.sigma_c, dtype='caption', proj=self.proj_c, scope='marg_xc')
 
         self.lxpi, self.lxpirec, self.lxpipen, self.logqpi, self.logppi = self._marginal_bound(self.rxi_pi, self.xpi,
-                             self.mu_pi, self.sigma_pi, dtype='image', scope='marg_xpi')
+                             self.mu_pi, self.sigma_pi, dtype='image', mode=None, proj=None, scope='marg_xpi')
 
         self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
-                             self.mu_pc, self.sigma_pc, dtype='caption', scope='marg_xpc')
+                             self.mu_pc, self.sigma_pc, dtype='caption', proj=self.proj_pc, scope='marg_xpc')
 
 
         # joint bound
         print("Joint bound...", flush=True)
         self.lxj, self.lxjreci, self.lxjrecc, self.lxjpen, self.logqj, self.logpj = self._joint_bound(
-            self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j, scope='joint_bound')
+            self.rxi_j, self.xpi, self.rxc_j, self.xpc, self.mu_j, self.sigma_j,
+            proj=self.proj_j, scope='joint_bound')
 
         # translation bounds
         print("Translation bounds...", flush=True)
-        self.txi = self._translation_bound(self.rxi_pc, self.xpi, dtype='image', scope='translate_to_xi')
-        self.txc = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption', scope='translate_to_xc')
+        self.txi = self._translation_bound(self.rxi_pc, self.xpi, dtype='image',
+                                           mode=None, proj=None, scope='translate_to_xi')
+        self.txc = self._translation_bound(self.rxc_pi, self.xpc, dtype='caption',
+                                           proj=self.proj_pi, scope='translate_to_xc')
 
         # loss function
         print("Loss function...", flush=True)
@@ -317,23 +320,26 @@ class MultiModalVAE(base.Model):
             return penalty, log_q, log_p
 
 
-    def _marginal_bound(self, logits, labels, mu, sigma, dtype, scope):
+    def _marginal_bound(self, logits, labels, mu, sigma, dtype, mode, proj, scope):
 
         with tf.variable_scope(scope):
 
-            l1 = self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
+            l1 = self._reconstruction(logits=logits, labels=labels, dtype=dtype,
+                                      mode=mode, proj=proj, scope='reconstruction')
             l2, log_q, log_p = self._penalty(mu=mu, sigma=sigma, scope='penalty')
             bound = l1 + l2
 
             return bound, l1, l2, log_q, log_p
 
 
-    def _joint_bound(self, xi_logits, xi_labels, xc_logits, xc_labels, mu, sigma, scope):
+    def _joint_bound(self, xi_logits, xi_labels, xc_logits, xc_labels, mu, sigma, mode, proj, scope):
 
         with tf.variable_scope(scope):
 
-            l1_xi = self._reconstruction(logits=xi_logits, labels=xi_labels, dtype='image', scope='reconstruction_xi')
-            l1_xc = self._reconstruction(logits=xc_logits, labels=xc_labels, dtype='caption', scope='reconstruction_xc')
+            l1_xi = self._reconstruction(logits=xi_logits, labels=xi_labels, dtype='image',
+                                         mode=None, proj=None, scope='reconstruction_xi')
+            l1_xc = self._reconstruction(logits=xc_logits, labels=xc_labels, dtype='caption',
+                                         mode=mode, proj=proj, scope='reconstruction_xc')
 
             l2, log_q, log_p = self._penalty(mu=mu, sigma=sigma, scope='penalty')
 
@@ -342,10 +348,11 @@ class MultiModalVAE(base.Model):
             return bound, l1_xi, l1_xc, l2, log_q, log_p
 
 
-    def _translation_bound(self, logits, labels, dtype, scope):
+    def _translation_bound(self, logits, labels, dtype, mode, proj, scope):
 
         with tf.variable_scope(scope):
-            return self._reconstruction(logits=logits, labels=labels, dtype=dtype, scope='reconstruction')
+            return self._reconstruction(logits=logits, labels=labels, dtype=dtype,
+                                        mode=mode, proj=proj, scope='reconstruction')
 
 
     def _optimizer(self, loss, scope):
