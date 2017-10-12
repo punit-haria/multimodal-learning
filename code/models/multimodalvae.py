@@ -72,28 +72,33 @@ class MultiModalVAE(base.Model):
         self._model((self.xi, self.xc, self.xpi, self.xpc), init=False)
 
 
-        # marginal bounds (images)
         print("Marginal bounds...", flush=True)
+        # marginal bounds (images)
         self.lxi, self.lxirec, self.lxipen, self.logqi, self.logpi = self._marginal_bound(self.rxi_i, self.xi,
-                                        self.mu_i, self.sigma_i, dtype='image', mode=None, proj=None, scope='marg_xi')
+                            self.mu_i, self.sigma_i, dtype='image', mode=None, proj=None, scope='marg_xi')
 
         self.lxpi, self.lxpirec, self.lxpipen, self.logqpi, self.logppi = self._marginal_bound(self.rxi_pi, self.xpi,
-                             self.mu_pi, self.sigma_pi, dtype='image', mode=None, proj=None, scope='marg_xpi')
+                            self.mu_pi, self.sigma_pi, dtype='image', mode=None, proj=None, scope='marg_xpi')
 
 
         # marginal bounds (captions)  <--- training time
-        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
-                        self.mu_c, self.sigma_c, dtype='caption', mode='train', proj=self.proj_c, scope='marg_xc')
+        self.lxc_tr, self.lxcrec_tr, self.lxcpen_tr, self.logqc_tr, self.logpc_tr = self._marginal_bound(
+            self.rxc_c, self.xc, self.mu_c, self.sigma_c, dtype='caption',
+            mode='train', proj=self.proj_c, scope='marg_xc_train')
 
-        self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
-                        self.mu_pc, self.sigma_pc, dtype='caption', mode='train', proj=self.proj_pc, scope='marg_xpc')
+        self.lxpc_tr, self.lxpcrec_tr, self.lxpcpen_tr, self.logqpc_tr, self.logppc_tr = self._marginal_bound(
+            self.rxc_pc, self.xpc, self.mu_pc, self.sigma_pc, dtype='caption',
+            mode='train', proj=self.proj_pc, scope='marg_xpc_train')
+
 
         # marginal bounds (captions)  <--- evaluation time
-        self.lxc, self.lxcrec, self.lxcpen, self.logqc, self.logpc = self._marginal_bound(self.rxc_c, self.xc,
-                        self.mu_c, self.sigma_c, dtype='caption', mode='test', proj=self.proj_c, scope='marg_xc')
+        self.lxc_te, self.lxcrec_te, self.lxcpen_te, self.logqc_te, self.logpc_te = self._marginal_bound(
+            self.rxc_c, self.xc, self.mu_c, self.sigma_c, dtype='caption',
+            mode='test', proj=self.proj_c, scope='marg_xc_test')
 
-        self.lxpc, self.lxpcrec, self.lxpcpen, self.logqpc, self.logppc = self._marginal_bound(self.rxc_pc, self.xpc,
-                        self.mu_pc, self.sigma_pc, dtype='caption', mode='test', proj=self.proj_pc, scope='marg_xpc')
+        self.lxpc_te, self.lxpcrec_te, self.lxpcpen_te, self.logqpc_te, self.logppc_te = self._marginal_bound(
+            self.rxc_pc, self.xpc, self.mu_pc, self.sigma_pc, dtype='caption',
+            mode='test', proj=self.proj_pc, scope='marg_xpc_test')
 
 
         # joint bound
