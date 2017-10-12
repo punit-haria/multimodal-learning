@@ -286,10 +286,10 @@ class MultiModalVAE(base.Model):
 
         outputs = tf.unstack(logits, axis=1)
         outputs = [tf.matmul(out, tf.transpose(w)) + b  for out in outputs]
-        logits = tf.stack(outputs, axis=1)
-        # logits: batch_size x max_seq_len x vocab_size
+        proj_logits = tf.stack(outputs, axis=1)
+        # projected logits: batch_size x max_seq_len x vocab_size
 
-        probs = tf.nn.softmax(logits, dim=-1)
+        probs = tf.nn.softmax(proj_logits, dim=-1)
 
         return logits, probs, output_projections
 
@@ -322,7 +322,12 @@ class MultiModalVAE(base.Model):
                 w, b = proj
 
                 if mode == 'test':
-                    logits = tf.matmul(logits, tf.transpose(w)) + b
+                    # logits: batch_size x max_seq_len x n_units
+                    outputs = tf.unstack(logits, axis=1)
+                    outputs = [tf.matmul(out, tf.transpose(w)) + b for out in outputs]
+                    logits = tf.stack(outputs, axis=1)
+                    # projected logits: batch_size x max_seq_len x vocab_size
+
                     l1 = -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
 
                 elif mode == 'train':
