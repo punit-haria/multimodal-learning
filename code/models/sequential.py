@@ -93,11 +93,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 t = tf.matmul(x, v_norm)
                 mu_t, var_t = tf.nn.moments(t, axes=0)
 
-                var_t = tf.Print(var_t, [tf.contrib.keras.any(tf.is_nan(var_t))])
-
                 inv = 1 / tf.sqrt(var_t + 1e-10)
-
-                inv = tf.Print(inv, [tf.contrib.keras.any(tf.is_nan(inv))])
 
                 inv = tf.reshape(inv, shape=[1, n_out])
                 mu_t = tf.reshape(mu_t, shape=[1, n_out])
@@ -108,6 +104,9 @@ class GRUCell(tf.contrib.rnn.RNNCell):
                 v = tf.get_variable("v", shape=[n_x, n_out])
                 g = tf.get_variable("g", shape=[n_out])
                 b = tf.get_variable("b", shape=[n_out])
+
+                g = tf.Print(g, [tf.contrib.keras.backend.any(tf.is_nan(g))])  #############################
+                b = tf.Print(b, [tf.contrib.keras.backend.any(tf.is_nan(b))])  #############################
 
                 x = tf.matmul(x, v)
                 scaling = g / tf.sqrt(tf.reduce_sum(tf.square(v), axis=0))
