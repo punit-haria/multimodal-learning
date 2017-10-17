@@ -75,7 +75,7 @@ class MultiModalVAE(base.Model):
 
         # model specification
         print("Define model connections...", flush=True)
-        self._model((self.xi, self.xc, self.sl_init, self.xpi, self.xpc, self.slp_init), init=False)
+        self._model((self.xi, self.xc, self.sl, self.xpi, self.xpc, self.slp), init=False)
 
 
         print("Marginal bounds...", flush=True)
@@ -534,7 +534,7 @@ class MultiModalVAE(base.Model):
         """
         xi, xc, sl, xi_pairs, xc_pairs, sl_pairs = xs
 
-        feed = {self.xi: xi, self.xc: xc, self.xpi: xi_pairs, self.xpc: xc_pairs}
+        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xpi: xi_pairs, self.xpc: xc_pairs, self.slp: sl_pairs}
         summary, _ = self.sess.run([self.summary_train, self.step], feed_dict=feed)
 
         self.tr_writer.add_summary(summary, self.n_steps)
@@ -548,7 +548,7 @@ class MultiModalVAE(base.Model):
         """
         xi, xc, sl = xs
 
-        feed = {self.xi: xi, self.xc: xc, self.xpi: xi, self.xpc: xc}
+        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xpi: xi, self.xpc: xc, self.slp: sl}
         summary = self.sess.run(self.summary_test, feed_dict=feed)
 
         self.te_writer.add_summary(summary, self.n_steps)
