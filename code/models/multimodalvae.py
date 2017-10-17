@@ -479,7 +479,7 @@ class MultiModalVAE(base.Model):
             training.append( tf.summary.scalar('loss', self.loss) )
 
             if self.objective == "joint":
-                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_train', self.lxj_tr) )
+                training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tr', self.lxj_tr) )
                 evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_eval', self.lxj_te) )
 
             elif self.objective == "translate":

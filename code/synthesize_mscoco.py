@@ -17,9 +17,7 @@ tracker = Results.load(experiment_name)
 
 for i in range(save_steps, train_steps+save_steps, save_steps):
 
-    suffix = str(i)
-
-    coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=1)
+    coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=1, train_steps=str(i))
 
 
 
