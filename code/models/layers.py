@@ -3,7 +3,7 @@ import numpy as np
 from models import sequential as sq
 
 
-def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
+def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
     """
     RNN encoder using GRUs.
     """
@@ -22,7 +22,7 @@ def seq_encoder(x, vocab_size, embed_size, n_units, n_z, n_layers, init, scope):
 
         gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
-        out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None)
+        out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
 
         # only need final output vector:
         seq_pos = out.get_shape()[1].value - 1

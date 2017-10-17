@@ -1263,10 +1263,13 @@ class MSCOCO(object):
 
         x_caption = []
         x_image = []
+        seq_lens = []
         for i in image_ids:
             capts = imcapt[i]
             capt_id = int(np.random.choice(list(capts), size=1))
             caption = captions[capt_id]
+
+            seq_lens.append(len(caption))  # true sequence length
 
             # add padding to each caption
             while len(caption) < self._max_seq_len:
@@ -1283,7 +1286,9 @@ class MSCOCO(object):
 
         x_caption = np.array(x_caption)
 
-        return x_image, x_caption
+        seq_lens = np.array(seq_lens)
+
+        return x_image, x_caption, seq_lens
 
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
@@ -1292,9 +1297,9 @@ class MSCOCO(object):
         if dtype == 'test':
 
             ids = list(np.random.choice(self.val_image_ids, size=n_paired_samples, replace=False))
-            x_image, x_caption = self._sample_setup(ids, train=False)
+            x_image, x_caption, seq_lens = self._sample_setup(ids, train=False)
 
-            return x_image, x_caption
+            return x_image, x_caption, seq_lens
 
         # training set case
         elif dtype == 'train':
@@ -1307,15 +1312,15 @@ class MSCOCO(object):
             n_x2 = n_unpaired_samples - n_x1
 
             paired_ids = list(np.random.choice(self.paired, size=n_paired_samples, replace=False))
-            xp_image, xp_caption = self._sample_setup(paired_ids, train=True)
+            xp_image, xp_caption, seq_lens_p = self._sample_setup(paired_ids, train=True)
 
             image_only_ids = list(np.random.choice(self.image_only, size=n_x1, replace=False))
-            x_image, _ = self._sample_setup(image_only_ids, train=True)
+            x_image, _, _ = self._sample_setup(image_only_ids, train=True)
 
             caption_only_ids = list(np.random.choice(self.caption_only, size=n_x2, replace=False))
-            _, x_caption = self._sample_setup(caption_only_ids, train=True)
+            _, x_caption, seq_lens = self._sample_setup(caption_only_ids, train=True)
 
-            return x_image, x_caption, xp_image, xp_caption
+            return x_image, x_caption, seq_lens, xp_image, xp_caption, seq_lens_p
 
 
 

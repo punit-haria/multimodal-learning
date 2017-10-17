@@ -64,16 +64,16 @@ def train_joint(name, model, parameters, data, tracker):
     for i in range(parameters['train_steps'] + 1):
         print("Iteration: ", i, flush=True)
 
-        x1, x2, x1p, x2p = data.sample_stratified(n_paired_samples=parameters['n_paired_samples'],
+        xs = data.sample_stratified(n_paired_samples=parameters['n_paired_samples'],
                                 n_unpaired_samples=parameters['n_unpaired_samples'], dtype='train')
 
-        model.train((x1, x2, x1p, x2p))
+        model.train(xs)
 
         if i % parameters['test_steps'] == 0:
             print("At iteration ", i, flush=True)
 
-            x1, x2 = data.sample_stratified(n_paired_samples=parameters['test_sample_size'], dtype='test')
-            model.test((x1, x2))
+            xs = data.sample_stratified(n_paired_samples=parameters['test_sample_size'], dtype='test')
+            model.test(xs)
 
         if i % parameters['save_steps'] == 0:
             if i != 0:

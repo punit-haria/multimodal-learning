@@ -41,7 +41,7 @@ class MultiModalVAE(base.Model):
         self.n_steps = 0
 
         # initialization minibatches
-        self.xi_init, self.xc_init, self.xpi_init, self.xpc_init = init_minibatches
+        self.xi_init, self.xc_init, self.sl_init, self.xpi_init, self.xpc_init, self.slp_init = init_minibatches
 
         # constructor
         super(MultiModalVAE, self).__init__(name=name, session=session, log_dir=log_dir, model_dir=model_dir)
@@ -53,24 +53,29 @@ class MultiModalVAE(base.Model):
         print("Placeholders...", flush=True)
         self.xi = tf.placeholder(tf.float32, [None, self.nxi], name='xi')
         self.xc = tf.placeholder(tf.int32, [None, self.nxc], name='xc')
+        self.sl = tf.placeholder(tf.int32, [None], name='sl')
+
         self.xpi = tf.placeholder(tf.float32, [None, self.nxi], name='xpi')
         self.xpc = tf.placeholder(tf.int32, [None, self.nxc], name='xpc')
+        self.slp = tf.placeholder(tf.int32, [None], name='slp')
 
         # data-dependent weight initialization (Salisman, Kingma - 2016)
         print("Sample batch...", flush=True)
         xi_init = tf.constant(self.xi_init, tf.float32)
         xc_init = tf.constant(self.xc_init, tf.int32)
+        sl_init =  tf.constant(self.sl_init, tf.int32)
+
         xpi_init = tf.constant(self.xpi_init, tf.float32)
         xpc_init = tf.constant(self.xpc_init, tf.int32)
-
+        slp_init = tf.constant(self.slp_init, tf.int32)
 
         # compute weight initializations
         print("Initialize model weights...", flush=True)
-        self._model((xi_init, xc_init, xpi_init, xpc_init), init=True)
+        self._model((xi_init, xc_init, sl_init, xpi_init, xpc_init, slp_init), init=True)
 
         # model specification
         print("Define model connections...", flush=True)
-        self._model((self.xi, self.xc, self.xpi, self.xpc), init=False)
+        self._model((self.xi, self.xc, self.sl_init, self.xpi, self.xpc, self.slp_init), init=False)
 
 
         print("Marginal bounds...", flush=True)
@@ -150,11 +155,11 @@ class MultiModalVAE(base.Model):
             if not init:
                 scope.reuse_variables()
 
-            xi, xc, xpi, xpc = xs
+            xi, xc, sl, xpi, xpc, slp = xs
 
             # encoders
             print("Encoder (caption)...", flush=True)
-            mu_pc, sigma_pc, hepc, emb_pc = self._encoder_c(xpc, init=init, scope='xc_enc')
+            mu_pc, sigma_pc, hepc, emb_pc = self._encoder_c(xpc, slp, init=init, scope='xc_enc')
             print("Encoder (image)...", flush=True)
             mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
 
@@ -177,7 +182,7 @@ class MultiModalVAE(base.Model):
                 # unpaired encodings
                 print("Encoders (2)...", flush=True)
                 mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')
-                mu_c, sigma_c, _, emb_c = self._encoder_c(xc, init=init, scope='xc_enc')
+                mu_c, sigma_c, _, emb_c = self._encoder_c(xc, sl, init=init, scope='xc_enc')
 
                 # additional samples
                 print("Samplers (2)...", flush=True)
@@ -237,9 +242,9 @@ class MultiModalVAE(base.Model):
         return mu, sigma, he
 
 
-    def _encoder_c(self, x, init, scope):
+    def _encoder_c(self, x, sl, init, scope):
 
-        mu, sigma, he, emb = nw.seq_encoder(x,  self.vocab_size, self.embed_size, self.n_units,
+        mu, sigma, he, emb = nw.seq_encoder(x, sl, self.vocab_size, self.embed_size, self.n_units,
                                        self.n_z, self.gru_layers, init, scope)
 
         return mu, sigma, he, emb
@@ -527,7 +532,7 @@ class MultiModalVAE(base.Model):
         """
         Performs single training step.
         """
-        xi, xc, xi_pairs, xc_pairs = xs
+        xi, xc, sl, xi_pairs, xc_pairs, sl_pairs = xs
 
         feed = {self.xi: xi, self.xc: xc, self.xpi: xi_pairs, self.xpc: xc_pairs}
         summary, _ = self.sess.run([self.summary_train, self.step], feed_dict=feed)
@@ -541,7 +546,7 @@ class MultiModalVAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        xi, xc = xs
+        xi, xc, sl = xs
 
         feed = {self.xi: xi, self.xc: xc, self.xpi: xi, self.xpc: xc}
         summary = self.sess.run(self.summary_test, feed_dict=feed)
@@ -554,7 +559,7 @@ class MultiModalVAE(base.Model):
         Reconstruct input.
         If one input is None, then this can be interpretted as a translation from the other input.
 
-        xs: (xi, xc) or (xi, None) or (None, xc)
+        xs: (xi, xc ,sl) or (xi, None, None) or (None, xc, sl)
         """
         z = self.encode(xs, mean=mean)
         xi, xc = self.decode(z)
@@ -566,15 +571,15 @@ class MultiModalVAE(base.Model):
         """
         Encodes xi or xc or both xi and xc to the latent space.
         """
-        xi, xc = xs
-        feed = {self.xpi: xi, self.xpc: xc}
+        xi, xc, sl = xs
+        feed = {self.xpi: xi, self.xpc: xc, self.slp: sl}
         outputs = self.mu_j, self.zj
 
         if xi is None and xc is None:
             raise ValueError
 
         elif xi is None:
-            feed = {self.xpc: xc}
+            feed = {self.xpc: xc, self.slp: sl}
             outputs = self.mu_pc, self.zpc
 
         elif xc is None:
