@@ -8,18 +8,36 @@ class GRUCell(tf.contrib.rnn.RNNCell):
     Taken from https://github.com/tensorflow/tensorflow/blob/r1.3/tensorflow/python/ops/rnn_cell_impl.py
     and modified.
     """
-    def __init__(self, num_units, activation, init, input, reuse=None):
+    def __init__(self, num_units, activation, init, input, is_bidirectional, reuse=None):
         super(GRUCell, self).__init__(_reuse=reuse)
         self._num_units = num_units
         self._activation = activation
         self._init = init
+        self._is_bidirectional = is_bidirectional
 
         if self._init:
-            with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
-                self._initialize_variables(input, 2 * self._num_units)
+            if self._is_bidirectional:
+                # forward cell
+                with tf.variable_scope('bidirectional_rnn/fw/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
+                    self._initialize_variables(input, 2 * self._num_units)
 
-            with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
-                self._initialize_variables(input, self._num_units)
+                with tf.variable_scope('bidirectional_rnn/fw/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
+                    self._initialize_variables(input, self._num_units)
+
+                # backward cell
+                with tf.variable_scope('bidirectional_rnn/bw/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
+                    self._initialize_variables(input, 2 * self._num_units)
+
+                with tf.variable_scope('bidirectional_rnn/bw/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
+                    self._initialize_variables(input, self._num_units)
+
+            else:
+
+                with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/gates/rt_zt'):
+                    self._initialize_variables(input, 2 * self._num_units)
+
+                with tf.variable_scope('rnn/multi_rnn_cell/cell_0/gru_cell/candidate/ct'):
+                    self._initialize_variables(input, self._num_units)
 
 
     @property

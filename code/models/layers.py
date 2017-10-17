@@ -20,9 +20,12 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
 
         x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
 
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x)
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x, is_bidirectional=True)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
-        out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
+
+        #out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
+        out, state = tf.nn.bidirectional_dynamic_rnn(cell_fw=gru, cell_bw=gru, inputs=x,
+                                        dtype=tf.float32, sequence_length=slens)
 
         # only need final output vector:
         seq_pos = out.get_shape()[1].value - 1
@@ -55,7 +58,7 @@ def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
         z = tf.expand_dims(z, axis=1)
         z = tf.concat([z,x], axis=1)   # batch_size x max_seq_len x embed_size
 
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z)
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z, is_bidirectional=False)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
         out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
 
