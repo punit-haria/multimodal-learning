@@ -10,6 +10,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
     with tf.variable_scope(scope):
 
         nonlin = tf.nn.elu
+        bidirectional = True
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
@@ -20,17 +21,23 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
 
         x = tf.nn.embedding_lookup(embeddings, x)   # batch_size x max_seq_len x embed_size
 
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x, is_bidirectional=True)
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=x, is_bidirectional=bidirectional)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
 
-        #out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
-        out, state = tf.nn.bidirectional_dynamic_rnn(cell_fw=gru, cell_bw=gru, inputs=x,
-                                        dtype=tf.float32, sequence_length=slens)
+        if bidirectional:
+            out, state = tf.nn.bidirectional_dynamic_rnn(cell_fw=gru, cell_bw=gru, inputs=x,
+                                                         dtype=tf.float32, sequence_length=slens)
 
-        # only need final output vector:
-        seq_pos = out.get_shape()[1].value - 1
-        out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
-        out = tf.squeeze(out)
+
+
+        else:
+            out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
+
+            # only need final output vector:
+            seq_pos = out.get_shape()[1].value - 1
+            out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
+            out = tf.squeeze(out)
+
 
         mu = linear(out, n_out=n_z, init=init, scope="mu_layer")
 
