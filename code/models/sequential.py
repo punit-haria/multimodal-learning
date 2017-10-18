@@ -73,7 +73,7 @@ class GRUCell(tf.contrib.rnn.RNNCell):
         # inputs: batch x time x depth
         inp = tf.slice(inputs, begin=[0,0,0], size=[-1,1,-1])
         inp = tf.squeeze(inp)   # batch x depth
-        #state = tf.zeros(shape=[tf.shape(inp)[0], self._num_units])
+
         state = tf.random_normal(shape=[tf.shape(inp)[0], self._num_units], mean=0.0, stddev=1.0)
         inp = tf.concat([inp, state], axis=1)
 
