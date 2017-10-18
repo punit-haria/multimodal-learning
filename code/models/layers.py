@@ -10,7 +10,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
     with tf.variable_scope(scope):
 
         nonlin = tf.nn.elu
-        bidirectional = False
+        bidirectional = True
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
@@ -37,20 +37,14 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         max_seq_len = tf.shape(out)[1]
         index = (tf.range(0, batch_size) * max_seq_len) + (slens - 1)
         flat = tf.reshape(out, [-1, n_units])
-        out = tf.gather(flat, index)   # select relevant out vectors
-
-        # only need output of last term in sequence
-        #seq_pos = out.get_shape()[1].value - 1
-        #out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
-        #out = tf.squeeze(out)
+        out = tf.gather(flat, index)   # select relevant output vectors only
 
         mu = linear(out, n_out=n_z, init=init, scope="mu_layer")
 
-        sigma = linear(out, n_z, init=init, scope="sigma_layer")
+        sigma = linear(out, n_out=n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
         return mu, sigma, out, x
-
 
 
 def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
