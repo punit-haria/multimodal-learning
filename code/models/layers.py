@@ -32,10 +32,17 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         else:
             out, state = tf.nn.dynamic_rnn(gru, x, dtype=tf.float32, initial_state=None, sequence_length=slens)
 
-        # only need final output vector:
-        seq_pos = out.get_shape()[1].value - 1
-        out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
-        out = tf.squeeze(out)
+        # out: batch_size x max_seq_len x n_units
+        batch_size = tf.shape(out)[0]
+        max_seq_len = tf.shape(out)[1]
+        index = (tf.range(0, batch_size) * max_seq_len) + (slens - 1)
+        flat = tf.reshape(out, [-1, n_units])
+        out = tf.gather(flat, index)   # select relevant out vectors
+
+        # only need output of last term in sequence
+        #seq_pos = out.get_shape()[1].value - 1
+        #out = tf.slice(out, begin=[0,seq_pos,0], size=[-1,1,-1])
+        #out = tf.squeeze(out)
 
         mu = linear(out, n_out=n_z, init=init, scope="mu_layer")
 
