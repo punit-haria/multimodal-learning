@@ -54,6 +54,7 @@ def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
     with tf.variable_scope(scope):
 
         nonlin = tf.nn.elu
+        bidirectional = False
 
         z = linear(z, n_out=embed_size, init=init, scope='mu_sigma_layer')  # batch_size x embed_size
 
@@ -64,14 +65,21 @@ def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
         z = tf.expand_dims(z, axis=1)
         z = tf.concat([z,x], axis=1)   # batch_size x max_seq_len x embed_size
 
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z, is_bidirectional=False)
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z, is_bidirectional=bidirectional)
         gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
         out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
-
         # out: batch_size x max_seq_len x n_units
 
         return out
 
+
+
+def seq_decoder_cnn(z, x, n_units, embed_size, n_layers, init, scope):
+    """
+    Dilated CNN decoder for sequences. Based on http://proceedings.mlr.press/v70/yang17d/yang17d.pdf
+    """
+    with tf.variable_scope(scope):
+        pass
 
 
 def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):

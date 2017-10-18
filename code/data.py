@@ -1042,6 +1042,9 @@ class MSCOCO(object):
 
         self._padding = '<PAD>'
         self._oov = '<OOV>'
+        self._go = '<GO>'
+        self._eof = '<EOF>'
+        self._symbols = [self._oov, self._padding, self._eof, self._go]
         self._inverse_vocab = None
 
         paths = [(_train_annotations_path, _train_images_dir), (_val_annotations_path, _val_images_dir)]
@@ -1143,7 +1146,7 @@ class MSCOCO(object):
                     capt = capt.replace('{', ' { ')  # expand brackets
                     capt = capt.replace('}', ' } ')  # expand brackets
                     capt = capt.split()  # split string
-                    capt.append(self._padding)  # pad with EOF character
+                    capt.append(self._eof)  # pad with EOF character
 
                     captions[k['id']] = capt
 
@@ -1177,6 +1180,11 @@ class MSCOCO(object):
                     words = {w for _, _v in captions.items() for w in _v}
                     for i,w in enumerate(words):
                         vocab[w] = i
+
+                    for s in self._symbols:  # add symbols to vocab dictionary if not already there
+                        if s not in vocab:
+                            idx = max([v for k,v in vocab.items()]) + 1
+                            vocab[s] = idx
 
 
                 print("Converting captions to ids (from vocab)..", flush=True)
