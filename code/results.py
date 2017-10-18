@@ -67,10 +67,10 @@ def _coco_reconstruct(model, data, n_rows, n_cols, mean, path):
 
     n = n_rows * n_cols
 
-    xi, xc, sl = data.sample_stratified(n_paired_samples=n, dtype='test')
+    xi, xc, sl, xc_dec = data.sample_stratified(n_paired_samples=n, dtype='test')
 
-    _, rxc = model.reconstruct((xi, None), mean=mean)
-    rxi, _ = model.reconstruct((None, xc), mean=mean)
+    _, rxc = model.reconstruct((xi, None, None, None), mean=mean)
+    rxi, _ = model.reconstruct((None, xc, sl, xc_dec), mean=mean)
 
     xc = _get_caption_text(data, xc, n_rows, n_cols)
     rxc = _get_caption_text(data, rxc, n_rows, n_cols)

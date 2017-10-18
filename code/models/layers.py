@@ -44,7 +44,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         sigma = linear(out, n_out=n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mu, sigma, out, x
+        return mu, sigma, out
 
 
 def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
