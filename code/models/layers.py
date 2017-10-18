@@ -93,9 +93,97 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
         z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')  # batch_size x n_units
 
         max_seq_len = x_dec.get_shape()[1].value
-        z = tf.stack([z for _ in range(max_seq_len)], axis=1)  # batch_szie x max_seq_len x n_units
+        z = tf.stack([z for _ in range(max_seq_len)], axis=1)  # batch_size x max_seq_len x n_units
 
         input = tf.concat([z,x_dec], axis=2)   # concatenate z with every single word embedding
+
+
+        # dilated convoluations as residual blocks:
+
+        c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+
+        for i in range(n_ar_layers):
+            cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
+            c = c + cz
+
+            #c = c + z
+            c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
+
+        c = nonlinearity(c)
+
+        c = conv(c, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='final_1x1_a')
+        c = nonlinearity(c)
+        c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
+
+
+
+def resblock1d(c, k, nonlinearity, init, scope):
+    """
+    Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
+    """
+    with tf.variable_scope(scope):
+
+        n_ch = c.get_shape()[3].value
+        half_ch = n_ch // 2
+        c1 = nonlinearity(c)
+        c1 = conv(c1, k=1, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='1x1_a')
+        c1 = nonlinearity(c1)
+        c1 = conv(c1, k=k, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='conv')
+        c1 = nonlinearity(c1)
+        c1 = conv(c1, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='1x1_b')
+        c = c1 + c
+
+        return c
+
+
+def conv1d(x, k, out_ch, init, scope, mask_type=None):
+    """
+    1-dimensional convolution
+
+    x: batch_size x length x n_channels
+    """
+    with tf.variable_scope(scope):
+
+        in_ch = x.get_shape()[3].value
+
+        strides = [1, 1, 1]
+        w_shape = [k, in_ch, out_ch]
+
+        if init:
+            v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
+            v = v.initialized_value()
+
+            if mask_type is not None:
+                mask = conv_mask(w_shape, mask_type)
+                v = tf.multiply(v, tf.constant(mask))
+
+            v_norm = tf.nn.l2_normalize(v, dim = [0, 1, 2])
+
+            t = tf.nn.conv2d(x, v_norm, strides=strides, padding='SAME')
+            mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
+
+            inv = 1 / tf.sqrt(var_t + 1e-10)
+            _ = tf.get_variable("g", initializer=inv)
+            _ = tf.get_variable("b", initializer=-mu_t * inv)
+
+            inv = tf.reshape(inv, shape=[1, 1, 1, out_ch])
+            mu_t = tf.reshape(mu_t, shape=[1, 1, 1, out_ch])
+
+            return tf.multiply(t - mu_t, inv)
+
+        else:
+            v = tf.get_variable("v", shape=w_shape)
+            g = tf.get_variable("g", shape=[out_ch])
+            b = tf.get_variable("b", shape=[out_ch])
+
+            if mask_type is not None:
+                mask = conv_mask(w_shape, mask_type)
+                v = tf.multiply(v, tf.constant(mask))
+
+            w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,2])
+            b = tf.reshape(b, shape=[1,1,1,out_ch])
+
+            return tf.nn.conv2d(x, w, strides=strides, padding='SAME') + b
 
 
 
