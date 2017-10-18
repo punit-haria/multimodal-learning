@@ -1270,6 +1270,7 @@ class MSCOCO(object):
             images = self._val_images
 
         x_caption = []
+        x_caption_decode = []
         x_image = []
         seq_lens = []
         for i in image_ids:
@@ -1285,6 +1286,9 @@ class MSCOCO(object):
 
             x_caption.append(caption)
 
+            caption_dec = [self._vocab[self._go]] + list(caption)
+            x_caption_decode.append(caption_dec)
+
             image = images[i]
 
             x_image.append(image)
@@ -1294,9 +1298,12 @@ class MSCOCO(object):
 
         x_caption = np.array(x_caption)
 
+        x_caption_decode = np.array(x_caption_decode)
+        x_caption_decode = x_caption_decode[:,:-1]
+
         seq_lens = np.array(seq_lens)
 
-        return x_image, x_caption, seq_lens
+        return x_image, x_caption, seq_lens, x_caption_decode
 
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
@@ -1305,9 +1312,9 @@ class MSCOCO(object):
         if dtype == 'test':
 
             ids = list(np.random.choice(self.val_image_ids, size=n_paired_samples, replace=False))
-            x_image, x_caption, seq_lens = self._sample_setup(ids, train=False)
+            xi, xc, sl, xc_dec = self._sample_setup(ids, train=False)
 
-            return x_image, x_caption, seq_lens
+            return xi, xc, sl, xc_dec
 
         # training set case
         elif dtype == 'train':
@@ -1320,15 +1327,15 @@ class MSCOCO(object):
             n_x2 = n_unpaired_samples - n_x1
 
             paired_ids = list(np.random.choice(self.paired, size=n_paired_samples, replace=False))
-            xp_image, xp_caption, seq_lens_p = self._sample_setup(paired_ids, train=True)
+            xpi, xpc, slp, xpc_dec = self._sample_setup(paired_ids, train=True)
 
             image_only_ids = list(np.random.choice(self.image_only, size=n_x1, replace=False))
-            x_image, _, _ = self._sample_setup(image_only_ids, train=True)
+            xi, _, _, _ = self._sample_setup(image_only_ids, train=True)
 
             caption_only_ids = list(np.random.choice(self.caption_only, size=n_x2, replace=False))
-            _, x_caption, seq_lens = self._sample_setup(caption_only_ids, train=True)
+            _, xc, sl, xc_dec = self._sample_setup(caption_only_ids, train=True)
 
-            return x_image, x_caption, seq_lens, xp_image, xp_caption, seq_lens_p
+            return xi, xc, sl, xc_dec, xpi, xpc, slp, xpc_dec
 
 
 
