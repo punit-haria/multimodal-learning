@@ -1308,6 +1308,8 @@ class MSCOCO(object):
 
     def sample_stratified(self, n_paired_samples, n_unpaired_samples=128, dtype='train'):
 
+        # note: decoder input begins with <GO> symbol
+
         # test set case
         if dtype == 'test':
 

@@ -47,7 +47,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         return mu, sigma, out
 
 
-def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
+def seq_decoder(z, x_dec, n_units, embed_size, n_layers, init, scope):
     """
     RNN decoder using GRUs (autoregressive)
     """
@@ -59,8 +59,8 @@ def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
         z = linear(z, n_out=embed_size, init=init, scope='mu_sigma_layer')  # batch_size x embed_size
 
         # x: batch_size x max_seq_len x embed_size
-        max_seq_len = x.get_shape()[1].value
-        x = tf.slice(x, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
+        max_seq_len = x_dec.get_shape()[1].value
+        x = tf.slice(x_dec, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
 
         z = tf.expand_dims(z, axis=1)
         z = tf.concat([z,x], axis=1)   # batch_size x max_seq_len x embed_size
@@ -74,12 +74,33 @@ def seq_decoder(z, x, n_units, embed_size, n_layers, init, scope):
 
 
 
-def seq_decoder_cnn(z, x, n_units, embed_size, n_layers, init, scope):
+def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
     """
     Dilated CNN decoder for sequences. Based on http://proceedings.mlr.press/v70/yang17d/yang17d.pdf
     """
     with tf.variable_scope(scope):
-        pass
+        nonlin = tf.nn.elu
+
+        if init:
+            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
+                                         initializer=tf.random_normal_initializer(0, 0.05))
+            embeddings = embeddings.initialized_value()
+        else:
+            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size])
+
+        x_dec = tf.nn.embedding_lookup(embeddings, x_dec)  # batch_size x max_seq_len x embed_size
+
+        z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')  # batch_size x n_units
+
+        max_seq_len = x_dec.get_shape()[1].value
+        z = tf.stack([z for _ in range(max_seq_len)], axis=1)  # batch_szie x max_seq_len x n_units
+
+        input = tf.concat([z,x_dec], axis=2)   # concatenate z with every single word embedding
+
+
+
+
+
 
 
 def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):

@@ -279,9 +279,9 @@ class MultiModalVAE(base.Model):
         return logits, parms
 
 
-    def _decoder_c(self, z, x_emb, init, scope):
+    def _decoder_c(self, z, x_dec, init, scope):
 
-        logits = nw.seq_decoder(z, x_emb, self.n_units, self.embed_size, self.gru_layers, init, scope)
+        logits = nw.seq_decoder(z, x_dec, self.n_units, self.embed_size, self.gru_layers, init, scope)
         # logits: batch_size x max_seq_len x n_units
 
         with tf.variable_scope('projections'):
