@@ -10,7 +10,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
     with tf.variable_scope(scope):
 
         nonlin = tf.nn.elu
-        bidirectional = True
+        bidirectional = False
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
