@@ -496,12 +496,25 @@ class MultiModalVAE(base.Model):
                 training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tr', self.lxj_tr) )
                 evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_eval', self.lxj_te) )
 
+                training.append( tf.summary.scalar('joint_penalty_tr', self.lxjpen_tr) )
+                evaluation.append(tf.summary.scalar('joint_penalty_eval', self.lxjpen_tr))
+
+                training.append(tf.summary.scalar('joint_train', self.lxj_tr))
+                evaluation.append(tf.summary.scalar('joint_eval', self.lxj_te))
+
+
             elif self.objective == "translate":
                 training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti_train', self.txi + self.lxpc_tr) )
                 training.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc_train', self.txc_tr + self.lxpi) )
 
                 evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_ti_eval', self.txi + self.lxpc_te) )
                 evaluation.append( tf.summary.scalar('lower_bound_on_log_p_xi_xc_tc_eval', self.txc_te + self.lxpi) )
+
+                training.append(tf.summary.scalar('trans_to_xi_train', self.txi))
+                training.append(tf.summary.scalar('trans_to_xc_train', self.txc_tr))
+
+                evaluation.append(tf.summary.scalar('trans_to_xi_eval', self.txi))
+                evaluation.append(tf.summary.scalar('trans_to_xc_eval', self.txc_te))
 
             else:
                 raise NotImplementedError
@@ -514,14 +527,6 @@ class MultiModalVAE(base.Model):
 
             evaluation.append(tf.summary.scalar('marg_xpi_eval', self.lxpi))
             evaluation.append(tf.summary.scalar('marg_xpc_eval', self.lxpc_te))
-
-            training.append( tf.summary.scalar('joint_train', self.lxj_tr) )
-            training.append( tf.summary.scalar('trans_to_xi_train', self.txi) )
-            training.append( tf.summary.scalar('trans_to_xc_train', self.txc_tr) )
-
-            evaluation.append( tf.summary.scalar('joint_eval', self.lxj_te) )
-            evaluation.append( tf.summary.scalar('trans_to_xi_eval', self.txi) )
-            evaluation.append( tf.summary.scalar('trans_to_xc_eval', self.txc_te) )
 
             training = tf.summary.merge(training)
             evaluation = tf.summary.merge(evaluation)
