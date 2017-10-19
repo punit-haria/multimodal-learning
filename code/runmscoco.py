@@ -4,7 +4,7 @@ from data import MSCOCO
 from training import train_joint, Results
 
 
-experiment_name = 'coco'
+experiment_name = 'coco_cnn'
 
 
 models = [
