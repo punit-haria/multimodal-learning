@@ -136,7 +136,7 @@ def resblock1d(c, k, nonlinearity, init, scope):
         return c
 
 
-def conv1d(x, k, out_ch, init, scope, mask_type=None):
+def conv1d(x, k, out_ch, dilation, init, scope, mask_type=None):
     """
     1-dimensional convolution
 
@@ -154,20 +154,20 @@ def conv1d(x, k, out_ch, init, scope, mask_type=None):
             v = v.initialized_value()
 
             if mask_type is not None:
-                mask = conv_mask(w_shape, mask_type)   # k x in_ch x out_ch
+                mask = conv1d_mask(w_shape, mask_type)   # k x in_ch x out_ch
                 v = tf.multiply(v, tf.constant(mask))
 
-            v_norm = tf.nn.l2_normalize(v, dim = [0, 1, 2])
+            v_norm = tf.nn.l2_normalize(v, dim = [0, 1])
 
-            t = tf.nn.conv2d(x, v_norm, strides=strides, padding='SAME')
-            mu_t, var_t = tf.nn.moments(t, axes=[0,1,2])
+            t = tf.nn.convolution(x, v_norm, strides=strides, padding='SAME', dilation_rate=dilation)
+            mu_t, var_t = tf.nn.moments(t, axes=[0,1])
 
             inv = 1 / tf.sqrt(var_t + 1e-10)
             _ = tf.get_variable("g", initializer=inv)
             _ = tf.get_variable("b", initializer=-mu_t * inv)
 
-            inv = tf.reshape(inv, shape=[1, 1, 1, out_ch])
-            mu_t = tf.reshape(mu_t, shape=[1, 1, 1, out_ch])
+            inv = tf.reshape(inv, shape=[1, 1, out_ch])
+            mu_t = tf.reshape(mu_t, shape=[1, 1, out_ch])
 
             return tf.multiply(t - mu_t, inv)
 
@@ -177,14 +177,13 @@ def conv1d(x, k, out_ch, init, scope, mask_type=None):
             b = tf.get_variable("b", shape=[out_ch])
 
             if mask_type is not None:
-                mask = conv_mask(w_shape, mask_type)
+                mask = conv1d_mask(w_shape, mask_type)  # k x in_ch x out_ch
                 v = tf.multiply(v, tf.constant(mask))
 
-            w = tf.reshape(g, shape=[1,1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1,2])
-            b = tf.reshape(b, shape=[1,1,1,out_ch])
+            w = tf.reshape(g, shape=[1,1,out_ch]) * tf.nn.l2_normalize(v, dim=[0,1])
+            b = tf.reshape(b, shape=[1,1,out_ch])
 
-            return tf.nn.conv2d(x, w, strides=strides, padding='SAME') + b
-
+            return tf.nn.convolution(x, w, strides=strides, padding='SAME', dilation_rate=dilation) + b
 
 
 def conv1d_mask(m_shape, mask_type):
