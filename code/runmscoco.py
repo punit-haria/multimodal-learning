@@ -24,7 +24,7 @@ parms = {
     'n_units': 128,
     'embed_size': 256,
     'gru_layers': 1,
-    'softmax_samples': 4000,
+    'softmax_samples': 6000,
 
     # loss function parameters
     'anneal': 0,  # 0, -0.0625, -0.125, -0.25   (0 is no anneal)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # objective, n_z, n_feature_maps, n_units, embed_size, gru_layers, softmax_samples, anneal, joint_anneal, learning_rate
 
     configs = [
-        ['joint', 96, 32, 128, 256, 1, 4000, 0, 0.3, 0.001]
+        ['joint', 96, 32, 128, 256, 1, 6000, 0, 0.3, 0.001]
     ]
 
     data = MSCOCO(parms['n_paired'])
