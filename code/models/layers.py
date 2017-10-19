@@ -58,8 +58,6 @@ def seq_decoder_cnn(z, x_dec, embeddings, n_units, vocab_size, embed_size, init,
 
         embeddings = tf.stop_gradient(embeddings)  # do not train embedding matrix in decoder
 
-        embeddings = tf.Print(embeddings, [tf.reduce_sum(embeddings)])  ##############################
-
         x_dec = tf.nn.embedding_lookup(embeddings, x_dec)  # batch_size x max_seq_len x embed_size
 
         z = linear(z, n_out=n_units, init=init, scope='mu_sigma_layer')  # batch_size x n_units
