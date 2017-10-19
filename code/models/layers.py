@@ -80,6 +80,7 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
     """
     with tf.variable_scope(scope):
         nonlin = tf.nn.elu
+        n_layers = 4
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
@@ -100,37 +101,37 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
 
         # dilated convoluations as residual blocks:
 
-        c = conv(x, k=ka, out_ch=n_ch, stride=False, mask_type='A', init=init, scope='layer_1x')
+        c = conv1d(input, k=3, out_ch=32, dilation=2, mask_type='A', init=init, scope='conv1d_0')
 
-        for i in range(n_ar_layers):
-            cz = conv(z, k=3, out_ch=n_ch, stride=False, mask_type=None, init=init, scope='cond_z_' + str(i+2))
-            c = c + cz
+        for i in range(n_layers):
+            scp = 'resblock_' + str(i+1)
+            c = resblock1d(c, k=3, nonlinearity=nonlin, dilation=2, init=init, scope=scp)
 
-            #c = c + z
-            c = masked_residual_block(c, kb, nonlinearity, init=init, scope='resblock_' + str(i+2))
+        c = nonlin(c)
 
-        c = nonlinearity(c)
-
-        c = conv(c, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='final_1x1_a')
-        c = nonlinearity(c)
-        c = conv(c, k=1, out_ch=out_ch, stride=False, mask_type='B', init=init, scope='final_1x1_b')
+        c = conv1d(c, k=1, out_ch=32, dilation=2, mask_type='B', init=init, scope='final_conv1d_a')
+        c = nonlin(c)
+        c = conv1d(c, k=1, out_ch=32, dilation=2, mask_type='B', init=init, scope='final_conv1d_b')
 
 
 
-def resblock1d(c, k, nonlinearity, init, scope):
+def resblock1d(c, k, nonlinearity, dilation, init, scope):
     """
     Residual Block for PixelCNN. See https://arxiv.org/abs/1601.06759
     """
     with tf.variable_scope(scope):
 
-        n_ch = c.get_shape()[3].value
+        # c:  batch_size x length x n_ch
+
+        n_ch = c.get_shape()[2].value
         half_ch = n_ch // 2
+
         c1 = nonlinearity(c)
-        c1 = conv(c1, k=1, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='1x1_a')
+        c1 = conv1d(c1, k=1, out_ch=half_ch, mask_type='B', dilation=dilation, init=init, scope='1x1_a')
         c1 = nonlinearity(c1)
-        c1 = conv(c1, k=k, out_ch=half_ch, stride=False, mask_type='B', init=init, scope='conv')
+        c1 = conv1d(c1, k=k, out_ch=half_ch, mask_type='B', dilation=dilation, init=init, scope='conv1d')
         c1 = nonlinearity(c1)
-        c1 = conv(c1, k=1, out_ch=n_ch, stride=False, mask_type='B', init=init, scope='1x1_b')
+        c1 = conv1d(c1, k=1, out_ch=n_ch, mask_type='B', dilation=dilation, init=init, scope='1x1_b')
         c = c1 + c
 
         return c
