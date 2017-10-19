@@ -829,8 +829,9 @@ def deconv_residual_block(d, k, n_feature_maps, out_ch, nonlinearity, stride, in
         d = nonlinearity(d)
         d = deconv(d, k=k, out_ch=out_ch, stride=False, init=init, scope='layer_2')
 
-        if stride:
-            id = deconv(id, k=k, out_ch=out_ch, stride=True, init=init, scope='identity_upsampled')
+        in_ch = id.get_shape()[3].value
+        if in_ch != out_ch or stride:
+            id = deconv(id, k=k, out_ch=out_ch, stride=stride, init=init, scope='identity_upsampled')
 
         d = d + id
 
