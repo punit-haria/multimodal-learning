@@ -80,7 +80,7 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
     """
     with tf.variable_scope(scope):
         nonlin = tf.nn.elu
-        n_layers = 7
+        n_layers = 9
         n_fmaps = n_units
 
         if init:
@@ -111,11 +111,6 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
             dilate = 1 if dilate > 16 else dilate
             c = resblock1d(c, k=3, nonlinearity=nonlin, dilation=dilate, init=init, scope=scp)
             dilate *= 2
-
-        c = nonlin(c)
-        c = conv1d(c, k=1, out_ch=n_fmaps, dilation=2, mask_type='B', init=init, scope='final_conv1d_a')
-        c = nonlin(c)
-        c = conv1d(c, k=1, out_ch=n_units, dilation=2, mask_type='B', init=init, scope='final_conv1d_b')
 
         return c    # batch_size x max_seq_len x n_units
 
