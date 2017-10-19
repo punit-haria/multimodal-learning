@@ -154,7 +154,7 @@ def conv1d(x, k, out_ch, init, scope, mask_type=None):
             v = v.initialized_value()
 
             if mask_type is not None:
-                mask = conv_mask(w_shape, mask_type)
+                mask = conv_mask(w_shape, mask_type)   # k x in_ch x out_ch
                 v = tf.multiply(v, tf.constant(mask))
 
             v_norm = tf.nn.l2_normalize(v, dim = [0, 1, 2])
@@ -186,6 +186,31 @@ def conv1d(x, k, out_ch, init, scope, mask_type=None):
             return tf.nn.conv2d(x, w, strides=strides, padding='SAME') + b
 
 
+
+def conv1d_mask(m_shape, mask_type):
+
+    k = m_shape[0]  # filter size
+    assert k % 2 == 1  # check that k is odd
+
+    if k == 1:
+        assert mask_type == 'B'
+        return np.ones(shape=m_shape, dtype=np.float32)
+
+    else:
+        mask = np.zeros(shape=m_shape, dtype=np.float32)
+        half_k = k // 2
+        for i in range(half_k):
+            mask[i,:,:] = 1
+
+        # mask type
+        if mask_type == 'A':
+            mask[half_k, :, :] = 0
+        elif mask_type == 'B':
+            mask[half_k, :, :] = 1
+        else:
+            raise Exception("Masking type not implemented..")
+
+        return mask
 
 
 
