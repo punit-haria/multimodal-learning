@@ -235,7 +235,7 @@ def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
                                 stride=True, init=init, scope='res_2')
         x = nonlin(x)
 
-        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps*2, nonlinearity=nonlin,
                                 stride=False, init=init, scope='unstrided_1a')
         x = nonlin(x)
 
@@ -251,7 +251,7 @@ def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
                                 stride=True, init=init, scope='res_4')
         x = nonlin(x)
 
-        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps*2, nonlinearity=nonlin,
                                 stride=False, init=init, scope='unstrided_2a')
         x = nonlin(x)
 
@@ -292,7 +292,7 @@ def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
         z = tf.reshape(z, shape=[-1, h, w, n_fmaps])
 
 
-        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps*2, out_ch=n_fmaps*2,
                                   nonlinearity=nonlin, stride=False, init=init, scope='unstrided_2b')
         z = nonlin(z)
 
@@ -308,7 +308,7 @@ def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
                                   nonlinearity=nonlin, stride=True, init=init, scope='res_3')
         z = nonlin(z)
 
-        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps*2, out_ch=n_fmaps*2,
                                   nonlinearity=nonlin, stride=False, init=init, scope='unstrided_1b')
         z = nonlin(z)
 
