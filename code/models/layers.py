@@ -112,7 +112,8 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
         c = conv1d(c, k=1, out_ch=n_fmaps, dilation=2, mask_type='B', init=init, scope='final_conv1d_a')
         c = nonlin(c)
         c = conv1d(c, k=1, out_ch=n_units, dilation=2, mask_type='B', init=init, scope='final_conv1d_b')
-        # batch_size x max_seq_len x n_units
+
+        return c    # batch_size x max_seq_len x n_units
 
 
 

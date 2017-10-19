@@ -546,9 +546,10 @@ class MultiModalVAE(base.Model):
         """
         Performs single training step.
         """
-        xi, xc, sl, xi_pairs, xc_pairs, sl_pairs = xs
+        xi, xc, sl, xc_dec, xi_pairs, xc_pairs, sl_pairs, xc_pairs_dec = xs
 
-        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xpi: xi_pairs, self.xpc: xc_pairs, self.slp: sl_pairs}
+        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xc_dec: xc_dec,
+                self.xpi: xi_pairs, self.xpc: xc_pairs, self.slp: sl_pairs, self.xpc_dec: xc_pairs_dec}
         summary, _ = self.sess.run([self.summary_train, self.step], feed_dict=feed)
 
         self.tr_writer.add_summary(summary, self.n_steps)
@@ -560,9 +561,10 @@ class MultiModalVAE(base.Model):
         """
         Computes lower bound on test data.
         """
-        xi, xc, sl = xs
+        xi, xc, sl, xc_dec = xs
 
-        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xpi: xi, self.xpc: xc, self.slp: sl}
+        feed = {self.xi: xi, self.xc: xc, self.sl: sl, self.xc_dec: xc_dec,
+                self.xpi: xi, self.xpc: xc, self.slp: sl, self.xpc_dec: xc_dec}
         summary = self.sess.run(self.summary_test, feed_dict=feed)
 
         self.te_writer.add_summary(summary, self.n_steps)
