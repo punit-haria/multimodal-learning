@@ -808,8 +808,9 @@ def conv_residual_block(c, k, n_feature_maps, nonlinearity, stride, init, scope)
 
         c = conv(c, k=k, out_ch=n_feature_maps, stride=stride, init=init, scope='layer_2')
 
-        if stride:
-            id = conv(id, k=k, out_ch=n_feature_maps, stride=True, init=init, scope='identity_downsampled')
+        in_ch = id.get_shape()[3].value
+        if in_ch != n_feature_maps or stride:
+            id = conv(id, k=k, out_ch=n_feature_maps, stride=stride, init=init, scope='identity_downsampled')
 
         c = c + id
 
