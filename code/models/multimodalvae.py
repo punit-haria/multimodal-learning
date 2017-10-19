@@ -181,7 +181,7 @@ class MultiModalVAE(base.Model):
             # decoders
             print("Decoders...", flush=True)
             rxi_j, rxi_j_probs = self._decoder_i(zj, init=init, scope='xi_dec')
-            rxc_j, rxc_j_probs, proj_j = self._decoder_c(zj, xpc_dec, init=init, scope='xc_dec')
+            rxc_j, rxc_j_probs, proj_j = self._decoder_c(zj, xpc_dec, embed, init=init, scope='xc_dec')
 
 
             if not init:
