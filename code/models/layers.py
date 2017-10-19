@@ -148,9 +148,9 @@ def conv1d(x, k, out_ch, dilation, init, scope, mask_type=None):
 
         in_ch = x.get_shape()[2].value
 
-        strides = [1, 1, 1]
         w_shape = [k, in_ch, out_ch]
-        dilation = [dilation, 1, 1]
+        strides = [1]
+        dilation = [dilation]
 
         if init:
             v = tf.get_variable("v", shape=w_shape, initializer=tf.random_normal_initializer(0,0.05))
