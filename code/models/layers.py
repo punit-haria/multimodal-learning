@@ -236,7 +236,11 @@ def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
         x = nonlin(x)
 
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
-                                stride=False, init=init, scope='unstrided_1')
+                                stride=False, init=init, scope='unstrided_1a')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=False, init=init, scope='unstrided_1b')
         x = nonlin(x)
 
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
@@ -248,7 +252,11 @@ def convolution_coco(x, nch, n_fmaps, n_units, n_z, init, scope):
         x = nonlin(x)
 
         x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
-                                stride=False, init=init, scope='unstrided_2')
+                                stride=False, init=init, scope='unstrided_2a')
+        x = nonlin(x)
+
+        x = conv_residual_block(x, k=3, n_feature_maps=n_fmaps, nonlinearity=nonlin,
+                                stride=False, init=init, scope='unstrided_2b')
         x = nonlin(x)
 
         x = tf.contrib.layers.flatten(x)
@@ -285,7 +293,11 @@ def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
 
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
-                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_2')
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_2b')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_2a')
         z = nonlin(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
@@ -297,7 +309,11 @@ def deconvolution_coco(z, nch, n_fmaps, n_units, init, scope):
         z = nonlin(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
-                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_1')
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_1b')
+        z = nonlin(z)
+
+        z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps,
+                                  nonlinearity=nonlin, stride=False, init=init, scope='unstrided_1a')
         z = nonlin(z)
 
         z = deconv_residual_block(z, k=3, n_feature_maps=n_fmaps, out_ch=n_fmaps, nonlinearity=nonlin,
