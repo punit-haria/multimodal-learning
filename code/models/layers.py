@@ -80,8 +80,8 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
     """
     with tf.variable_scope(scope):
         nonlin = tf.nn.elu
-        n_layers = 4
-        n_fmaps = 128
+        n_layers = 6
+        n_fmaps = n_units
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
