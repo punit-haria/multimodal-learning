@@ -34,7 +34,7 @@ parms = {
     'learning_rate': 0.001,
     'n_unpaired_samples': 128,
     'n_paired_samples': 128,
-    'n_paired': 50000,
+    'n_paired': 60000,
 
     'test_sample_size': 128,
     'train_steps': 30000,  # 350000

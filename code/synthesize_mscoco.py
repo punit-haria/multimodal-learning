@@ -7,10 +7,10 @@ from runmscoco import models
 
 experiment_name = "coco"
 
-train_steps = 20000
-save_steps = 1000
+train_steps = 30000
+save_steps = 3000
 
-data = MSCOCO(50000)
+data = MSCOCO(60000)
 
 tracker = Results.load(experiment_name)
 
