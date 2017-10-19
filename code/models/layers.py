@@ -81,6 +81,7 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
     with tf.variable_scope(scope):
         nonlin = tf.nn.elu
         n_layers = 4
+        n_fmaps = 128
 
         if init:
             embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
@@ -101,17 +102,16 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
 
         # dilated convoluations as residual blocks:
 
-        c = conv1d(input, k=3, out_ch=32, dilation=2, mask_type='A', init=init, scope='conv1d_0')
+        c = conv1d(input, k=3, out_ch=n_fmaps, dilation=2, mask_type='A', init=init, scope='conv1d_0')
 
         for i in range(n_layers):
             scp = 'resblock_' + str(i+1)
             c = resblock1d(c, k=3, nonlinearity=nonlin, dilation=2, init=init, scope=scp)
 
         c = nonlin(c)
-
-        c = conv1d(c, k=1, out_ch=32, dilation=2, mask_type='B', init=init, scope='final_conv1d_a')
+        c = conv1d(c, k=1, out_ch=n_fmaps, dilation=2, mask_type='B', init=init, scope='final_conv1d_a')
         c = nonlin(c)
-        c = conv1d(c, k=1, out_ch=32, dilation=2, mask_type='B', init=init, scope='final_conv1d_b')
+        c = conv1d(c, k=1, out_ch=n_fmaps, dilation=2, mask_type='B', init=init, scope='final_conv1d_b')
 
 
 
