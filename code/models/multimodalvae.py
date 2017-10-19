@@ -166,7 +166,7 @@ class MultiModalVAE(base.Model):
 
             # encoders
             print("Encoder (caption)...", flush=True)
-            mu_pc, sigma_pc, hepc = self._encoder_c(xpc, slp, init=init, scope='xc_enc')
+            mu_pc, sigma_pc, hepc, embed = self._encoder_c(xpc, slp, init=init, scope='xc_enc')
             print("Encoder (image)...", flush=True)
             mu_pi, sigma_pi, hepi = self._encoder_i(xpi, init=init, scope='xi_enc')
 
@@ -189,7 +189,7 @@ class MultiModalVAE(base.Model):
                 # unpaired encodings
                 print("Encoders (2)...", flush=True)
                 mu_i, sigma_i, _ = self._encoder_i(xi, init=init, scope='xi_enc')
-                mu_c, sigma_c, _ = self._encoder_c(xc, sl, init=init, scope='xc_enc')
+                mu_c, sigma_c, _, _ = self._encoder_c(xc, sl, init=init, scope='xc_enc')
 
                 # additional samples
                 print("Samplers (2)...", flush=True)
@@ -201,19 +201,19 @@ class MultiModalVAE(base.Model):
                 # reconstructions
                 print("Decoders (2)...", flush=True)
                 rxi_i, rxi_i_probs = self._decoder_i(zi, init=init, scope='xi_dec')
-                rxc_c, rxc_c_probs, proj_c = self._decoder_c(zc, xc_dec, init=init, scope='xc_dec')
+                rxc_c, rxc_c_probs, proj_c = self._decoder_c(zc, xc_dec, embed, init=init, scope='xc_dec')
 
                 # translations
                 rxi_c, rxi_c_probs = self._decoder_i(zc, init=init, scope='xi_dec')
-                rxc_i, rxc_i_probs, proj_i = self._decoder_c(zi, xc_dec, init=init, scope='xc_dec')
+                rxc_i, rxc_i_probs, proj_i = self._decoder_c(zi, xc_dec, embed, init=init, scope='xc_dec')
 
                 # reconstructions (from paired input)
                 rxi_pi, rxi_pi_probs = self._decoder_i(zpi, init=init, scope='xi_dec')
-                rxc_pc, rxc_pc_probs, proj_pc = self._decoder_c(zpc, xpc_dec, init=init, scope='xc_dec')
+                rxc_pc, rxc_pc_probs, proj_pc = self._decoder_c(zpc, xpc_dec, embed, init=init, scope='xc_dec')
 
                 # translations (from paired input)
                 rxi_pc, rxi_pc_probs = self._decoder_i(zpc, init=init, scope='xi_dec')
-                rxc_pi, rxc_pi_probs, proj_pi = self._decoder_c(zpi, xpc_dec, init=init, scope='xc_dec')
+                rxc_pi, rxc_pi_probs, proj_pi = self._decoder_c(zpi, xpc_dec, embed, init=init, scope='xc_dec')
 
                 # final tensors
                 print("Assignments...", flush=True)
@@ -251,10 +251,10 @@ class MultiModalVAE(base.Model):
 
     def _encoder_c(self, x, sl, init, scope):
 
-        mu, sigma, he = nw.seq_encoder(x, sl, self.vocab_size, self.embed_size, self.n_units,
+        mu, sigma, he, embed_matrix = nw.seq_encoder(x, sl, self.vocab_size, self.embed_size, self.n_units,
                                        self.n_z, self.gru_layers, init, scope)
 
-        return mu, sigma, he
+        return mu, sigma, he, embed_matrix
 
 
 
@@ -279,10 +279,10 @@ class MultiModalVAE(base.Model):
         return logits, parms
 
 
-    def _decoder_c(self, z, x_dec, init, scope):
+    def _decoder_c(self, z, x_dec, embed, init, scope):
 
         # logits = nw.seq_decoder(z, x_dec, self.n_units, self.embed_size, self.gru_layers, init, scope)
-        logits = nw.seq_decoder_cnn(z, x_dec, self.n_units, self.vocab_size, self.embed_size, init, scope)
+        logits = nw.seq_decoder_cnn(z, x_dec, embed, self.n_units, self.vocab_size, self.embed_size, init, scope)
 
         # logits: batch_size x max_seq_len x n_units
 

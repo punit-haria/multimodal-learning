@@ -44,37 +44,10 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         sigma = linear(out, n_out=n_z, init=init, scope="sigma_layer")
         sigma = tf.nn.softplus(sigma)
 
-        return mu, sigma, out
+        return mu, sigma, out, embeddings
 
 
-def seq_decoder(z, x_dec, n_units, embed_size, n_layers, init, scope):
-    """
-    RNN decoder using GRUs (autoregressive)
-    """
-    with tf.variable_scope(scope):
-
-        nonlin = tf.nn.elu
-        bidirectional = False
-
-        z = linear(z, n_out=embed_size, init=init, scope='mu_sigma_layer')  # batch_size x embed_size
-
-        # x: batch_size x max_seq_len x embed_size
-        max_seq_len = x_dec.get_shape()[1].value
-        x = tf.slice(x_dec, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
-
-        z = tf.expand_dims(z, axis=1)
-        z = tf.concat([z,x], axis=1)   # batch_size x max_seq_len x embed_size
-
-        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z, is_bidirectional=bidirectional)
-        gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
-        out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
-        # out: batch_size x max_seq_len x n_units
-
-        return out
-
-
-
-def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
+def seq_decoder_cnn(z, x_dec, embeddings, n_units, vocab_size, embed_size, init, scope):
     """
     Dilated CNN decoder for sequences. Based on http://proceedings.mlr.press/v70/yang17d/yang17d.pdf
     """
@@ -83,12 +56,9 @@ def seq_decoder_cnn(z, x_dec, n_units, vocab_size, embed_size, init, scope):
         n_layers = 9
         n_fmaps = n_units
 
-        if init:
-            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size],
-                                         initializer=tf.random_normal_initializer(0, 0.05))
-            embeddings = embeddings.initialized_value()
-        else:
-            embeddings = tf.get_variable("embeddings", shape=[vocab_size, embed_size])
+        embeddings = tf.stop_gradient(embeddings)  # do not train embedding matrix in decoder
+
+        embeddings = tf.Print(embeddings, [tf.reduce_sum(embeddings)])  ##############################
 
         x_dec = tf.nn.embedding_lookup(embeddings, x_dec)  # batch_size x max_seq_len x embed_size
 
@@ -214,6 +184,33 @@ def conv1d_mask(m_shape, mask_type):
 
         return mask
 
+
+
+
+def seq_decoder(z, x_dec, n_units, embed_size, n_layers, init, scope):
+    """
+    RNN decoder using GRUs (autoregressive)
+    """
+    with tf.variable_scope(scope):
+
+        nonlin = tf.nn.elu
+        bidirectional = False
+
+        z = linear(z, n_out=embed_size, init=init, scope='mu_sigma_layer')  # batch_size x embed_size
+
+        # x: batch_size x max_seq_len x embed_size
+        max_seq_len = x_dec.get_shape()[1].value
+        x = tf.slice(x_dec, begin=[0,0,0], size=[-1,max_seq_len-1,-1])
+
+        z = tf.expand_dims(z, axis=1)
+        z = tf.concat([z,x], axis=1)   # batch_size x max_seq_len x embed_size
+
+        gru = sq.GRUCell(num_units=n_units, activation=nonlin, init=init, input=z, is_bidirectional=bidirectional)
+        gru = tf.nn.rnn_cell.MultiRNNCell([gru] * n_layers)
+        out, state = tf.nn.dynamic_rnn(gru, z, dtype=tf.float32, initial_state=None)
+        # out: batch_size x max_seq_len x n_units
+
+        return out
 
 
 
