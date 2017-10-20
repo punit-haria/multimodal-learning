@@ -644,7 +644,8 @@ class MultiModalVAE(base.Model):
 
         for i in range(max_seq_len):
 
-            feed = {self.zj: z, self.xpc: xc}
+            #feed = {self.zj: z, self.xpc: xc, self.xpc_dec: xc_dec}
+            feed = {self.zj: z, self.xpc_dec: xc}
             pb = self.sess.run(self.rxc_j_probs, feed_dict=feed)   # batch_size x max_seq_len x vocab_size
 
             pb = pb[:,i,:]

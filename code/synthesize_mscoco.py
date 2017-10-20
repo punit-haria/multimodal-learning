@@ -5,7 +5,7 @@ from results import coco_plot
 from runmscoco import models
 
 
-experiment_name = "coco"
+experiment_name = "coco_cnn"
 
 train_steps = 30000
 save_steps = 3000
