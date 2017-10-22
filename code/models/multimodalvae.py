@@ -372,7 +372,7 @@ class MultiModalVAE(base.Model):
 
                 # mask out irrelevant sequence vectors
                 max_len = l1.get_shape()[1].value
-                mask = tf.sequence_mask(slens, maxlen=max_len, dtype=tf.int32)
+                mask = tf.sequence_mask(slens, maxlen=max_len, dtype=tf.float32)
                 l1 = mask * l1
 
                 # reduce
