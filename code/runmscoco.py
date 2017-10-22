@@ -73,15 +73,15 @@ if __name__ == "__main__":
         parms['n_feature_maps_image'] = c[4]
         parms['n_feature_maps_capt'] = c[5]
 
-        parms['embed_size'] = c[4]
-        parms['gru_layers'] = c[5]
+        parms['embed_size'] = c[6]
+        parms['gru_layers'] = c[7]
 
-        parms['softmax_samples'] = c[6]
+        parms['softmax_samples'] = c[8]
 
-        parms['anneal'] = c[7]
-        parms['joint_anneal'] = c[8]
+        parms['anneal'] = c[9]
+        parms['joint_anneal'] = c[10]
 
-        parms['learning_rate'] = c[9]
+        parms['learning_rate'] = c[11]
 
 
         for name, model in models.items():
@@ -100,6 +100,7 @@ if __name__ == "__main__":
 
             if parms['joint_anneal'] < 1:
                 name += "_jointanneal_" + str(parms['joint_anneal'])
+
 
             train_joint(name=name, model=model, parameters=parms, data=data, tracker=tracker)
 
