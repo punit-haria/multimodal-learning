@@ -39,7 +39,7 @@ parms = {
     'n_paired': 60000,
 
     'test_sample_size': 128,
-    'train_steps': 200,  # 30000, 350000
+    'train_steps': 200,  # 60000 = 3.5 days
     'test_steps': 50,
     'save_steps': 100
 }
