@@ -122,7 +122,7 @@ def _get_caption_text(data, capts, n_rows, n_cols):
             seq = capts[i,j,:]
             for w in seq:
                 word = data.get_word(w)
-                if word == data._padding:
+                if word == data._padding or word == data._eof:
                     break
                 c.append(word)
 
