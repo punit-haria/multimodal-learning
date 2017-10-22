@@ -282,7 +282,7 @@ class MultiModalVAE(base.Model):
     def _decoder_c(self, z, x_dec, embed, init, scope):
 
         # logits = nw.seq_decoder(z, x_dec, self.n_units, self.embed_size, self.gru_layers, init, scope)
-        logits = nw.seq_decoder_cnn(z, x_dec, embed, self.n_units, self.vocab_size, self.embed_size, init, scope)
+        logits = nw.seq_decoder_cnn(z, x_dec, embed, self.n_units, init, scope)
 
         # logits: batch_size x max_seq_len x n_units
 
@@ -644,7 +644,7 @@ class MultiModalVAE(base.Model):
 
         for i in range(max_seq_len):
 
-            #feed = {self.zj: z, self.xpc: xc, self.xpc_dec: xc_dec}
+            #feed = {self.zj: z, self.xpc: xc, self.xpc_dec: xc_dec}   #############################
             feed = {self.zj: z, self.xpc_dec: xc}
             pb = self.sess.run(self.rxc_j_probs, feed_dict=feed)   # batch_size x max_seq_len x vocab_size
 

@@ -47,7 +47,7 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         return mu, sigma, out, embeddings
 
 
-def seq_decoder_cnn(z, x_dec, embeddings, n_units, vocab_size, embed_size, init, scope):
+def seq_decoder_cnn(z, x_dec, embeddings, n_units, init, scope):
     """
     Dilated CNN decoder for sequences. Based on http://proceedings.mlr.press/v70/yang17d/yang17d.pdf
     """
