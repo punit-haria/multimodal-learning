@@ -47,10 +47,11 @@ parms = {
 
 if __name__ == "__main__":
 
-    # objective, n_z, n_feature_maps, n_units, embed_size, gru_layers, softmax_samples, anneal, joint_anneal, learning_rate
+    # objective, n_z, n_units_image, n_units_enc_capt, n_feature_maps_image, n_feature_maps_capt,
+    # embed_size, gru_layers, softmax_samples, anneal, joint_anneal, learning_rate
 
     configs = [
-        ['joint', 96, 32, 128, 256, 1, 6000, 0, 0.3, 0.001]
+        ['joint', 128, 256, 512, 64, 512, 1024, 1, 6000, 0, 0.3, 0.001]
     ]
 
     data = MSCOCO(parms['n_paired'])
@@ -67,8 +68,11 @@ if __name__ == "__main__":
         parms['objective'] = c[0]
         parms['n_z'] = c[1]
 
-        parms['n_feature_maps'] = c[2]
-        parms['n_units'] = c[3]
+        parms['n_units_image'] = c[2]
+        parms['n_units_enc_capt'] = c[3]
+        parms['n_feature_maps_image'] = c[4]
+        parms['n_feature_maps_capt'] = c[5]
+
         parms['embed_size'] = c[4]
         parms['gru_layers'] = c[5]
 
@@ -85,8 +89,8 @@ if __name__ == "__main__":
             name =  experiment_name + '_obj_' + parms['objective'] \
                     + '_nz_' +  str(parms['n_z']) \
                     + '_lr_' + str(parms['learning_rate']) \
-                    + '_fmaps_' + str(parms['n_feature_maps']) \
-                    + '_units_' + str(parms['n_units']) \
+                    + '_units_' + str(parms['n_units_image']) + '_' + str(parms['n_units_enc_capt']) \
+                    + '_fmaps_' + str(parms['n_feature_maps_image']) + '_' + str(parms['n_feature_maps_capt']) \
                     + '_embed_' + str(parms['embed_size']) \
                     + '_gru_' + str(parms['gru_layers']) \
                     + '_sftsamples_' + str(parms['softmax_samples'])

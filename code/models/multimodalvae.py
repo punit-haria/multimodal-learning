@@ -321,7 +321,7 @@ class MultiModalVAE(base.Model):
             return z_mu, z_sigma
 
 
-    def _reconstruction(self, logits, labels, dtype, mode, proj, scope):
+    def _reconstruction(self, logits, labels, slens, dtype, mode, proj, scope):
 
         with tf.variable_scope(scope):
 
@@ -366,6 +366,13 @@ class MultiModalVAE(base.Model):
                     # l1: (batch_size x max_seq_len) x 1
                     l1 = tf.reshape(l1, shape=[batch_size, max_seq_len])
                     # l1: batch_size x max_seq_len
+
+                    # mask out irrelevant sequence vectors
+                    batch_size = tf.shape(out)[0]
+                    max_seq_len = tf.shape(out)[1]
+                    index = (tf.range(0, batch_size) * max_seq_len) + (slens - 1)
+                    flat = tf.reshape(out, [-1, n_units])
+                    out = tf.gather(flat, index)  # select relevant output vectors only
 
                 else:
                     raise NotImplementedError
