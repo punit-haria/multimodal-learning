@@ -5,12 +5,12 @@ from results import coco_plot
 from runmscoco import models
 
 
-experiment_name = "coco_cnn"
+experiment_name = "coco_final"
 
-train_steps = 30000
-save_steps = 3000
+train_steps = 60000
+save_steps = 5000
 
-data = MSCOCO(60000)
+data = MSCOCO(65000)
 
 tracker = Results.load(experiment_name)
 

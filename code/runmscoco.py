@@ -4,7 +4,7 @@ from data import MSCOCO
 from training import train_joint, Results
 
 
-experiment_name = 'coco_cnn'
+experiment_name = 'coco_final'
 
 
 models = [
@@ -36,12 +36,12 @@ parms = {
     'learning_rate': 0.001,
     'n_unpaired_samples': 128,
     'n_paired_samples': 128,
-    'n_paired': 60000,
+    'n_paired': 65000,
 
     'test_sample_size': 128,
-    'train_steps': 200,  # 60000 = 3.5 days
+    'train_steps': 60000,  # 60000 = 4 days
     'test_steps': 50,
-    'save_steps': 100
+    'save_steps': 5000
 }
 
 
