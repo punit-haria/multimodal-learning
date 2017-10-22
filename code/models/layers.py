@@ -47,14 +47,13 @@ def seq_encoder(x, slens, vocab_size, embed_size, n_units, n_z, n_layers, init, 
         return mu, sigma, out, embeddings
 
 
-def seq_decoder_cnn(z, x_dec, embeddings, n_units, init, scope):
+def seq_decoder_cnn(z, x_dec, embeddings, n_fmaps, n_units, init, scope):
     """
     Dilated CNN decoder for sequences. Based on http://proceedings.mlr.press/v70/yang17d/yang17d.pdf
     """
     with tf.variable_scope(scope):
         nonlin = tf.nn.elu
         n_layers = 9
-        n_fmaps = n_units
 
         embeddings = tf.stop_gradient(embeddings)  # do not train embedding matrix in decoder
 
@@ -80,7 +79,7 @@ def seq_decoder_cnn(z, x_dec, embeddings, n_units, init, scope):
             c = resblock1d(c, k=3, nonlinearity=nonlin, dilation=dilate, init=init, scope=scp)
             dilate *= 2
 
-        return c    # batch_size x max_seq_len x n_units
+        return c    # batch_size x max_seq_len x n_fmaps
 
 
 

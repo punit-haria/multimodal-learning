@@ -21,8 +21,10 @@ class MultiModalVAE(base.Model):
         self.vocab_size = self.args['vocab_size']               # vocabulary size
         self.embed_size = self.args['embed_size']               # embedding size
         self.gru_layers = self.args['gru_layers']               # number of GRU layers
-        self.n_units = self.args['n_units']                     # number of hidden units in FC layers
-        self.n_fmaps = self.args['n_feature_maps']              # number of feature maps in Conv. layers
+        self.n_units_image = self.args['n_units_image']         # number of hidden units in FC layers
+        self.n_units_enc_capt = self.args['n_units_enc_capt']   # number of hidden units in Encoder GRU
+        self.n_fmaps_capt = self.args['n_feature_maps_capt']    # number of feature maps in Caption Decoder
+        self.n_fmaps_image = self.args['n_feature_maps_image']  # number of feature maps in Image Decoder
         self.alpha = self.args['anneal']                        # freebits parameter
         self.joint_anneal = self.args['joint_anneal']           # joint annealing parameter
         self.lr = self.args['learning_rate']                    # learning rate
@@ -244,14 +246,15 @@ class MultiModalVAE(base.Model):
 
     def _encoder_i(self, x, init, scope):
 
-        mu, sigma, he = nw.convolution_coco(x, self.nch, self.n_fmaps, self.n_units, self.n_z, init, scope)
+        mu, sigma, he = nw.convolution_coco(x, self.nch, self.n_fmaps_image,
+                                            self.n_units_image, self.n_z, init, scope)
 
         return mu, sigma, he
 
 
     def _encoder_c(self, x, sl, init, scope):
 
-        mu, sigma, he, embed_matrix = nw.seq_encoder(x, sl, self.vocab_size, self.embed_size, self.n_units,
+        mu, sigma, he, embed_matrix = nw.seq_encoder(x, sl, self.vocab_size, self.embed_size, self.n_units_enc_capt,
                                        self.n_z, self.gru_layers, init, scope)
 
         return mu, sigma, he, embed_matrix
@@ -271,7 +274,7 @@ class MultiModalVAE(base.Model):
 
         nch = self.nch * 256
 
-        z = nw.deconvolution_coco(z, nch, self.n_fmaps, self.n_units, init, scope)
+        z = nw.deconvolution_coco(z, nch, self.n_fmaps_image, self.n_units_image, init, scope)
 
         logits = tf.reshape(z, shape=[-1, self.nxi, 256])
         parms = tf.nn.softmax(logits, dim=-1)
@@ -281,20 +284,20 @@ class MultiModalVAE(base.Model):
 
     def _decoder_c(self, z, x_dec, embed, init, scope):
 
-        # logits = nw.seq_decoder(z, x_dec, self.n_units, self.embed_size, self.gru_layers, init, scope)
-        logits = nw.seq_decoder_cnn(z, x_dec, embed, self.n_units, init, scope)
+        logits = nw.seq_decoder_cnn(z, x_dec, embed, self.n_fmaps_capt, self.n_units_image, init, scope)
 
         # logits: batch_size x max_seq_len x n_units
 
         with tf.variable_scope('projections'):
             if init:
-                w = tf.get_variable("w", shape=[self.vocab_size, self.n_units], initializer=tf.random_normal_initializer(0, 0.05))
+                w = tf.get_variable("w", shape=[self.vocab_size, self.n_fmaps_capt],
+                                    initializer=tf.random_normal_initializer(0, 0.05))
                 b = tf.get_variable("b", shape=[self.vocab_size], initializer=tf.random_normal_initializer(0, 0.05))
                 w = w.initialized_value()
                 b = b.initialized_value()
 
             else:
-                w = tf.get_variable("w", shape=[self.vocab_size, self.n_units])
+                w = tf.get_variable("w", shape=[self.vocab_size, self.n_fmaps_capt])
                 b = tf.get_variable("b", shape=[self.vocab_size])
 
             output_projections = (w, b)
@@ -313,7 +316,7 @@ class MultiModalVAE(base.Model):
 
         with tf.variable_scope(scope):
 
-            z_mu, z_sigma = nw.joint_coco_encode(xhi, xhc, self.n_units, self.n_z, init, scope=scope)
+            z_mu, z_sigma = nw.joint_coco_encode(xhi, xhc, self.n_units_image, self.n_z, init, scope=scope)
 
             return z_mu, z_sigma
 

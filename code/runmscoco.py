@@ -17,12 +17,14 @@ models = {x.__name__: x for x in models}
 parms = {
     # basic parameters
     'objective': 'joint',    # joint, translate
-    'n_z': 96,
+    'n_z': 128,
 
     # network parameters
-    'n_feature_maps': 32,
-    'n_units': 128,
-    'embed_size': 256,
+    'n_units_image': 256,
+    'n_units_enc_capt': 512,
+    'n_feature_maps_image': 64,
+    'n_feature_maps_capt': 512,
+    'embed_size': 1024,
     'gru_layers': 1,
     'softmax_samples': 6000,
 
