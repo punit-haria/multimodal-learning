@@ -16,9 +16,12 @@ data = MSCOCO(65000)
 tracker = Results.load(experiment_name)
 
 
+coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=1, train_steps=None)
+
+'''
 for i in range(save_steps, train_steps+save_steps, save_steps):
 
     coco_plot(tracker, models, data=data, n_rows=5, n_cols=5, repetitions=1, train_steps=str(i))
-
+'''
 
 
